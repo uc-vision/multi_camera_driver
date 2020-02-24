@@ -1,0 +1,49 @@
+camera_aliases:
+  19195147: cam2
+  19280415: cam1
+
+master: 19280415
+timeout: 1.0
+
+output_dir: "/home/josh/Downloads"
+
+camera_settings:
+  device:
+    - UserSetSelector:
+      - Default
+      - ENUM
+    - SensorShutterMode:
+      - GlobalReset
+      - ENUM
+    # - BinningHorizontal:
+    #   - 2
+    #   - INT
+    # - BinningVertical:
+    #   - 2
+    #   - INT
+    - PixelFormat:
+      - BayerRG8
+      - ENUM
+    - ExposureAuto:
+      - "Off"
+      - ENUM
+    - ExposureTime:
+      - 2000
+      - FLOAT
+    - TriggerMode:
+      - "Off"  # needs quotes otherwise is evaluated to false
+      - ENUM
+    - AcquisitionMode:
+      - Continuous
+      - ENUM
+    - AcquisitionFrameRateEnable:
+      - False
+      - BOOL
+  transport_layer:
+    - StreamBufferCountMode:
+      - Auto
+      - ENUM
+    - StreamBufferHandlingMode:
+      - NewestOnly
+      - ENUM
+#  Stream:
