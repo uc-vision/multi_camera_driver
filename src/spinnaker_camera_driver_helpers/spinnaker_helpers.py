@@ -159,6 +159,7 @@ def activate_image_chunks(nodemap):
 
 
 def execute(nodemap, node_name):
+    # print("Execute", node_name)
     node = PySpin.CCommandPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
         print('Unable to execute {}. Aborting... {} {}'.format(node_name, PySpin.IsAvailable(node),
@@ -170,8 +171,11 @@ def execute(nodemap, node_name):
 def reset_camera(camera):
     camera.Init()
     nodemap = camera.GetNodeMap()
+    set_enum(nodemap, "UserSetSelector", "Default")
     execute(nodemap, "UserSetLoad")
-    execute(nodemap, "DeviceReset")
+
+    # This often just freezes on re-runs, and everything seems to be OK without it. Is it necessary?
+    # execute(nodemap, "DeviceReset")  
     camera.DeInit()
 
 
