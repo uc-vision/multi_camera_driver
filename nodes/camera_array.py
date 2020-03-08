@@ -24,40 +24,16 @@ from std_srvs.srv import Empty, EmptyResponse
 from maara_msgs.msg import StereoCameraInfo
 from sensor_msgs.msg import CameraInfo
 
-from spinnaker_camera_driver_helpers import spinnaker_helpers
+from camera_helpers import spinnaker_helpers
 from dynamic_reconfigure.server import Server
 from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 
 from camera_geometry.import_calibration import *
 from camera_geometry.json import load_json
 
+from camera_geometry_ros.conversions import camera_info_msg
+
 LOCK = threading.Lock()
-
-def camera_info(camera):
-    cam_info = CameraInfo()
-    
-    width, height = camera.image_size
-    cam_info.width = width
-    cam_info.height = height
-    
-    cam_info.distortion_model = 'plumb_bob'
-    cam_info.K = camera.intrinsic
-    cam_info.D = camera.dist
-    return cam_info
-    
-
-def rectified_info(rectified):
-    cam_info = camera_info(rectified.camera)
-    cam_info.R = rectified.rotation
-    cam_info.P = rectified.intrinsic
-
-    x, y, w, h = rectified.roi
-    roi = cam_info.roi
-    roi.x_offset = x
-    roi.y_offset = y
-    roi.width = w
-    roi.height = h
-    return cam_info
 
 
 
@@ -124,9 +100,6 @@ def set_exposure(camera, exposure_time):
         spinnaker_helpers.set_float(node_map, "ExposureTime", exposure_time)
     else:
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
-
-    # print("Got exposure=", spinnaker_helpers.get_float(node_map, "ExposureTime"))
-    # print("Gain=", spinnaker_helpers.get_float(node_map, "Gain"))
 
 
 def set_balance_ratio(camera, balance_ratio):
@@ -208,7 +181,7 @@ class CameraArrayNode(object):
 
             cam_info = CameraInfo()
             if alias in self.calibrations:
-                cam_info = camera_info(self.calibrations[alias])
+                cam_info = camera_info_msg(self.calibrations[alias])
 
             event_handler = init_camera(camera, alias, cam_info, serial == self.master_id, alias, self.camera_settings,
                                         output_dir=self.output_dir)
@@ -269,8 +242,6 @@ def load_calibration(calibration_file):
     calib_data = load_json(calibration_file)
     cameras = import_cameras(calib_data)
 
-    # stereo_pairs = import_stereo_pairs(calib_data)
-    # return cameras, stereo_pairs
     return cameras
 
 
