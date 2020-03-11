@@ -11,18 +11,18 @@ from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
+from geometry_msgs.msg import TransformStamped
 
+from camera_geometry_ros.conversions import camera_info_msg
+from camera_geometry.import_calibration import import_cameras
+from camera_geometry import image_utils, json, util
 
-from camera_geometry_ros.conversions import camera_info
-from camera_geometry.import_calibration import Camera
-from camera_geometry import image_utils, json
-
+from tf.transformations import quaternion_from_matrix
+import tf2_ros
 
 def load_calibration(calibration_file):
     calib_data = json.load_json(calibration_file)
-    cameras = import_cameras(calib_data)
-
-    return cameras
+    return import_cameras(calib_data)
 
 jpeg = TurboJPEG()
 
@@ -54,9 +54,13 @@ class ImagePublisher(object):
         self.info_publisher = rospy.Publisher("{}/cam_info".format(self.name), CameraInfo, queue_size=4)
 
         self.cam_info = CameraInfo() if camera is None \
-             else camera_info(camera)
+             else camera_info_msg(camera)
 
-    def publish(self, header, image, encoding="rgb8"):
+    def publish(self, image, timestamp, encoding="rgb8"):
+
+        header = Header()
+        header.stamp = timestamp
+        header.frame_id = self.name
 
         image_msg = self.bridge.cv2_to_imgmsg(image, encoding=encoding)
         image_msg.header = header
@@ -79,13 +83,11 @@ def publish(image_sets, publishers, frequency=5, looping=False):
 
         for image_set in image_sets:
 
-            header = Header()
-            header.stamp = rospy.Time.now()
-            header.frame_id = unicode(frame)
+            timestamp = rospy.Time.now()
 
             images = load_image_set(image_set)
             for publisher, image in zip(publishers, images):
-                publisher.publish(header, image)
+                publisher.publish(image, timestamp)
 
             if rospy.is_shutdown():
                 return
@@ -95,7 +97,22 @@ def publish(image_sets, publishers, frequency=5, looping=False):
         frame = frame + 1
     
 
+def publish_extrinsics(extrinsics):
 
+    stamp = rospy.Time.now()
+    broadcaster = tf2_ros.StaticTransformBroadcaster()
+
+    for frame_id, transform in extrinsics.items():
+        transform_msg = TransformStamped()
+  
+        transform_msg.header.stamp = stamp
+        transform_msg.header.frame_id = transform.parent
+        transform_msg.child_frame_id = frame_id
+
+        transform_msg.transform.translation = transform.translation
+        transform_msg.transform.rotation = quaternion_from_matrix(util.expand_identity(transform.rotation))
+
+        broadcaster.sendTransform(transform_msg)
 
 def main():
 
@@ -107,17 +124,20 @@ def main():
     image_path = rospy.get_param("~image_path")
     calibration_file = rospy.get_param("~calibration_file", None)
 
-    camera_calibs = {}
-    if calibration_file is not None:
-        camera_calibs = load_calibration(calibration_file)
+    cameras = {}
+    extrinsics = []
 
+    if calibration_file is not None:
+        cameras, extrinsics = load_calibration(calibration_file)
+
+    publish_extrinsics(extrinsics)
     
     camera_dirs, image_sets =  image_utils.find_image_dirs(image_path)
     print("Found camera directories {} with {} matching images".format(str(camera_dirs), len(image_sets)))
 
     def publisher(dir):
         name = path.basename(dir)
-        return ImagePublisher(name, camera_calibs.get(name))
+        return ImagePublisher(name, cameras.get(name))
 
     publishers = [publisher(dir) for dir in camera_dirs]
 
