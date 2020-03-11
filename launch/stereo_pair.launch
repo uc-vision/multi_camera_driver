@@ -1,0 +1,13 @@
+<launch>
+
+  <node pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="camera_array" output="screen">
+    <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/camera_pair.yaml"/>
+    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/stereo_pair.json"/>    
+  </node>
+
+  <node pkg="spinnaker_camera_driver_ros" type="stereo_sync_node.py" name="stereo_sync_node" ns="camera_array" output="screen">
+      <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/stereo_pair.json"/>    
+
+
+
+</launch>

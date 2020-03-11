@@ -178,7 +178,6 @@ def reset_camera(camera):
     # execute(nodemap, "DeviceReset")  
     camera.DeInit()
 
-
 def reset_all():
     print("Reset all:")
     system = PySpin.System.GetInstance()
