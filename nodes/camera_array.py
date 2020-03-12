@@ -17,48 +17,28 @@ import yaml
 
 import PySpin
 import rospy
-from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
+
 from std_srvs.srv import Empty, EmptyResponse
-
-import tf2_ros
-import tf_conversions
-
-from geometry_msgs.msg TransformStamped
 from sensor_msgs.msg import CameraInfo
 
+
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-from dynamic_reconfigure.server import Server
+from spinnaker_camera_driver_helpers.common import *
 from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 
-from camera_geometry.import_calibration import *
-from camera_geometry.json import load_json
-
-from camera_geometry_ros.conversions import camera_info_msg
+from dynamic_reconfigure.server import Server
 
 LOCK = threading.Lock()
 
-
-
 class ImageEventHandler(PySpin.ImageEvent):
-    def __init__(self, cam, name, cam_info, output_dir=""):
+    def __init__(self, publisher, camera):
         super(ImageEventHandler, self).__init__()
-
-        self.node_map = cam.GetNodeMap()
-        self.bridge = CvBridge()
-        self.name = name
-
-        self.image_publisher = rospy.Publisher("{}/image_raw".format(self.name), Image, queue_size=4)
-        self.info_publisher = rospy.Publisher("{}/cam_info".format(self.name), CameraInfo, queue_size=4)
-
-        self.cam_info = cam_info
+        self.publisher = publisher
 
         self.sent = False
         self.frame = 0
         self.stamp = rospy.Time.now()
-        self.output_dir = output_dir
-
-        del cam
+        self.node_map = camera.GetNodeMap()
 
     def OnImageEvent(self, image):
         if image.IsIncomplete():
@@ -67,20 +47,15 @@ class ImageEventHandler(PySpin.ImageEvent):
             image_data = image.GetNDArray()
             image.Release()
 
-            image_msg = self.bridge.cv2_to_imgmsg(image_data, encoding="bayer_rggb8")
-            for msg in [image_msg, self.cam_info]:
-                msg.header.stamp = self.stamp
-                msg.header.frame_id = unicode(self.frame)
-                
-            self.frame = self.frame + 1
-            self.info_publisher.publish(self.cam_info)
-            self.image_publisher.publish(image_msg)
+            self.publisher.publish(image_data, self.stamp, encoding="bayer_rggb8")
             self.sent = True
 
 
-def init_camera(camera, image_topic, cam_info=CameraInfo(), trigger_master=None, desc='', camera_settings=None, output_dir=""):
+def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=None, desc='', camera_settings=None):
     camera.Init()
-    event_handler = ImageEventHandler(camera, image_topic, cam_info=cam_info, output_dir=output_dir)
+
+    publisher = ImagePublisher(image_topic, camera_info=camera_info)
+    event_handler = ImageEventHandler(publisher, camera)
 
     nodemap_tldevice = camera.GetTLDeviceNodeMap()
     serial = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
@@ -186,8 +161,7 @@ class CameraArrayNode(object):
             if alias in self.calibrations:
                 cam_info = camera_info_msg(self.calibrations[alias])
 
-            event_handler = init_camera(camera, alias, cam_info, serial == self.master_id, alias, self.camera_settings,
-                                        output_dir=self.output_dir)
+            event_handler = init_camera(camera, alias, cam_info, serial == self.master_id, alias, self.camera_settings)
             event_handlers.append(event_handler)
             started.append(camera)
             del camera
@@ -237,15 +211,6 @@ class CameraArrayNode(object):
         del self.camera_dict
         self.system.ReleaseInstance()
 
-def load_config(config_file):
-   with open(config_file) as config_file:
-      return yaml.load(config_file, Loader=yaml.Loader)    
-
-def load_calibration(calibration_file):
-    calib_data = load_json(calibration_file)
-    cameras = import_cameras(calib_data)
-
-    return cameras
 
 
 def main():
@@ -256,16 +221,12 @@ def main():
     config_file = rospy.get_param("~config_file", None)
     calibration_file = rospy.get_param("~calibration_file", None)
 
-    config = load_config(config_file) if config_file is not None else None   
-    
-    camera_calibs = {}
-    if calibration_file is not None:
-        camera_calibs = load_calibration(calibration_file)
+    config = load_config(config_file)  
+    camera_calibs, extrinsics = load_calibration(calibration_file)
 
-
+    broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
     
-
     try:
         camera_node.start()
     except KeyboardInterrupt:

@@ -3,9 +3,6 @@ camera_aliases:
   19280415: cam1
 
 master: 19280415
-timeout: 1.0
-
-output_dir: "/home/josh/Downloads"
 
 camera_settings:
   device:
