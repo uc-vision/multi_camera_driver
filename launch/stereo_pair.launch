@@ -5,15 +5,4 @@
     <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/stereo_pair.json"/>    
   </node>
 
-  <node pkg="spinnaker_camera_driver_ros" type="rectify_node.py" name="rectify_node" ns="camera_array" output="screen">
-    <param name="topic" value="stereo1"/>    
-
-    <param name="left" value="cam1"/>    
-    <param name="right" value="cam2"/>    
-
-    <param name="rectify" value="true"/>
-  </node>
-
-
-
 </launch>

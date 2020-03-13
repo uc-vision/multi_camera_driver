@@ -4,6 +4,12 @@ camera_aliases:
 
 master: 19280415
 
+stereo_pairs:
+  stereo1:
+    - cam1
+    - cam2
+
+
 camera_settings:
   device:
     - UserSetSelector:

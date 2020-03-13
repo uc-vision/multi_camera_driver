@@ -4,6 +4,11 @@ camera_aliases:
 
 cam-imu-offset: 0.030006283033521982
 
+stereo_pairs:
+  stereo1:
+    - cam1
+    - cam2
+
 camera_settings:
   device:
     - UserSetSelector:

@@ -19,8 +19,9 @@ import PySpin
 import rospy
 
 from std_srvs.srv import Empty, EmptyResponse
-from sensor_msgs.msg import CameraInfo
+from camera_geometry_ros.conversions import camera_info_msg
 
+from sensor_msgs.msg import CameraInfo
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.common import *
@@ -205,7 +206,7 @@ class CameraArrayNode(object):
         for camera in self.camera_dict.values():
             spinnaker_helpers.load_defaults(camera)
             # Why are we doing this here?
-            # otherwise the camera can't be examined in spinview (trigger mode etc.)
+            # Otherwise the camera can't be examined in spinview (trigger mode etc.)
             camera.DeInit()
         del camera
         del self.camera_dict
@@ -226,7 +227,11 @@ def main():
 
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
-    
+
+    stereo_pairs = config.get('stereo_pairs') or {}
+    stereo_processors = [StereoPublisher(name, left, right) 
+        for name, (left, right) in stereo_pairs.items()]
+
     try:
         camera_node.start()
     except KeyboardInterrupt:
