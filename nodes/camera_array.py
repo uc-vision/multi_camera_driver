@@ -81,6 +81,16 @@ def set_exposure(camera, exposure_time):
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
 
 
+def set_gain(camera, gain):
+    """Set the cameras exposure time the the given value. If 0 set to auto"""
+    node_map = camera.GetNodeMap()
+    if gain > 0:
+        spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
+        spinnaker_helpers.set_float(node_map, "Gain", gain)
+    else:
+        spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
+
+
 def set_balance_ratio(camera, balance_ratio):
     node_map = camera.GetNodeMap()
     spinnaker_helpers.set_float(node_map, "BalanceRatio", balance_ratio)
@@ -132,6 +142,11 @@ class CameraArrayNode(object):
                 balance_ratio = config["balance_ratio"]
                 for camera in self.camera_dict.values():
                     set_balance_ratio(camera, balance_ratio)
+
+            if "gain" in config and config["gain"] > 0:
+                gain = config["gain"]
+                for camera in self.camera_dict.values():
+                    set_gain(camera, gain)
         return config
 
 
@@ -222,14 +237,14 @@ def main():
     config_file = rospy.get_param("~config_file", None)
     calibration_file = rospy.get_param("~calibration_file", None)
 
-    config = load_config(config_file)  
+    config = load_config(config_file)
     camera_calibs, extrinsics = load_calibration(calibration_file)
 
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
     stereo_pairs = config.get('stereo_pairs') or {}
-    stereo_processors = [StereoPublisher(name, left, right) 
+    stereo_processors = [StereoPublisher(name, left, right)
         for name, (left, right) in stereo_pairs.items()]
 
     try:
