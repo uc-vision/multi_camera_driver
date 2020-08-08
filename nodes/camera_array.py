@@ -31,7 +31,7 @@ from dynamic_reconfigure.server import Server
 
 LOCK = threading.Lock()
 
-class ImageEventHandler(PySpin.ImageEvent):
+class ImageEventHandler(PySpin.ImageEventHandler):
     def __init__(self, publisher, camera):
         super(ImageEventHandler, self).__init__()
         self.publisher = publisher
@@ -66,7 +66,7 @@ def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=No
     if trigger_master is not None:
         spinnaker_helpers.enable_triggering(camera, trigger_master)
 
-    camera.RegisterEvent(event_handler)
+    camera.RegisterEventHandler(event_handler)
     camera.BeginAcquisition()
     return event_handler
 
@@ -232,9 +232,9 @@ def main():
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
-    stereo_pairs = config.get('stereo_pairs') or {}
-    stereo_processors = [StereoPublisher(name, left, right)
-        for name, (left, right) in stereo_pairs.items()]
+    # stereo_pairs = config.get('stereo_pairs') or {}
+    # stereo_processors = [StereoPublisher(name, left, right)
+    #     for name, (left, right) in stereo_pairs.items()]
 
     try:
         camera_node.start()

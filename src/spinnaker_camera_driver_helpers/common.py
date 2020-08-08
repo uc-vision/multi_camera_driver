@@ -59,8 +59,7 @@ def defer(f, args):
     return thread
 
 class StereoPublisher(object):
-
-    def __init__(self, name, left, right, queue_size=4):
+    def __init__(self, name, left, right, rectify=False, resize=None,  queue_size=4):
 
         self.buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.buffer)

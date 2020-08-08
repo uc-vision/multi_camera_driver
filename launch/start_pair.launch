@@ -2,7 +2,19 @@
 
   <node pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="camera_array" output="screen">
     <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/camera_pair.yaml"/>
-    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/calibration_pair.json"/>    
+    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/stereo_pair.json"/>    
   </node>
+
+  <node pkg="spinnaker_camera_driver_ros" type="rectify_node.py" name="rectify_node" ns="camera_array" output="screen">
+    <remap from="cam1" to="left"/>
+    <remap from="cam2" to="right"/>
+
+    <param name="rectify" value="true"/>
+    <rosparam param="resize">
+      width: 2048
+      height: 1536
+    </rosparam>
+  </node>
+
 
 </launch>
