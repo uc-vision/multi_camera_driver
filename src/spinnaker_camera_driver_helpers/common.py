@@ -60,7 +60,7 @@ def defer(f, args):
 
 class StereoPublisher(object):
 
-    def __init__(self, name, left, right, queue_size=4):
+    def __init__(self, name, left, right, queue_size=16):
 
         self.buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.buffer)
@@ -68,33 +68,42 @@ class StereoPublisher(object):
         self.frames = (left, right)
         self.name = name
 
-        topics = ["{}/camera_info".format(camera) for camera in [left, right]]
+        self.pair = None
+        self.bridge = CvBridge()
 
-        self.publisher = rospy.Publisher("{}/stereo_info".format(self.name), StereoCameraInfo, queue_size=queue_size)
+        info_topics = ["{}/camera_info".format(camera) for camera in [left, right]]
+        image_topics = ["{}/image_raw".format(camera) for camera in [left, right]]
 
+        self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), StereoCameraInfo, queue_size=queue_size)
         self.info_publishers = [
             rospy.Publisher("{}/{}/camera_info".format(self.name, camera), CameraInfo, queue_size=queue_size)
                 for camera in ['left', 'right']
         ]
 
-        subscribers = [message_filters.Subscriber(topic, CameraInfo) for topic in topics]
+        info_subscribers = [message_filters.Subscriber(topic, CameraInfo) for topic in info_topics]          
 
-        sync = message_filters.TimeSynchronizer(subscribers, queue_size=queue_size)
+        sync = message_filters.TimeSynchronizer(info_subscribers, queue_size=16)
         sync.registerCallback(self.frame_callback)
+
+
 
 
     def frame_callback(self, left_info, right_info):
         try:
-            msg = self.buffer.lookup_transform(self.frames[1], self.frames[0], rospy.Time())
-            _, transform = conversions.transform_from_msg(msg)
             
-            
-            left = conversions.camera_from_msg(left_info)
-            right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
+            # TODO - check if changed
+            if self.pair is None:
+                print("Rectifying pair")
 
-            pair = stereo_pair.rectify_pair(left, right)
+                msg = self.buffer.lookup_transform(self.frames[1], self.frames[0], rospy.Time())
+                _, transform = conversions.transform_from_msg(msg)
+                        
+                left = conversions.camera_from_msg(left_info)
+                right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
+            
+                self.pair = stereo_pair.rectify_pair(left, right)
                      
-            stereo_info = stereo_info_msg(pair)
+            stereo_info = stereo_info_msg(self.pair)
             header = stereo_info.header
             header.stamp = left_info.header.stamp
             header.frame_id = self.name
@@ -102,36 +111,38 @@ class StereoPublisher(object):
             for msg in [stereo_info, stereo_info.left_info, stereo_info.right_info]:
                 msg.header = header
 
-            self.publisher.publish(stereo_info)
-            
+            self.stereo_publisher.publish(stereo_info)
             for publisher, msg in zip(self.info_publishers, [stereo_info.left_info, stereo_info.right_info]):
                 publisher.publish(msg)
 
+               
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             pass    
 
 
 class ImagePublisher(object):
-    def __init__(self, name, camera_info, queue_size=4):
+    def __init__(self, name, camera_info, image_topic="image_raw", encoding="passthrough", queue_size=4):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
         self.name = name
 
-        self.image_publisher = rospy.Publisher("{}/image_raw".format(self.name), Image, queue_size=queue_size)
+        self.encoding = encoding
+
+        self.image_publisher = rospy.Publisher("{}/{}".format(self.name, image_topic), Image, queue_size=queue_size)
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
 
         self.cam_info = camera_info
 
-    def publish(self, image, timestamp, encoding="rgb8"):
+    def publish(self, image, timestamp):
 
         header = Header()
         header.stamp = timestamp
         header.frame_id = self.name
 
-        image_msg = self.bridge.cv2_to_imgmsg(image, encoding=encoding)
+        image_msg = self.bridge.cv2_to_imgmsg(image, encoding=self.encoding)
+
         image_msg.header = header
-        
         self.cam_info.header = header
 
         self.info_publisher.publish(self.cam_info)

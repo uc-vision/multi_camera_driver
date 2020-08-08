@@ -48,14 +48,14 @@ class ImageEventHandler(PySpin.ImageEvent):
             image_data = image.GetNDArray()
             image.Release()
 
-            self.publisher.publish(image_data, self.stamp, encoding="bayer_rggb8")
+            self.publisher.publish(image_data, self.stamp)
             self.sent = True
 
 
 def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=None, desc='', camera_settings=None):
     camera.Init()
 
-    publisher = ImagePublisher(image_topic, camera_info=camera_info)
+    publisher = ImagePublisher(image_topic, camera_info=camera_info, encoding="bayer_rggb8")
     event_handler = ImageEventHandler(publisher, camera)
 
     nodemap_tldevice = camera.GetTLDeviceNodeMap()
@@ -232,9 +232,9 @@ def main():
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
-    stereo_pairs = config.get('stereo_pairs') or {}
-    stereo_processors = [StereoPublisher(name, left, right)
-        for name, (left, right) in stereo_pairs.items()]
+    # stereo_pairs = config.get('stereo_pairs') or {}
+    # stereo_processors = [StereoPublisher(name, left, right)
+    #     for name, (left, right) in stereo_pairs.items()]
 
     try:
         camera_node.start()
