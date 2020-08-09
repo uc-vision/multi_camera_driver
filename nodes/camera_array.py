@@ -19,7 +19,6 @@ import PySpin
 import rospy
 
 from std_srvs.srv import Empty, EmptyResponse
-from camera_geometry_ros.conversions import camera_info_msg
 
 from sensor_msgs.msg import CameraInfo
 
@@ -28,6 +27,8 @@ from spinnaker_camera_driver_helpers.common import *
 from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 
 from dynamic_reconfigure.server import Server
+import sys
+import traceback
 
 LOCK = threading.Lock()
 
@@ -42,20 +43,25 @@ class ImageEventHandler(PySpin.ImageEventHandler):
         self.node_map = camera.GetNodeMap()
 
     def OnImageEvent(self, image):
-        if image.IsIncomplete():
-            print('Image incomplete with image status %d ...' % image.GetImageStatus())
-        else:
-            image_data = image.GetNDArray()
-            image.Release()
+        try:
+            if image.IsIncomplete():
+                print('Image incomplete with image status %d ...' % image.GetImageStatus())
+            else:
+                image_data = image.GetNDArray()
+                image.Release()
 
-            self.publisher.publish(image_data, self.stamp, encoding="bayer_rggb8")
-            self.sent = True
+                self.publisher.publish(image_data, self.stamp)
+                self.sent = True
+        except:
+            traceback.print_exc(file=sys.stdout)
+            sys.exit(1)
 
 
-def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=None, desc='', camera_settings=None):
+
+def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None):
     camera.Init()
 
-    publisher = ImagePublisher(image_topic, camera_info=camera_info)
+    publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding="bayer_rggb8")
     event_handler = ImageEventHandler(publisher, camera)
 
     nodemap_tldevice = camera.GetTLDeviceNodeMap()
@@ -162,11 +168,8 @@ class CameraArrayNode(object):
             else:
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
 
-            cam_info = CameraInfo()
-            if alias in self.calibrations:
-                cam_info = camera_info_msg(self.calibrations[alias])
 
-            event_handler = init_camera(camera, alias, cam_info, serial == self.master_id, alias, self.camera_settings)
+            event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), serial == self.master_id, alias, self.camera_settings)
             event_handlers.append(event_handler)
             started.append(camera)
             del camera

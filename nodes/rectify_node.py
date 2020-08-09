@@ -14,9 +14,14 @@ def main():
     rospy.init_node('stereo_node', anonymous=True)
 
     resize = rospy.get_param("~resize")
-    rectify = rospy.get_param("~rectify")
- 
-    processor = StereoPublisher("stereo", "left", "right", resize=resize, rectify=rectify)
+    assert len(resize) == 2
+
+    left = rospy.get_param("~left")
+    right = rospy.get_param("~right")
+
+    topic = rospy.get_param("~topic")
+
+    processor = StereoPublisher(topic, left, right, resize=resize)
     
     rospy.spin()
 
