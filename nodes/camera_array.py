@@ -32,7 +32,7 @@ import traceback
 
 LOCK = threading.Lock()
 
-class ImageEventHandler(PySpin.ImageEventHandler):
+class ImageEventHandler(PySpin.ImageEvent):
     def __init__(self, publisher, camera):
         super(ImageEventHandler, self).__init__()
         self.publisher = publisher
@@ -61,7 +61,12 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None):
     camera.Init()
 
-    publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding="bayer_rggb8")
+    encoding="bayer_rggb8"
+    if camera_settings is not None:
+        encoding=camera_settings.get('encoding', encoding)
+
+
+    publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding=encoding)
     event_handler = ImageEventHandler(publisher, camera)
 
     nodemap_tldevice = camera.GetTLDeviceNodeMap()
@@ -72,7 +77,7 @@ def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc
     if trigger_master is not None:
         spinnaker_helpers.enable_triggering(camera, trigger_master)
 
-    camera.RegisterEventHandler(event_handler)
+    camera.RegisterEvent(event_handler)
     camera.BeginAcquisition()
     return event_handler
 
@@ -167,7 +172,6 @@ class CameraArrayNode(object):
                 alias = "cam_{}".format(serial)
             else:
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
-
 
             event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), serial == self.master_id, alias, self.camera_settings)
             event_handlers.append(event_handler)

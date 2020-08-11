@@ -108,7 +108,7 @@ class StereoPublisher(object):
 
     def frame_callback(self, left_info, right_info, left_msg, right_msg):
         try:
-            msg = self.buffer.lookup_transform(self.frames[1], self.frames[0], rospy.Time())
+            msg = self.buffer.lookup_transform(self.frames[0], self.frames[1], rospy.Time())
             _, transform = conversions.transform_from_msg(msg)
                     
             left = conversions.camera_from_msg(left_info)
@@ -189,11 +189,16 @@ class CalibratedPublisher(object):
 
 
 def publish_extrinsics(extrinsics):
+    print(extrinsics)
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-    for child_id, transform in extrinsics.items():       
+    for child_id, transform in extrinsics.items():      
+        print(child_id) 
+
+        print(transform)
+
         msg = conversions.transform_msg(transform, child_id, stamp)
         broadcaster.sendTransform(msg)
     return broadcaster

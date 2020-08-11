@@ -1,6 +1,6 @@
 camera_aliases:
-  20068364: cam1
-  19423933: cam2
+  19423933: cam1
+  20068364: cam2
 
 master: 19423933
 
@@ -9,6 +9,7 @@ stereo_pairs:
     - cam1
     - cam2
 
+encoding: "bayer_bggr8"
 
 camera_settings:
   device:
@@ -19,11 +20,17 @@ camera_settings:
       - Rolling
       - ENUM
     - BinningHorizontal:
-      - 2
+      - 1
       - INT
     - BinningVertical:
-      - 2
+      - 1
       - INT
+    - ReverseY:
+      - True
+      - BOOL
+    - ReverseX:
+      - True
+      - BOOL      
     - PixelFormat:
       - BayerRG8
       - ENUM

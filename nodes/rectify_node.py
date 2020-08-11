@@ -13,6 +13,8 @@ from spinnaker_camera_driver_helpers.common import StereoPublisher
 def main():
     rospy.init_node('stereo_node', anonymous=True)
 
+    np.set_printoptions(precision=5, suppress=True)
+
     resize = rospy.get_param("~resize")
     assert len(resize) == 2
 
