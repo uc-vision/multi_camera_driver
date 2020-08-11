@@ -59,7 +59,7 @@ def main():
 
     def publisher(dir):
         name = path.basename(dir)
-        return ImagePublisher(name, camera_info_msg(cameras.get(name)))
+        return CalibratedPublisher(name, cameras.get(name), encoding='bgr8')
 
     publishers = [publisher(dir) for dir in camera_dirs]
 

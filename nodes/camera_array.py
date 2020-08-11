@@ -32,7 +32,9 @@ import traceback
 
 LOCK = threading.Lock()
 
-class ImageEventHandler(PySpin.ImageEvent):
+ImageEvent = getattr(PySpin, 'ImageEventHandler') or getattr(PySpin, 'ImageEvent')
+
+class ImageEventHandler(ImageEvent):
     def __init__(self, publisher, camera):
         super(ImageEventHandler, self).__init__()
         self.publisher = publisher
@@ -72,7 +74,10 @@ def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc
     if trigger_master is not None:
         spinnaker_helpers.enable_triggering(camera, trigger_master)
 
-    camera.RegisterEvent(event_handler)
+    if 'RegisterEvent' in camera:
+        camera.RegisterEvent(event_handler)
+    else:
+        camera.RegisterEventHandler(event_handler)
     camera.BeginAcquisition()
     return event_handler
 
