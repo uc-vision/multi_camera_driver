@@ -182,6 +182,7 @@ def reset_all():
     print("Reset all:")
     system = PySpin.System.GetInstance()
     camera_list = system.GetCameras()
+    camera = None
 
     print("Detected {} cameras".format(len(camera_list)))
     for i, camera in enumerate(camera_list):

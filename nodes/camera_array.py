@@ -58,13 +58,8 @@ class ImageEventHandler(PySpin.ImageEvent):
 
 
 
-def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None):
+def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None, encoding="bayer_rggb8"):
     camera.Init()
-
-    encoding="bayer_rggb8"
-    if camera_settings is not None:
-        encoding=camera_settings.get('encoding', encoding)
-
 
     publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding=encoding)
     event_handler = ImageEventHandler(publisher, camera)
@@ -112,6 +107,8 @@ class CameraArrayNode(object):
         self.system = PySpin.System.GetInstance()
         self.output_dir = config.get("output_dir", "")
         self.camera_settings = config.get("camera_settings", None)
+        self.encoding = config.get("encoding", "bayer_rggb8")
+
         self.calibrations = calibrations
 
         self.master_id = config.get("master", None)
@@ -173,7 +170,9 @@ class CameraArrayNode(object):
             else:
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
 
-            event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), serial == self.master_id, alias, self.camera_settings)
+            event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), 
+                serial == self.master_id, alias, self.camera_settings, self.encoding)
+
             event_handlers.append(event_handler)
             started.append(camera)
             del camera

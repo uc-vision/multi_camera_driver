@@ -84,7 +84,7 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
-        self.image_publishers = [ImagePublisher("{}/{}".format(self.name, camera), encoding="rgb8",
+        self.image_publishers = [ImagePublisher("{}/{}".format(self.name, camera), encoding="bgr8",
             image_topic="image_color_rect", queue_size=queue_size) for camera in ["left", "right"]]
 
         image_subscribers = []
@@ -97,7 +97,7 @@ class StereoPublisher(object):
 
 
     def decode_rectify(self, image_msg, calibration):
-        image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="rgb8")
+        image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
         source_size = (image.shape[1], image.shape[0])
 
         if source_size != self.pair.image_size:
@@ -189,16 +189,11 @@ class CalibratedPublisher(object):
 
 
 def publish_extrinsics(extrinsics):
-    print(extrinsics)
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
     for child_id, transform in extrinsics.items():      
-        print(child_id) 
-
-        print(transform)
-
         msg = conversions.transform_msg(transform, child_id, stamp)
         broadcaster.sendTransform(msg)
     return broadcaster
