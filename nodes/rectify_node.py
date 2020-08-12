@@ -14,9 +14,8 @@ def main():
     rospy.init_node('stereo_node', anonymous=True)
 
     np.set_printoptions(precision=5, suppress=True)
-
-    resize = rospy.get_param("~resize")
-    assert len(resize) == 2
+    resize = rospy.get_param("~resize", None)
+    
 
     left = rospy.get_param("~left")
     right = rospy.get_param("~right")

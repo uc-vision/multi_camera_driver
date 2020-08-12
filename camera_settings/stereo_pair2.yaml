@@ -1,0 +1,63 @@
+camera_aliases:
+  19195147: cam1
+  19280415: cam2
+
+master: 19195147
+
+stereo_pairs:
+  stereo1:
+    - cam1
+    - cam2
+
+encoding: "bayer_bggr8"
+
+camera_settings:
+  device:
+    - UserSetSelector:
+      - Default
+      - ENUM
+    - SensorShutterMode:
+      - Rolling
+      - ENUM
+    - BinningHorizontal:
+      - 1
+      - INT
+    - BinningVertical:
+      - 1
+      - INT
+    - ReverseY:
+      - True
+      - BOOL
+    - ReverseX:
+      - True
+      - BOOL      
+    - PixelFormat:
+      - BayerRG8
+      - ENUM
+    - ExposureAuto:
+      # - "Off"
+      - "Continuous"
+      - ENUM
+    - ExposureTime:
+      - 4000
+      - FLOAT
+    - GainAuto:
+      - "Continuous"
+      - ENUM
+    - TriggerMode:
+      - "Off"  # needs quotes otherwise is evaluated to false
+      - ENUM
+    - AcquisitionMode:
+      - Continuous
+      - ENUM
+    - AcquisitionFrameRateEnable:
+      - False
+      - BOOL
+  transport_layer:
+    - StreamBufferCountMode:
+      - Auto
+      - ENUM
+    - StreamBufferHandlingMode:
+      - NewestOnly
+      - ENUM
+#  Stream:

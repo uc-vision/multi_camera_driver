@@ -20,6 +20,7 @@ from camera_geometry.import_calibration import import_cameras
 from camera_geometry import image_utils, json, util, stereo_pair
 
 from camera_geometry_ros.conversions import camera_info_msg
+from camera_geometry_ros.stereo_pair import stereo_info_msg
 
 
 def load_config(config_file):
@@ -40,20 +41,6 @@ def load_calibration(calibration_file):
 
 
 
-def stereo_info_msg(pair):
-    assert isinstance(pair, stereo_pair.StereoPair)
-
-    left, right = pair.rectified
-
-    msg = StereoCameraInfo()
-    msg.left_info = conversions.rectified_info_msg(left)
-    msg.right_info = conversions.rectified_info_msg(right)
-
-    msg.T_left_right = pair.translation.flatten().tolist()
-    msg.R_left_right = pair.rotation.flatten().tolist()
-
-    msg.Q = left.disparity_to_depth.flatten().tolist()
-    return msg
   
 def defer(f, args):
     thread = Thread(target=f, args=args)
