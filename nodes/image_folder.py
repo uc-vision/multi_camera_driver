@@ -49,6 +49,7 @@ def main():
     frequency = rospy.get_param("~frequency", 5)
 
     image_path = rospy.get_param("~image_path")
+
     calibration_file = rospy.get_param("~calibration_file", None)
 
     cameras, extrinsics = load_calibration(calibration_file)
