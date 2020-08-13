@@ -20,7 +20,7 @@ from camera_geometry.import_calibration import import_cameras
 from camera_geometry import image_utils, json, util, stereo_pair
 
 from camera_geometry_ros.conversions import camera_info_msg
-from camera_geometry_ros.stereo_pair import stereo_info_msg
+from camera_geometry_ros.stereo_pair import stereo_info_msg, stereo_pair_from_msg
 
 
 def load_config(config_file):
@@ -111,6 +111,9 @@ class StereoPublisher(object):
             timestamp = left_info.header.stamp
 
             stereo_info = stereo_info_msg(self.pair)
+            # pair2 = stereo_pair_from_msg(stereo_info)
+            # assert self.pair.approx_eq(pair2)
+
             stereo_info.header = make_header(self.name,  timestamp)
             self.stereo_publisher.publish(stereo_info)
 
