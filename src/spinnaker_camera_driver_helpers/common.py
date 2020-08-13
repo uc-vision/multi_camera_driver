@@ -51,6 +51,9 @@ def defer(f, args):
 def equal_pair(pair, left, right):
     return pair.cameras[0].approx_eq(left) and pair.cameras[1].approx_eq(right)
 
+
+
+
 class StereoPublisher(object):
     def __init__(self, name, left, right, resize=None, queue_size=1):
 
@@ -82,6 +85,9 @@ class StereoPublisher(object):
         sync = message_filters.TimeSynchronizer(info_subscribers + image_subscribers, queue_size=1)
         sync.registerCallback(self.frame_callback)
 
+        self.broadcaster = tf2_ros.StaticTransformBroadcaster()
+
+
 
     def decode_rectify(self, image_msg, calibration):
         image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
@@ -105,10 +111,16 @@ class StereoPublisher(object):
                 left = left.resize_image(self.resize)
                 right = right.resize_image(self.resize)
 
+            timestamp = left_info.header.stamp
+
             if self.pair is None or (not equal_pair(self.pair, left, right)):
                 self.pair = stereo_pair.rectify_pair(left, right)
+    
+                # Broadcast the rectification induced rotation as a static transform
+                transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
+                msg = conversions.transform_msg(transform, self.name, timestamp)
+                self.broadcaster.sendTransform(msg)
                      
-            timestamp = left_info.header.stamp
 
             stereo_info = stereo_info_msg(self.pair)
             stereo_info.header = make_header(self.name,  timestamp)
