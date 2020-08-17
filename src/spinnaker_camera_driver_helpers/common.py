@@ -118,13 +118,12 @@ class StereoPublisher(object):
     
                 # Broadcast the rectification induced rotation as a static transform
                 transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
-                msg = conversions.transform_msg(transform, self.name, timestamp)
+                msg = conversions.transform_msg(transform, self.name + "/left", timestamp)
                 self.broadcaster.sendTransform(msg)
                      
 
             stereo_info = stereo_info_msg(self.pair)
-            # pair2 = stereo_pair_from_msg(stereo_info)
-            # assert self.pair.approx_eq(pair2)
+            
 
             stereo_info.header = make_header(self.name,  timestamp)
             self.stereo_publisher.publish(stereo_info)
