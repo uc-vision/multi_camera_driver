@@ -19,7 +19,6 @@ from camera_geometry.import_calibration import import_cameras
 from camera_geometry import image_utils, json, util, stereo_pair
 
 
-
 def load_config(config_file):
     if config_file is not None:
         with open(config_file) as config_file:
@@ -31,9 +30,11 @@ def load_config(config_file):
 def load_calibration(calibration_file):
     if calibration_file is not None:
         calib_data = json.load_json(calibration_file)
-        return import_cameras(calib_data)
+        cameras, extrinsics = import_cameras(calib_data)
+
+        return cameras, extrinsics, calib_data['stereo_pairs']
     else:
-        return {}, {}
+        return {}, {}, {}
 
 
 
@@ -52,6 +53,12 @@ def stereo_info_msg(pair):
 
     msg.Q = left.disparity_to_depth.flatten().tolist()
     return msg
+
+
+# def from_stereo_info(msg):
+
+
+
   
 def defer(f, args):
     thread = Thread(target=f, args=args)
@@ -88,13 +95,14 @@ class StereoPublisher(object):
             msg = self.buffer.lookup_transform(self.frames[1], self.frames[0], rospy.Time())
             _, transform = conversions.transform_from_msg(msg)
             
-            
             left = conversions.camera_from_msg(left_info)
             right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
 
             pair = stereo_pair.rectify_pair(left, right)
-                     
             stereo_info = stereo_info_msg(pair)
+
+            pair2 = from_stere_info(stereo_info)
+
             header = stereo_info.header
             header.stamp = left_info.header.stamp
             header.frame_id = self.name
