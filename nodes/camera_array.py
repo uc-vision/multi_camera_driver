@@ -81,6 +81,16 @@ def set_exposure(camera, exposure_time):
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
 
 
+def set_gain(camera, gain):
+    """Set the cameras exposure time the the given value. If 0 set to auto"""
+    node_map = camera.GetNodeMap()
+    if gain > 0:
+        spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
+        spinnaker_helpers.set_float(node_map, "Gain", gain)
+    else:
+        spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
+
+
 def set_balance_ratio(camera, balance_ratio):
     node_map = camera.GetNodeMap()
     spinnaker_helpers.set_float(node_map, "BalanceRatio", balance_ratio)
@@ -112,26 +122,20 @@ class CameraArrayNode(object):
     def reconfigure_callback(self, config, _):
 
         if self.cameras_initialised:
-            top_exposure = config.get("top_exposure_time")
-            mid_exposure = config.get("mid_exposure_time")
-            bottom_exposure = config.get("bottom_exposure_time")
-
-            if top_exposure is not None:
-                set_exposure(self.get_cam_by_alias("cam1"), top_exposure)
-                set_exposure(self.get_cam_by_alias("cam2"), top_exposure)
-
-            if mid_exposure is not None:
-                set_exposure(self.get_cam_by_alias("cam3"), mid_exposure)
-                set_exposure(self.get_cam_by_alias("cam4"), mid_exposure)
-
-            if bottom_exposure is not None:
-                set_exposure(self.get_cam_by_alias("cam5"), bottom_exposure)
-                set_exposure(self.get_cam_by_alias("cam6"), bottom_exposure)
+            if 'exposure' in config and config["exposure"] > 0:
+                balance_ratio = config["exposure"]
+                for camera in self.camera_dict.values():
+                    set_exposure(camera, balance_ratio)
 
             if 'balance_ratio' in config and config["balance_ratio"] > 0:
                 balance_ratio = config["balance_ratio"]
                 for camera in self.camera_dict.values():
                     set_balance_ratio(camera, balance_ratio)
+
+            if "gain" in config and config["gain"] > 0:
+                gain = config["gain"]
+                for camera in self.camera_dict.values():
+                    set_gain(camera, gain)
         return config
 
 
@@ -222,14 +226,14 @@ def main():
     config_file = rospy.get_param("~config_file", None)
     calibration_file = rospy.get_param("~calibration_file", None)
 
-    config = load_config(config_file)  
+    config = load_config(config_file)
     camera_calibs, extrinsics = load_calibration(calibration_file)
 
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
     stereo_pairs = config.get('stereo_pairs') or {}
-    stereo_processors = [StereoPublisher(name, left, right) 
+    stereo_processors = [StereoPublisher(name, left, right)
         for name, (left, right) in stereo_pairs.items()]
 
     try:

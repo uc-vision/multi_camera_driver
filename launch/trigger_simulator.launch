@@ -1,0 +1,17 @@
+<launch>
+  <node pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="camera_array" output="screen">
+    <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/uc_ur5_pair.yaml"/>
+    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/stereo_pair.json"/>
+  </node>
+
+  <node pkg="spinnaker_camera_driver_ros" type="camera_trigger_simulator.py" name="camera_trigger_simulator" output="screen">
+    <rosparam param="image_topics">
+      - /camera_array/left/image_raw
+      - /camera_array/right/image_raw
+    </rosparam>
+    <rosparam param="triggered_image_topics">
+      - /camera_array/left/image_triggered
+      - /camera_array/right/image_triggered
+    </rosparam>
+  </node>
+</launch>
