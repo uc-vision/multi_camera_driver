@@ -49,6 +49,7 @@ def main():
     frequency = rospy.get_param("~frequency", 5)
 
     image_path = rospy.get_param("~image_path")
+
     calibration_file = rospy.get_param("~calibration_file", None)
 
     cameras, extrinsics, stereo_pairs = load_calibration(calibration_file)
@@ -59,7 +60,11 @@ def main():
 
     def publisher(dir):
         name = path.basename(dir)
+<<<<<<< HEAD
         return ImagePublisher(name, conversions.camera_info_msg(cameras.get(name)))
+=======
+        return CalibratedPublisher(name, cameras.get(name), encoding='bgr8')
+>>>>>>> test_stereo
 
     publishers = [publisher(dir) for dir in camera_dirs]
 

@@ -11,13 +11,18 @@ import errno
 from spinnaker_camera_driver_helpers.common import StereoPublisher
 
 def main():
-
     rospy.init_node('stereo_node', anonymous=True)
 
-    stereo_topic = rospy.get_param("~topic")
-    left, right = rospy.get_param("~left"),  rospy.get_param("~right")
+    np.set_printoptions(precision=5, suppress=True)
+    resize = rospy.get_param("~resize", None)
+    
 
-    processor = StereoPublisher(stereo_topic, left, right)
+    left = rospy.get_param("~left")
+    right = rospy.get_param("~right")
+
+    topic = rospy.get_param("~topic")
+
+    processor = StereoPublisher(topic, left, right, resize=resize)
     
     rospy.spin()
 

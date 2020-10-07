@@ -19,7 +19,6 @@ import PySpin
 import rospy
 
 from std_srvs.srv import Empty, EmptyResponse
-from camera_geometry_ros.conversions import camera_info_msg
 
 from sensor_msgs.msg import CameraInfo
 
@@ -28,10 +27,14 @@ from spinnaker_camera_driver_helpers.common import *
 from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 
 from dynamic_reconfigure.server import Server
+import sys
+import traceback
 
 LOCK = threading.Lock()
 
-class ImageEventHandler(PySpin.ImageEvent):
+ImageEvent = getattr(PySpin, 'ImageEventHandler', None) or getattr(PySpin, 'ImageEvent')
+
+class ImageEventHandler(ImageEvent):
     def __init__(self, publisher, camera):
         super(ImageEventHandler, self).__init__()
         self.publisher = publisher
@@ -42,20 +45,25 @@ class ImageEventHandler(PySpin.ImageEvent):
         self.node_map = camera.GetNodeMap()
 
     def OnImageEvent(self, image):
-        if image.IsIncomplete():
-            print('Image incomplete with image status %d ...' % image.GetImageStatus())
-        else:
-            image_data = image.GetNDArray()
-            image.Release()
+        try:
+            if image.IsIncomplete():
+                print('Image incomplete with image status %d ...' % image.GetImageStatus())
+            else:
+                image_data = image.GetNDArray()
+                image.Release()
 
-            self.publisher.publish(image_data, self.stamp, encoding="bayer_rggb8")
-            self.sent = True
+                self.publisher.publish(image_data, self.stamp)
+                self.sent = True
+        except:
+            traceback.print_exc(file=sys.stdout)
+            sys.exit(1)
 
 
-def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=None, desc='', camera_settings=None):
+
+def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None, encoding="bayer_rggb8"):
     camera.Init()
 
-    publisher = ImagePublisher(image_topic, camera_info=camera_info)
+    publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding=encoding)
     event_handler = ImageEventHandler(publisher, camera)
 
     nodemap_tldevice = camera.GetTLDeviceNodeMap()
@@ -66,7 +74,10 @@ def init_camera(camera, image_topic, camera_info=CameraInfo(), trigger_master=No
     if trigger_master is not None:
         spinnaker_helpers.enable_triggering(camera, trigger_master)
 
-    camera.RegisterEvent(event_handler)
+    if getattr(camera, 'RegisterEvent', None):
+        camera.RegisterEvent(event_handler)
+    else:
+        camera.RegisterEventHandler(event_handler)
     camera.BeginAcquisition()
     return event_handler
 
@@ -101,6 +112,8 @@ class CameraArrayNode(object):
         self.system = PySpin.System.GetInstance()
         self.output_dir = config.get("output_dir", "")
         self.camera_settings = config.get("camera_settings", None)
+        self.encoding = config.get("encoding", "bayer_rggb8")
+
         self.calibrations = calibrations
 
         self.master_id = config.get("master", None)
@@ -162,11 +175,9 @@ class CameraArrayNode(object):
             else:
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
 
-            cam_info = CameraInfo()
-            if alias in self.calibrations:
-                cam_info = camera_info_msg(self.calibrations[alias])
+            event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), 
+                serial == self.master_id, alias, self.camera_settings, self.encoding)
 
-            event_handler = init_camera(camera, alias, cam_info, serial == self.master_id, alias, self.camera_settings)
             event_handlers.append(event_handler)
             started.append(camera)
             del camera
@@ -232,9 +243,9 @@ def main():
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
-    stereo_pairs = config.get('stereo_pairs') or {}
-    stereo_processors = [StereoPublisher(name, left, right)
-        for name, (left, right) in stereo_pairs.items()]
+    # stereo_pairs = config.get('stereo_pairs') or {}
+    # stereo_processors = [StereoPublisher(name, left, right)
+    #     for name, (left, right) in stereo_pairs.items()]
 
     try:
         camera_node.start()
