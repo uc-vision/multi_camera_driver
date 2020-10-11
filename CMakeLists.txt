@@ -4,6 +4,7 @@ project(spinnaker_camera_driver_ros)
 find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   rospy
+  cv_bridge
 )
 
 catkin_python_setup()

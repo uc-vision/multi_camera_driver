@@ -8,6 +8,8 @@ camera_aliases:
 
 master: 19280415
 
+timeout: 1.0
+max_framerate: 6.0 
 
 stereo_pairs:
   stereo1:
@@ -26,7 +28,7 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
-      - GlobalReset
+      - Rolling
       - ENUM
     # - BinningHorizontal:
     #   - 2
@@ -54,8 +56,12 @@ camera_settings:
       - BOOL
   transport_layer:
     - StreamBufferCountMode:
-      - Auto
+      - Manual
       - ENUM
+    - StreamBufferCountManual:
+      - 1
+      - INT
+
     - StreamBufferHandlingMode:
       - NewestOnly
       - ENUM

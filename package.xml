@@ -13,6 +13,7 @@
     <build_depend>rospy</build_depend>
     <build_export_depend>dynamic_reconfigure</build_export_depend>
     <build_export_depend>rospy</build_export_depend>
+    <build_export_depend>cv_bridge</build_export_depend>
     <exec_depend>dynamic_reconfigure</exec_depend>
     <exec_depend>rospy</exec_depend>
 

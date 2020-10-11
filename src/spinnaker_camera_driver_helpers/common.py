@@ -1,15 +1,14 @@
 import tf2_ros
-import tf_conversions
 import yaml
 
-import rospy
+import rospy 
 import message_filters
 
-from cv_bridge import CvBridge
 import cv2
+from cv_bridge import CvBridge
 
 from std_msgs.msg import Header
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from sensor_msgs.msg import CameraInfo
 from maara_msgs.msg import StereoCameraInfo
 
@@ -21,6 +20,13 @@ from camera_geometry import image_utils, json, util, stereo_pair
 
 from camera_geometry_ros.conversions import camera_info_msg
 from camera_geometry_ros.stereo_pair import stereo_info_msg, stereo_pair_from_msg
+
+from threading import Thread
+from turbojpeg import TurboJPEG
+from cv_bridge import CvBridge
+
+from queue import Queue
+
 
 def load_config(config_file):
     if config_file is not None:
@@ -118,7 +124,6 @@ class StereoPublisher(object):
                 transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
                 msg = conversions.transform_msg(transform, self.name + "/left", timestamp)
                 self.broadcaster.sendTransform(msg)
-                     
 
             stereo_info = stereo_info_msg(self.pair)
             
@@ -143,19 +148,36 @@ def make_header(frame_id, timestamp, seq=0):
     return header
 
 
-class ImagePublisher(object):
-    def __init__(self, name,  image_topic="image_raw", encoding="passthrough", queue_size=4):
+class ImagePublisher(rospy.SubscribeListener):
+    def __init__(self, name, encoding="passthrough", queue_size=4, quality=96):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
+        self.jpeg = TurboJPEG()
+        self.quality = quality
+
         self.name = name
 
         self.encoding = encoding
+        self.peers = {}
 
-        self.image_publisher = rospy.Publisher("{}/{}".format(self.name, image_topic), Image, queue_size=queue_size)
+        self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
+             Image, subscriber_listener=self, queue_size=queue_size)
+
+        self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "image_compressed"),
+             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+
+
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
-
         self.seq = 0
+
+    def peer_subscribe(self, topic_name, topic_publish, peer_publish):
+        peers = self.peers.get(topic_name, 0) + 1
+        self.peers[topic_name] = peers 
+        
+    def peer_unsubscribe(self, topic_name, num_peers):
+        self.peers[topic_name] = num_peers
+
 
     def publish(self, image, timestamp, cam_info=None):
         header = make_header(self.name, timestamp, self.seq + 1)
@@ -163,14 +185,52 @@ class ImagePublisher(object):
         cam_info = cam_info or CameraInfo()        
         cam_info.header = header
 
-        image_msg = self.bridge.cv2_to_imgmsg(image, encoding=self.encoding)
-        image_msg.header = header
-
         self.info_publisher.publish(cam_info)
-        self.image_publisher.publish(image_msg)
+
+        if self.peers.get(self.raw_publisher.name, 0) > 0:
+
+            image_msg = self.bridge.cv2_to_imgmsg(image, encoding=self.encoding)
+            image_msg.header = header
+            self.raw_publisher.publish(image_msg)
+
+        if self.peers.get(self.compressed_publisher.name, 0) > 0:
+
+            colour = cv2.cvtColor(image, cv2.COLOR_BAYER_BG2BGR)
+            compressed = self.jpeg.encode(colour, self.quality)
+
+            image_msg = CompressedImage()
+            image_msg.header = header
+            image_msg.format = "jpeg"
+            image_msg.data = compressed
+
+            self.compressed_publisher.publish(image_msg)
 
         self.seq += 1
+    
+    def stop(self):
+        pass
 
+def publisher_worker(queue, publisher):
+    item = queue.get()
+    while item is not None:
+        image, timestamp = item
+        publisher.publish(image, timestamp)
+        item = queue.get()
+
+class AsyncPublisher(object):
+    def __init__(self, publisher, queue_size=1):
+        self.publisher = publisher
+
+        self.queue = Queue(queue_size)
+        self.thread = Thread(target=publisher_worker, args=(self.queue, self.publisher))
+
+        self.thread.start()
+
+    def publish(self, image, timestamp):
+        self.queue.put((image, timestamp))
+
+    def stop(self):
+        self.queue.put(None)
 
 class CalibratedPublisher(object):
     def __init__(self, name, calibration=None, **kwargs):
@@ -186,6 +246,8 @@ class CalibratedPublisher(object):
 
         self.publisher.publish(image, timestamp, cam_info)
 
+    def stop(self):
+        self.publisher.stop()
 
 def publish_extrinsics(extrinsics):
 

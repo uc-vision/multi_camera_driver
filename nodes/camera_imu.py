@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ROS node for spinnaker cameras.
 
 Copyright (c) 2019. Sam Schofield. This file is subject to the 3-clause BSD

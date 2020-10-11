@@ -2,19 +2,20 @@ from __future__ import print_function
 
 import PySpin
 import rospy
+from time import sleep
 
 
 def set_enum(nodemap, node_name, value):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to set {} to {} (enum retrieval). Aborting...'.format(node, value))
+        print('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
         return False
 
     # Retrieve entry node from enumeration node
     entry = node.GetEntryByName(value)
     if not PySpin.IsAvailable(entry) or not PySpin.IsReadable(
             entry):
-        print('Unable to set {} to {} (entry retrieval). Aborting...'.format(node_name, value))
+        print('Unable to set {} to {} (entry retrieval). '.format(node_name, value))
         return False
 
     # Retrieve integer value from entry node
@@ -27,7 +28,7 @@ def set_enum(nodemap, node_name, value):
 def get_enum(nodemap, node_name):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
-        print('Unable to read {} (enum retrieval). Aborting...'.format(node_name))
+        print('Unable to read {} (enum retrieval). '.format(node_name))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -36,7 +37,7 @@ def get_enum(nodemap, node_name):
 def get_float(nodemap, node_name):
     node = PySpin.CFloatPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
-        print('Unable to read {} (float retrieval). Aborting...'.format(node_name))
+        print('Unable to read {} (float retrieval). '.format(node_name))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -45,7 +46,7 @@ def get_float(nodemap, node_name):
 def set_bool(nodemap, node_name, value):
     node = PySpin.CBooleanPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to set {} to {} (enum retrieval). Aborting...'.format(node_name, value))
+        print('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -56,7 +57,7 @@ def set_float(nodemap, node_name, value):
     node = PySpin.CFloatPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
         print(PySpin.IsAvailable(node), PySpin.IsWritable(node))
-        print('Unable to set {} to {} (node map retrieval). Aborting...'.format(node_name, value))
+        print('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -67,7 +68,7 @@ def set_int(nodemap, node_name, value):
     node = PySpin.CIntegerPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
         print(PySpin.IsAvailable(node), PySpin.IsWritable(node))
-        print('Unable to set {} to {} (node map retrieval). Aborting...'.format(node_name, value))
+        print('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -110,7 +111,7 @@ def activate_image_chunks(nodemap):
         chunk_selector = PySpin.CEnumerationPtr(nodemap.GetNode('ChunkSelector'))
 
         if not PySpin.IsAvailable(chunk_selector) or not PySpin.IsReadable(chunk_selector):
-            rospy.logwarn('Unable to retrieve chunk selector. Aborting...\n')
+            rospy.logwarn('Unable to retrieve chunk selector. \n')
             return False
 
         # Retrieve entries
@@ -162,7 +163,7 @@ def execute(nodemap, node_name):
     # print("Execute", node_name)
     node = PySpin.CCommandPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to execute {}. Aborting... {} {}'.format(node_name, PySpin.IsAvailable(node),
+        print('Unable to execute {}.  {} {}'.format(node_name, PySpin.IsAvailable(node),
                                                                PySpin.IsWritable(node)))
         return False
     node.Execute()
@@ -171,12 +172,16 @@ def execute(nodemap, node_name):
 def reset_camera(camera):
     camera.Init()
     nodemap = camera.GetNodeMap()
-    set_enum(nodemap, "UserSetSelector", "Default")
-    execute(nodemap, "UserSetLoad")
 
     # This often just freezes on re-runs, and everything seems to be OK without it. Is it necessary?
-    # execute(nodemap, "DeviceReset")  
+    execute(nodemap, "DeviceReset")  
     camera.DeInit()
+
+def load_defaults(camera):
+    nodemap = camera.GetNodeMap()
+
+    set_enum(nodemap, "UserSetSelector", "Default")
+    execute(nodemap, "UserSetLoad")
 
 def reset_all():
     print("Reset all:")
@@ -198,6 +203,9 @@ def reset_all():
 
     print("Release system:")
     system.ReleaseInstance()
+    print("Done")
+
+    sleep(2)
 
 
 def load_defaults(camera):
@@ -237,9 +245,9 @@ def enable_triggering(camera, master=True):
 def set_settings(nodemap, settings):
     for setting in settings:
 
-        setting_name = setting.keys()[0]
+        setting_name = next(iter(setting)) # setting.keys()[0]
         value, type_ = setting[setting_name]
-        #print(setting_name,value, type_)
+        # print(setting_name,value, type_)
         if type_ == "ENUM":
             set_enum(nodemap, setting_name, value)
             if setting == "UserSetSelector":
@@ -258,6 +266,7 @@ def set_settings(nodemap, settings):
 
 
 def set_camera_settings(camera, settings):
+
     nodemap = camera.GetNodeMap()
     set_settings(nodemap, settings["device"])
 

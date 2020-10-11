@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import cv2
@@ -60,11 +60,7 @@ def main():
 
     def publisher(dir):
         name = path.basename(dir)
-<<<<<<< HEAD
-        return ImagePublisher(name, conversions.camera_info_msg(cameras.get(name)))
-=======
         return CalibratedPublisher(name, cameras.get(name), encoding='bgr8')
->>>>>>> test_stereo
 
     publishers = [publisher(dir) for dir in camera_dirs]
 
