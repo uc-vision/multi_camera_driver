@@ -4,6 +4,8 @@ import yaml
 import rospy 
 import message_filters
 
+from functools import partial
+
 import cv2
 from cv_bridge import CvBridge
 
@@ -78,8 +80,8 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
-        self.image_publishers = [ImagePublisher("{}/{}".format(self.name, camera), encoding="bgr8",
-            image_topic="image_color_rect", queue_size=queue_size) for camera in ["left", "right"]]
+        self.image_publishers = [ImagePublisher("{}/{}".format(self.name, camera), encoding="bgr8", 
+            queue_size=queue_size) for camera in ["left", "right"]]
 
         image_subscribers = []
 
@@ -148,25 +150,45 @@ def make_header(frame_id, timestamp, seq=0):
     return header
 
 
+class Lazy(object):
+    def __init__(self, f, *args, **kwargs):
+        self.f = partial(f, *args, **kwargs)
+        self.result = None
+
+    def get(self):
+        self.result = self.f() if self.result is None else self.result
+        return self.result
+
+def make_preview(image):
+    image = image.get()
+    h, w, *_ = image.shape
+    preview_size = (w // 10, h // 10)
+    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_CUBIC)
+
 class ImagePublisher(rospy.SubscribeListener):
-    def __init__(self, name, encoding="passthrough", queue_size=4, quality=96):
+    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
         self.jpeg = TurboJPEG()
         self.quality = quality
 
-        self.name = name
+        self.raw_encoding = raw_encoding
 
-        self.encoding = encoding
+        self.name = name
         self.peers = {}
 
         self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
              Image, subscriber_listener=self, queue_size=queue_size)
 
+        self.color_publisher = rospy.Publisher("{}/{}".format(self.name, "image_color"),
+             Image, subscriber_listener=self, queue_size=queue_size)
+
         self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "image_compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
+        self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview_compressed"),
+             CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
         self.seq = 0
@@ -174,36 +196,44 @@ class ImagePublisher(rospy.SubscribeListener):
     def peer_subscribe(self, topic_name, topic_publish, peer_publish):
         peers = self.peers.get(topic_name, 0) + 1
         self.peers[topic_name] = peers 
-        
+
     def peer_unsubscribe(self, topic_name, num_peers):
         self.peers[topic_name] = num_peers
 
+    def publish_image(self, publisher, header, lazy_image, encoding):
+        if self.peers.get(publisher.name, 0) > 0:
 
-    def publish(self, image, timestamp, cam_info=None):
-        header = make_header(self.name, timestamp, self.seq + 1)
-
-        cam_info = cam_info or CameraInfo()        
-        cam_info.header = header
-
-        self.info_publisher.publish(cam_info)
-
-        if self.peers.get(self.raw_publisher.name, 0) > 0:
-
-            image_msg = self.bridge.cv2_to_imgmsg(image, encoding=self.encoding)
+            image_msg = self.bridge.cv2_to_imgmsg(lazy_image.get(), encoding=encoding)
             image_msg.header = header
-            self.raw_publisher.publish(image_msg)
+            publisher.publish(image_msg)
 
-        if self.peers.get(self.compressed_publisher.name, 0) > 0:
-
-            colour = cv2.cvtColor(image, cv2.COLOR_BAYER_BG2BGR)
-            compressed = self.jpeg.encode(colour, self.quality)
+    def publish_compressed(self, publisher, header, lazy_image):
+        if self.peers.get(publisher.name, 0) > 0:
+            compressed = self.jpeg.encode(lazy_image.get(), self.quality)
 
             image_msg = CompressedImage()
             image_msg.header = header
             image_msg.format = "jpeg"
             image_msg.data = compressed
 
-            self.compressed_publisher.publish(image_msg)
+            publisher.publish(image_msg)
+
+        
+    def publish(self, image, timestamp, cam_info=None):
+        header = make_header(self.name, timestamp, self.seq + 1)
+
+        cam_info = cam_info or CameraInfo()        
+        cam_info.header = header
+        
+        color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_BG2BGR)
+        preview_image = Lazy(make_preview, color_image)
+
+        self.info_publisher.publish(cam_info)
+        self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     
+        self.publish_image(self.color_publisher, header, color_image, encoding="bgr8")     
+
+        self.publish_compressed(self.compressed_publisher, header, color_image)     
+        self.publish_compressed(self.preview_publisher, header, preview_image)
 
         self.seq += 1
     

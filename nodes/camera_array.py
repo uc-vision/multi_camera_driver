@@ -36,7 +36,6 @@ from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 import tf2_ros
 
 
-
 ImageEvent = getattr(PySpin, 'ImageEventHandler', None) or getattr(PySpin, 'ImageEvent')
 
 class ImageEventHandler(ImageEvent):
@@ -76,23 +75,26 @@ class SpinnakerPublisher(object):
     def stop(self):
         self.publisher.stop()
 
-def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None, encoding="bayer_rggb8"):
+def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc='', camera_settings=None, raw_encoding="bayer_rggb8"):
     try:
         camera.Init()
 
-        publisher = CalibratedPublisher(image_topic, calibration=calibration, encoding=encoding)
-        publisher = SpinnakerPublisher(publisher)
-        
-        event_handler = ImageEventHandler(AsyncPublisher(publisher), camera)
-
         nodemap_tldevice = camera.GetTLDeviceNodeMap()
         serial = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
+
         rospy.loginfo("Initialising: {} {}".format(desc, serial.GetValue()))
 
         spinnaker_helpers.set_camera_settings(camera, camera_settings)
+        info = spinnaker_helpers.get_camera_info(camera)
+
+        rospy.loginfo("{}: {}".format(desc, str(info)))
 
         if trigger_master is not None:
             spinnaker_helpers.enable_triggering(camera, trigger_master)
+
+        publisher = CalibratedPublisher(image_topic, calibration=calibration, raw_encoding=raw_encoding)
+        publisher = SpinnakerPublisher(publisher)
+        event_handler = ImageEventHandler(AsyncPublisher(publisher), camera)
 
         if getattr(camera, 'RegisterEvent', None):
             camera.RegisterEvent(event_handler)
@@ -102,7 +104,6 @@ def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc
         camera.BeginAcquisition()
         return event_handler
     except PySpin.SpinnakerException as e:
-        publisher.stop()
         rospy.logerr("Could not initialise camera {}: {}".format(desc, str(e)))
 
 
@@ -137,7 +138,7 @@ class CameraArrayNode(object):
 
         self.output_dir = config.get("output_dir", "")
         self.camera_settings = config.get("camera_settings", None)
-        self.encoding = config.get("encoding", "bayer_rggb8")
+        self.raw_encoding = config.get("encoding", "bayer_rggb8")
 
         self.calibrations = calibrations
 
@@ -161,7 +162,6 @@ class CameraArrayNode(object):
         return self.camera_dict[self.camera_aliases[alias]]
 
     def reconfigure_callback(self, config, _):
-
         if self.cameras_initialised:
             if 'exposure' in config and config["exposure"] > 0:
                 balance_ratio = config["exposure"]
@@ -193,7 +193,7 @@ class CameraArrayNode(object):
         try:
             spinnaker_helpers.trigger(self.camera_dict[self.master_id])
         except PySpin.SpinnakerException as e:
-            rospy.logerr("Error triggering: ", e)
+            rospy.logerr("Error triggering: ", str(e))
 
 
     def start(self):
@@ -202,8 +202,9 @@ class CameraArrayNode(object):
             rospy.logerr("No cameras found")
             return
 
-        event_handlers = []
-        started = []
+        self.event_handlers = []
+        self.started = []
+
         for serial, camera in self.camera_dict.items():
             if self.camera_serials is None:
                 alias = "cam_{}".format(serial)
@@ -211,26 +212,26 @@ class CameraArrayNode(object):
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
 
             event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), 
-                serial == self.master_id, alias, self.camera_settings, self.encoding)
+                serial == self.master_id, alias, self.camera_settings, self.raw_encoding)
 
             if event_handler is not None:
-                event_handlers.append(event_handler)
-                started.append(camera)
+                self.event_handlers.append(event_handler)
+                self.started.append(camera)
             del camera
 
         self.cameras_initialised = True
 
-        if len(event_handlers) > 0:
+        if len(self.event_handlers) > 0:
             rospy.loginfo("Acquisition Started")
 
             stamp = rospy.Time.now()
-            for handler in event_handlers:
+            for handler in self.event_handlers:
                 handler.stamp = stamp
 
             self.trigger()
 
             while not rospy.is_shutdown():
-                ready = all([handler.sent for handler in event_handlers])
+                ready = all([handler.sent for handler in self.event_handlers])
                 delay = rospy.Time.now() - stamp
 
                 if delay.to_sec() > self.timeout:
@@ -240,20 +241,23 @@ class CameraArrayNode(object):
 
                 if ready and delay.to_sec() > 1.0/self.max_rate:
                     stamp = rospy.Time.now()
-                    for handler in event_handlers:
+                    for handler in self.event_handlers:
                         handler.sent = False
                         handler.stamp = stamp
                     self.trigger()
 
             rospy.loginfo("Acquisition ended")
-            for camera in started:
+            for camera in self.started:
                 camera.EndAcquisition()
-
                 # TODO: UnregisterEventHandler?
-            for handler in event_handlers:
-                handler.stop()
+
 
     def stop(self):
+        for handler in self.event_handlers:
+            handler.stop()
+
+        del self.started
+        del self.event_handlers
 
         rospy.loginfo("Stopping cameras")
         for camera in self.camera_dict.values():
@@ -266,24 +270,22 @@ class CameraArrayNode(object):
         self.system.ReleaseInstance()
 
 
-
 def main():
     rospy.init_node('camera_array_node', anonymous=False)
 
     rospy.loginfo("Starting")
-    spinnaker_helpers.reset_all()
-
     config_file = rospy.get_param("~config_file", None)
     calibration_file = rospy.get_param("~calibration_file", None)
+
+    if rospy.get_param("~reset_cycle", False):
+        spinnaker_helpers.reset_all()
+        rospy.sleep(2)
 
     config = load_config(config_file)
     camera_calibs, extrinsics, _ = load_calibration(calibration_file)
     broadcaster = publish_extrinsics(extrinsics)
     camera_node = CameraArrayNode(config, camera_calibs)
 
-    # stereo_pairs = config.get('stereo_pairs') or {}
-    # stereo_processors = [StereoPublisher(name, left, right)
-    #     for name, (left, right) in stereo_pairs.items()]
 
     try:
         camera_node.start()

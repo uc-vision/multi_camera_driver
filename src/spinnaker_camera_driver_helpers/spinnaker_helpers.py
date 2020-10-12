@@ -8,14 +8,14 @@ from time import sleep
 def set_enum(nodemap, node_name, value):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
+        rospy.logerr('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
         return False
 
     # Retrieve entry node from enumeration node
     entry = node.GetEntryByName(value)
     if not PySpin.IsAvailable(entry) or not PySpin.IsReadable(
             entry):
-        print('Unable to set {} to {} (entry retrieval). '.format(node_name, value))
+        rospy.logerr('Unable to set {} to {} (entry retrieval). '.format(node_name, value))
         return False
 
     # Retrieve integer value from entry node
@@ -28,7 +28,7 @@ def set_enum(nodemap, node_name, value):
 def get_enum(nodemap, node_name):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
-        print('Unable to read {} (enum retrieval). '.format(node_name))
+        rospy.logerr('Unable to read {} (enum retrieval). '.format(node_name))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -37,7 +37,7 @@ def get_enum(nodemap, node_name):
 def get_float(nodemap, node_name):
     node = PySpin.CFloatPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
-        print('Unable to read {} (float retrieval). '.format(node_name))
+        rospy.logerr('Unable to read {} (float retrieval). '.format(node_name))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -46,7 +46,7 @@ def get_float(nodemap, node_name):
 def set_bool(nodemap, node_name, value):
     node = PySpin.CBooleanPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
+        rospy.logerr('Unable to set {} to {} (enum retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -56,8 +56,7 @@ def set_bool(nodemap, node_name, value):
 def set_float(nodemap, node_name, value):
     node = PySpin.CFloatPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print(PySpin.IsAvailable(node), PySpin.IsWritable(node))
-        print('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
+        rospy.logerr('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -67,8 +66,7 @@ def set_float(nodemap, node_name, value):
 def set_int(nodemap, node_name, value):
     node = PySpin.CIntegerPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print(PySpin.IsAvailable(node), PySpin.IsWritable(node))
-        print('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
+        rospy.logerr('Unable to set {} to {} (node map retrieval). '.format(node_name, value))
         return False
 
     # Set integer value from entry node as new value of enumeration node
@@ -92,7 +90,7 @@ def activate_image_chunks(nodemap):
         if PySpin.IsAvailable(chunk_mode_active) and PySpin.IsWritable(chunk_mode_active):
             chunk_mode_active.SetValue(True)
         else:
-            print("Couldn't activate chunk mode")
+            rospy.logerr("Couldn't activate chunk mode")
 
         rospy.logdebug('Chunk mode activated...')
 
@@ -163,7 +161,7 @@ def execute(nodemap, node_name):
     # print("Execute", node_name)
     node = PySpin.CCommandPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
-        print('Unable to execute {}.  {} {}'.format(node_name, PySpin.IsAvailable(node),
+        rospy.logerr('Unable to execute {}.  {} {}'.format(node_name, PySpin.IsAvailable(node),
                                                                PySpin.IsWritable(node)))
         return False
     node.Execute()
@@ -184,37 +182,33 @@ def load_defaults(camera):
     execute(nodemap, "UserSetLoad")
 
 def reset_all():
-    print("Reset all:")
+    rospy.loginfo("Reset all:")
     system = PySpin.System.GetInstance()
     camera_list = system.GetCameras()
     camera = None
 
-    print("Detected {} cameras".format(len(camera_list)))
+    rospy.loginfo("Detected {} cameras".format(len(camera_list)))
     for i, camera in enumerate(camera_list):
         nodemap_tldevice = camera.GetTLDeviceNodeMap()
         serial = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
-        print("Reset: ", serial.GetValue())
+        rospy.loginfo("Reset {}".format(serial.GetValue()))
         reset_camera(camera)
 
-    print("Done")
+    rospy.loginfo("Done")
 
     del camera
     camera_list.Clear()
 
-    print("Release system:")
+    rospy.loginfo("Release system:")
     system.ReleaseInstance()
-    print("Done")
-
-    sleep(2)
+    rospy.loginfo("Done")
 
 
 def load_defaults(camera):
-    print("Loading defaults")
+    rospy.loginfo("Loading defaults")
     nodemap = camera.GetNodeMap()
     set_enum(nodemap, "UserSetSelector", "Default")
     execute(nodemap, "UserSetLoad")
-    # execute(nodemap, "DeviceReset")
-
 
 def trigger(camera):
     nodemap = camera.GetNodeMap()
@@ -225,7 +219,6 @@ def enable_triggering(camera, master=True):
     nodemap = camera.GetNodeMap()
 
     if master:
-        print("MASTER----------------")
         set_enum(nodemap, "LineSelector", "Line2")
         set_enum(nodemap, "LineMode", "Output")
         set_enum(nodemap, "TriggerSource", "Software")
@@ -247,7 +240,6 @@ def set_settings(nodemap, settings):
 
         setting_name = next(iter(setting)) # setting.keys()[0]
         value, type_ = setting[setting_name]
-        # print(setting_name,value, type_)
         if type_ == "ENUM":
             set_enum(nodemap, setting_name, value)
             if setting == "UserSetSelector":
@@ -262,7 +254,7 @@ def set_settings(nodemap, settings):
             set_int(nodemap, setting_name, value)
 
         else:
-            print(type_, "Unknown, not setting")
+            rospy.logerr("Unknown type {} for {}".format(type_, setting_name))
 
 
 def set_camera_settings(camera, settings):
@@ -273,8 +265,9 @@ def set_camera_settings(camera, settings):
     s_node_map = camera.GetTLStreamNodeMap()
     set_settings(s_node_map, settings["transport_layer"])
 
+def get_camera_info(camera):
     d_node_map = camera.GetTLDeviceNodeMap()
-    print(get_enum(d_node_map, "DeviceCurrentSpeed"))
+    return dict(DeviceCurrentSpeed = get_enum(d_node_map, "DeviceCurrentSpeed"))
 
 
 def camera_list_to_dict(camera_list):

@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="camera_array" output="screen">
-    <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/camera_array.yaml"/>
-  </node>
-
-</launch>

@@ -9,7 +9,9 @@ camera_aliases:
 master: 19280415
 
 timeout: 1.0
-max_framerate: 6.0 
+max_framerate: 4.0 
+
+reset_cycle: False
 
 stereo_pairs:
   stereo1:
