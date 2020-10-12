@@ -35,6 +35,8 @@ from spinnaker_camera_driver_helpers.common import *
 from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 import tf2_ros
 
+import gc
+
 
 ImageEvent = getattr(PySpin, 'ImageEventHandler', None) or getattr(PySpin, 'ImageEvent')
 
@@ -267,6 +269,8 @@ class CameraArrayNode(object):
             camera.DeInit()
         del camera
         del self.camera_dict
+        gc.collect()
+
         self.system.ReleaseInstance()
 
 
