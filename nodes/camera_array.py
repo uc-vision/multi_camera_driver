@@ -195,7 +195,7 @@ class CameraArrayNode(object):
         try:
             spinnaker_helpers.trigger(self.camera_dict[self.master_id])
         except PySpin.SpinnakerException as e:
-            rospy.logerr("Error triggering: ", str(e))
+            rospy.logerr("Error triggering: " + str(e))
 
 
     def start(self):
