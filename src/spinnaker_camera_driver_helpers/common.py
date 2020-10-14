@@ -193,16 +193,16 @@ class ImagePublisher(rospy.SubscribeListener):
         self.color_publisher = rospy.Publisher("{}/{}".format(self.name, "image_color"),
              Image, subscriber_listener=self, queue_size=queue_size)
 
-        self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "image_compressed"),
+        self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
-        self.medium_publisher = rospy.Publisher("{}/{}".format(self.name, "medium_compressed"),
+        self.medium_publisher = rospy.Publisher("{}/{}".format(self.name, "medium/compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
-        self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview_compressed"),
+        self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview/compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
-        self.centre_publisher = rospy.Publisher("{}/{}".format(self.name, "centre_compressed"),
+        self.centre_publisher = rospy.Publisher("{}/{}".format(self.name, "centre/compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
