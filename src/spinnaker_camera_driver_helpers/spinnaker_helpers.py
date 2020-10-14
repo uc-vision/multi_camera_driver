@@ -4,6 +4,8 @@ import PySpin
 import rospy
 from time import sleep
 
+import gc
+
 
 def set_enum(nodemap, node_name, value):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
@@ -198,6 +200,8 @@ def reset_all():
 
     del camera
     camera_list.Clear()
+
+    gc.collect()
 
     rospy.loginfo("Release system:")
     system.ReleaseInstance()

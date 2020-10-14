@@ -159,11 +159,20 @@ class Lazy(object):
         self.result = self.f() if self.result is None else self.result
         return self.result
 
-def make_preview(image):
+def make_crop(image, image_scale=0.1):
     image = image.get()
     h, w, *_ = image.shape
-    preview_size = (w // 10, h // 10)
-    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_CUBIC)
+    cx, cy = int(w * image_scale), int(h * image_scale)
+    x = (w // 2) - (cx // 2)
+    y = (h // 2) - (cy // 2)    
+    return image[y:y + cy, x:x + cx]
+
+def make_preview(image, image_scale=0.1):
+    image = image.get()
+    h, w, *_ = image.shape
+    preview_size = (int(w * image_scale), int(h * image_scale))
+    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_LINEAR)
+
 
 class ImagePublisher(rospy.SubscribeListener):
     def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96):
@@ -187,7 +196,13 @@ class ImagePublisher(rospy.SubscribeListener):
         self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "image_compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
+        self.medium_publisher = rospy.Publisher("{}/{}".format(self.name, "medium_compressed"),
+             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+
         self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview_compressed"),
+             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+
+        self.centre_publisher = rospy.Publisher("{}/{}".format(self.name, "centre_compressed"),
              CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
@@ -226,13 +241,19 @@ class ImagePublisher(rospy.SubscribeListener):
         cam_info.header = header
         
         color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_BG2BGR)
-        preview_image = Lazy(make_preview, color_image)
+        preview_image = Lazy(make_preview, color_image, 0.1)
+        medium_image = Lazy(make_preview, color_image, 1/3.0)
+        centre_image = Lazy(make_crop, color_image, 1/3.0)
+
 
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     
         self.publish_image(self.color_publisher, header, color_image, encoding="bgr8")     
 
         self.publish_compressed(self.compressed_publisher, header, color_image)     
+        self.publish_compressed(self.medium_publisher, header, medium_image)   
+        self.publish_compressed(self.centre_publisher, header, centre_image)     
+
         self.publish_compressed(self.preview_publisher, header, preview_image)
 
         self.seq += 1

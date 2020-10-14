@@ -35,8 +35,7 @@ camera_settings:
       - BayerRG8
       - ENUM
     - ExposureAuto:
-      # - "Off"
-      - "Continuous"
+      - "Off"
       - ENUM
     - ExposureTime:
       - 4000
@@ -54,9 +53,16 @@ camera_settings:
       - False
       - BOOL
   transport_layer:
+    # - StreamBufferCountMode:
+    #   - Auto
+    #   - ENUM
     - StreamBufferCountMode:
-      - Auto
+      - Manual
       - ENUM
+    - StreamBufferCountManual:
+      - 1
+      - INT
+
     - StreamBufferHandlingMode:
       - NewestOnly
       - ENUM
