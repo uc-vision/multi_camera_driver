@@ -240,7 +240,14 @@ class ImagePublisher(rospy.SubscribeListener):
         cam_info = cam_info or CameraInfo()        
         cam_info.header = header
         
-        color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_BG2BGR)
+        color_image = None
+        if self.raw_encoding == "bayer_rggb8":
+          color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_BG2BGR)
+        elif self.raw_encoding == "bgr8":
+          color_image = Lazy(lambda _: image, image)
+        else:
+          assert False, f"TODO: implement conversion for {self.raw_encoding}"
+        
         preview_image = Lazy(make_preview, color_image, 0.1)
         medium_image = Lazy(make_preview, color_image, 1/3.0)
         centre_image = Lazy(make_crop, color_image, 1/3.0)

@@ -9,9 +9,11 @@ camera_aliases:
 master: 19280415
 
 timeout: 1.0
-max_framerate: 16.0 
+max_framerate: 4.0 
 
 reset_cycle: False
+
+encoding: bgr8
 
 stereo_pairs:
   stereo1:
@@ -39,13 +41,14 @@ camera_settings:
       - 2
       - INT
     - PixelFormat:
-      - BayerRG8
+      - BGR8
+            #  - BayerRG8
       - ENUM
     - ExposureAuto:
       - "Off"
       - ENUM
     - ExposureTime:
-      - 2000
+      - 4000
       - FLOAT
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
