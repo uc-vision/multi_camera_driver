@@ -17,7 +17,8 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
-      - Rolling
+      - GlobalReset
+      # - Rolling
       - ENUM
     - BinningHorizontal:
       - 1
@@ -25,12 +26,6 @@ camera_settings:
     - BinningVertical:
       - 1
       - INT
-    - ReverseY:
-      - True
-      - BOOL
-    - ReverseX:
-      - True
-      - BOOL      
     - PixelFormat:
       - BayerRG8
       - ENUM
@@ -38,11 +33,8 @@ camera_settings:
       - "Off"
       - ENUM
     - ExposureTime:
-      - 4000
+      - 2000
       - FLOAT
-    - GainAuto:
-      - "Continuous"
-      - ENUM
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM
@@ -53,9 +45,6 @@ camera_settings:
       - False
       - BOOL
   transport_layer:
-    # - StreamBufferCountMode:
-    #   - Auto
-    #   - ENUM
     - StreamBufferCountMode:
       - Manual
       - ENUM

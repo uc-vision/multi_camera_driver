@@ -13,7 +13,7 @@ max_framerate: 4.0
 
 reset_cycle: False
 
-encoding: bgr8
+# encoding: bgr8
 
 stereo_pairs:
   stereo1:

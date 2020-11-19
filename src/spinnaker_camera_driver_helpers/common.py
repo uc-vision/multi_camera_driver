@@ -245,6 +245,8 @@ class ImagePublisher(rospy.SubscribeListener):
           color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_BG2BGR)
         elif self.raw_encoding == "bgr8":
           color_image = Lazy(lambda _: image, image)
+        elif self.raw_encoding == "bayer_bggr8":
+          color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_RG2RGB)
         else:
           assert False, f"TODO: implement conversion for {self.raw_encoding}"
         

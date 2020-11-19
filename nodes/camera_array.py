@@ -163,22 +163,21 @@ class CameraArrayNode(object):
     def get_cam_by_alias(self, alias):
         return self.camera_dict[self.camera_aliases[alias]]
 
+
+    def set_property(self, config, key, setter):
+        if key in config and config[key] > 0:
+            value = config[key]
+            for camera in self.camera_dict.values():
+                setter(camera, value)      
+
     def reconfigure_callback(self, config, _):
         if self.cameras_initialised:
-            if 'exposure' in config and config["exposure"] > 0:
-                balance_ratio = config["exposure"]
-                for camera in self.camera_dict.values():
-                    set_exposure(camera, balance_ratio)
+            self.set_property(config, 'exposure', set_exposure)
+            self.set_property(config, 'balance_ratio', set_balance_ratio)
+            self.set_property(config, 'gain', set_gain)    
 
-            if 'balance_ratio' in config and config["balance_ratio"] > 0:
-                balance_ratio = config["balance_ratio"]
-                for camera in self.camera_dict.values():
-                    set_balance_ratio(camera, balance_ratio)
-
-            if "gain" in config and config["gain"] > 0:
-                gain = config["gain"]
-                for camera in self.camera_dict.values():
-                    set_gain(camera, gain)
+            if 'max_framerate' in config:
+              self.max_rate = config['max_framerate']
         return config
 
 
@@ -241,7 +240,7 @@ class CameraArrayNode(object):
                     stamp = rospy.Time.now()
                     self.trigger()
 
-                if ready and delay.to_sec() > 1.0/self.max_rate:
+                if ready and (self.max_rate == 0 or delay.to_sec() > 1.0/self.max_rate):
                     stamp = rospy.Time.now()
                     for handler in self.event_handlers:
                         handler.sent = False
@@ -285,9 +284,16 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(2)
 
-    config = load_config(config_file)
-    camera_calibs, extrinsics, _ = load_calibration(calibration_file)
-    broadcaster = publish_extrinsics(extrinsics)
+    camera_calibs = {}
+
+    try:
+      config = load_config(config_file)
+      camera_calibs, extrinsics, _ = load_calibration(calibration_file)   
+      broadcaster = publish_extrinsics(extrinsics)
+    except FileNotFoundError:
+        rospy.logwarn(f"Calibration file not found: {config_file}")
+
+
     camera_node = CameraArrayNode(config, camera_calibs)
 
 

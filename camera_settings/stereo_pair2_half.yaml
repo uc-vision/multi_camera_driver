@@ -9,8 +9,7 @@ stereo_pairs:
     - cam1
     - cam2
 
-encoding: "bayer_bggr8"
-
+encoding: bgr8
 
 camera_settings:
   device:
@@ -20,20 +19,21 @@ camera_settings:
     - SensorShutterMode:
       - Rolling
       - ENUM
-    # - BinningHorizontal:
-    #   - 2
-    #   - INT
-    # - BinningVertical:
-    #   - 2
-    #   - INT
+    - BinningHorizontal:
+      - 2
+      - INT
+    - BinningVertical:
+      - 2
+      - INT
     - PixelFormat:
-      - BayerRG8
+      - BGR8
+            #  - BayerRG8
       - ENUM
     - ExposureAuto:
       - "Off"
       - ENUM
     - ExposureTime:
-      - 2000
+      - 4000
       - FLOAT
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
