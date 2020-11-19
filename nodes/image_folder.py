@@ -51,22 +51,27 @@ def main():
     image_path = rospy.get_param("~image_path")
 
     calibration_file = rospy.get_param("~calibration_file", None)
+    camera_calibs = {}
 
-    cameras, extrinsics, stereo_pairs = load_calibration(calibration_file)
-    broadcaster = publish_extrinsics(extrinsics)
-    
+    try:
+      camera_calibs, extrinsics, stereo_pairs = load_calibration(calibration_file)   
+      broadcaster = publish_extrinsics(extrinsics)
+    except FileNotFoundError:
+        rospy.logwarn(f"Calibration file not found: {calibration_file}")
+
+   
     camera_dirs, image_sets =  image_utils.find_image_dirs(image_path)
     print("Found camera directories {} with {} matching images".format(str(camera_dirs), len(image_sets)))
 
     def publisher(dir):
         name = path.basename(dir)
-        return CalibratedPublisher(name, cameras.get(name), encoding='bgr8')
+        return CalibratedPublisher(name, camera_calibs.get(name), raw_encoding='bgr8')
 
     publishers = [publisher(dir) for dir in camera_dirs]
 
 
-    stereo_processors = [StereoPublisher(name, left, right) 
-        for name, (left, right) in stereo_pairs.items()]
+    # stereo_processors = [StereoPublisher(name, left, right) 
+    #     for name, (left, right) in stereo_pairs.items()]
 
 
     try:

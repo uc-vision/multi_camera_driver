@@ -17,8 +17,8 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
-      - GlobalReset
-      # - Rolling
+      #- GlobalReset
+      - Rolling
       - ENUM
     - BinningHorizontal:
       - 1

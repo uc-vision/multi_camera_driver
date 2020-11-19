@@ -80,7 +80,7 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
-        self.image_publishers = [ImagePublisher("{}/{}".format(self.name, camera), encoding="bgr8", 
+        self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), encoding='bgr8', 
             queue_size=queue_size) for camera in ["left", "right"]]
 
         image_subscribers = []
@@ -174,6 +174,51 @@ def make_preview(image, image_scale=0.1):
     return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_LINEAR)
 
 
+class RawPublisher(rospy.SubscribeListener):
+    def __init__(self, name, encoding="passthrough", queue_size=4):
+        super(RawPublisher, self).__init__()
+
+        self.encoding = encoding
+        self.name = name
+        self.peers = {}
+        self.bridge = CvBridge()
+
+        self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
+             Image, subscriber_listener=self, queue_size=queue_size)
+
+        self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
+        self.seq = 0
+
+    def peer_subscribe(self, topic_name, topic_publish, peer_publish):
+        peers = self.peers.get(topic_name, 0) + 1
+        self.peers[topic_name] = peers 
+
+    def peer_unsubscribe(self, topic_name, num_peers):
+        self.peers[topic_name] = num_peers
+
+    def publish_image(self, publisher, header, lazy_image, encoding):
+        if self.peers.get(publisher.name, 0) > 0:
+
+            image_msg = self.bridge.cv2_to_imgmsg(lazy_image.get(), encoding=encoding)
+            image_msg.header = header
+            publisher.publish(image_msg)
+
+        
+    def publish(self, image, timestamp, cam_info=None):
+        header = make_header(self.name, timestamp, self.seq + 1)
+
+        cam_info = cam_info or CameraInfo()        
+        cam_info.header = header
+
+        self.info_publisher.publish(cam_info)
+        self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.encoding)     
+
+        self.seq += 1
+    
+    def stop(self):
+        pass
+
+
 class ImagePublisher(rospy.SubscribeListener):
     def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96):
         super(ImagePublisher, self).__init__()
@@ -194,16 +239,16 @@ class ImagePublisher(rospy.SubscribeListener):
              Image, subscriber_listener=self, queue_size=queue_size)
 
         self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "compressed"),
-             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+            CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.medium_publisher = rospy.Publisher("{}/{}".format(self.name, "medium/compressed"),
-             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+            CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview/compressed"),
-             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+            CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.centre_publisher = rospy.Publisher("{}/{}".format(self.name, "centre/compressed"),
-             CompressedImage, subscriber_listener=self, queue_size=queue_size)
+            CompressedImage, subscriber_listener=self, queue_size=queue_size)
 
         self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
         self.seq = 0
@@ -254,7 +299,6 @@ class ImagePublisher(rospy.SubscribeListener):
         medium_image = Lazy(make_preview, color_image, 1/3.0)
         centre_image = Lazy(make_crop, color_image, 1/3.0)
 
-
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     
         self.publish_image(self.color_publisher, header, color_image, encoding="bgr8")     
@@ -262,7 +306,6 @@ class ImagePublisher(rospy.SubscribeListener):
         self.publish_compressed(self.compressed_publisher, header, color_image)     
         self.publish_compressed(self.medium_publisher, header, medium_image)   
         self.publish_compressed(self.centre_publisher, header, centre_image)     
-
         self.publish_compressed(self.preview_publisher, header, preview_image)
 
         self.seq += 1
