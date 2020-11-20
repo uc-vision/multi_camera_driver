@@ -26,6 +26,13 @@ camera_settings:
     - BinningVertical:
       - 1
       - INT
+    - ReverseY:
+      - True
+      - BOOL
+    - ReverseX:
+      - True
+      - BOOL   
+     
     - PixelFormat:
       - BayerRG8
       - ENUM

@@ -29,6 +29,12 @@ camera_settings:
       - BGR8
             #  - BayerRG8
       - ENUM
+   - ReverseY:
+      - True
+      - BOOL
+    - ReverseX:
+      - True
+      - BOOL         
     - ExposureAuto:
       - "Off"
       - ENUM

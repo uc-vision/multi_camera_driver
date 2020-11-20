@@ -61,7 +61,7 @@ def equal_pair(pair, left, right):
 
 
 class StereoPublisher(object):
-    def __init__(self, name, left, right, resize=None, queue_size=1):
+    def __init__(self, name, left, right, resize=None, queue_size=1, encoding='bgr8'):
 
         self.buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.buffer)
@@ -73,6 +73,7 @@ class StereoPublisher(object):
         self.bridge = CvBridge()
 
         self.resize = resize
+        self.encoding = encoding
 
         info_topics = ["{}/camera_info".format(camera) for camera in [left, right]]
         image_topics = ["{}/image_raw".format(camera) for camera in [left, right]]
@@ -80,7 +81,7 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
-        self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), image_topic="image_color_rect", encoding='bgr8', 
+        self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), image_topic="image_color_rect", encoding=self.encoding, 
             queue_size=queue_size) for camera in ["left", "right"]]
 
         image_subscribers = []
@@ -95,7 +96,7 @@ class StereoPublisher(object):
 
 
     def decode_rectify(self, image_msg, calibration):
-        image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding="bgr8")
+        image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding=self.encoding)
         source_size = (image.shape[1], image.shape[0])
 
         if source_size != self.pair.image_size:
@@ -120,6 +121,8 @@ class StereoPublisher(object):
 
             if self.pair is None or (not equal_pair(self.pair, left, right)):
                 self.pair = stereo_pair.rectify_pair(left, right)
+
+                print(self.pair)
     
                 # Broadcast the rectification induced rotation as a static transform
                 transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
@@ -289,7 +292,7 @@ class ImagePublisher(rospy.SubscribeListener):
         elif self.raw_encoding == "bgr8":
           color_image = Lazy(lambda _: image, image)
         elif self.raw_encoding == "bayer_bggr8":
-          color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_RG2RGB)
+          color_image = Lazy(cv2.cvtColor, image, cv2.COLOR_BAYER_RG2BGR)
         else:
           assert False, f"TODO: implement conversion for {self.raw_encoding}"
         
