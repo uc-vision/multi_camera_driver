@@ -80,7 +80,7 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
-        self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), encoding='bgr8', 
+        self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), image_topic="image_color_rect", encoding='bgr8', 
             queue_size=queue_size) for camera in ["left", "right"]]
 
         image_subscribers = []
@@ -92,7 +92,6 @@ class StereoPublisher(object):
         sync.registerCallback(self.frame_callback)
 
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
-
 
 
     def decode_rectify(self, image_msg, calibration):
@@ -128,7 +127,6 @@ class StereoPublisher(object):
                 self.broadcaster.sendTransform(msg)
 
             stereo_info = stereo_info_msg(self.pair)
-            
 
             stereo_info.header = make_header(self.name,  timestamp)
             self.stereo_publisher.publish(stereo_info)
@@ -139,7 +137,8 @@ class StereoPublisher(object):
                 cam_info = conversions.rectified_info_msg(calibration)
                 publisher.publish(image, timestamp, cam_info)
                
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            rospy.logwarn(f"Could not lookup transform: {e}")
             pass    
 
 def make_header(frame_id, timestamp, seq=0):
@@ -175,7 +174,7 @@ def make_preview(image, image_scale=0.1):
 
 
 class RawPublisher(rospy.SubscribeListener):
-    def __init__(self, name, encoding="passthrough", queue_size=4):
+    def __init__(self, name, image_topic, encoding="passthrough", queue_size=4):
         super(RawPublisher, self).__init__()
 
         self.encoding = encoding
@@ -183,10 +182,9 @@ class RawPublisher(rospy.SubscribeListener):
         self.peers = {}
         self.bridge = CvBridge()
 
-        self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
-             Image, subscriber_listener=self, queue_size=queue_size)
+        self.publisher = rospy.Publisher(f"{self.name}/{image_topic}",  Image, subscriber_listener=self, queue_size=queue_size)
 
-        self.info_publisher = rospy.Publisher("{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
+        self.info_publisher = rospy.Publisher(f"{self.name}/camera_info", CameraInfo, queue_size=queue_size)
         self.seq = 0
 
     def peer_subscribe(self, topic_name, topic_publish, peer_publish):
@@ -211,7 +209,7 @@ class RawPublisher(rospy.SubscribeListener):
         cam_info.header = header
 
         self.info_publisher.publish(cam_info)
-        self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.encoding)     
+        self.publish_image(self.publisher, header, Lazy(lambda: image), encoding=self.encoding)     
 
         self.seq += 1
     
