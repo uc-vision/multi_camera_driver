@@ -81,6 +81,9 @@ class StereoPublisher(object):
         self.stereo_publisher = rospy.Publisher("{}/stereo_info".format(self.name), 
             StereoCameraInfo, queue_size=queue_size)
 
+        self.stereo_full_publisher = rospy.Publisher("{}/stereo_info_full".format(self.name), 
+            StereoCameraInfo, queue_size=queue_size)
+
         self.image_publishers = [RawPublisher("{}/{}".format(self.name, camera), image_topic="image_color_rect", encoding=self.encoding, 
             queue_size=queue_size) for camera in ["left", "right"]]
 
@@ -94,7 +97,6 @@ class StereoPublisher(object):
 
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-
     def decode_rectify(self, image_msg, calibration):
         image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding=self.encoding)
         source_size = (image.shape[1], image.shape[0])
@@ -106,6 +108,8 @@ class StereoPublisher(object):
 
 
     def frame_callback(self, left_info, right_info, left_msg, right_msg):
+        timestamp = left_info.header.stamp
+
         try:
             msg = self.buffer.lookup_transform(self.frames[0], self.frames[1], rospy.Time())
             _, transform = conversions.transform_from_msg(msg)
@@ -113,11 +117,18 @@ class StereoPublisher(object):
             left = conversions.camera_from_msg(left_info)
             right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
 
+            # For logging purposes - output full size stereo_info
+            pair_full = stereo_pair.rectify_pair(left, right)
+            stereo_info_full = stereo_info_msg(pair_full)
+
+            stereo_info_full.header = make_header(self.name,  timestamp)
+            self.stereo_full_publisher.publish(stereo_info_full)
+
+
             if self.resize is not None:
                 left = left.resize_image(self.resize)
                 right = right.resize_image(self.resize)
 
-            timestamp = left_info.header.stamp
 
             if self.pair is None or (not equal_pair(self.pair, left, right)):
                 self.pair = stereo_pair.rectify_pair(left, right)
