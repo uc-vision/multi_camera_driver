@@ -137,6 +137,14 @@ def set_balance_ratio(camera, balance_ratio):
     else:
         spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Continuous")
 
+def set_grey_value(camera, value):
+    """Set the target grey value. If 0 set to auto"""
+    node_map = camera.GetNodeMap()
+    if value > 0:
+        spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Off")
+        spinnaker_helpers.set_float(node_map, "AutoExposureTargetGreyValue", value)
+    else:
+        spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
 
 class CameraArrayNode(object):
@@ -148,6 +156,7 @@ class CameraArrayNode(object):
         self.raw_encoding = config.get("encoding", "bayer_rggb8")
 
         self.calibrations = calibrations
+        self.config = {}
 
         self.master_id = config.get("master", None)
         self.camera_serials = config.get("camera_aliases", None)  # serial -> alias
@@ -170,10 +179,11 @@ class CameraArrayNode(object):
 
 
     def set_property(self, config, key, setter):
-        rospy.loginfo(f"Dynamic reconfigure {key}: {config[key]}")
+        value = config[key]
 
-        if key in config and config[key] > 0:
-            value = config[key]
+        if not key in self.config or self.config[key] != value:
+            rospy.loginfo(f"set_property {key}: {config[key]}")
+
             for camera in self.camera_dict.values():
                 setter(camera, value)      
 
@@ -182,9 +192,13 @@ class CameraArrayNode(object):
             self.set_property(config, 'exposure', set_exposure)
             self.set_property(config, 'balance_ratio', set_balance_ratio)
             self.set_property(config, 'gain', set_gain)    
+            self.set_property(config, 'grey_value', set_grey_value)    
+
 
             if 'max_framerate' in config:
               self.max_rate = config['max_framerate']
+
+            self.config = config
         return config
 
 

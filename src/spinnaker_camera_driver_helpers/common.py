@@ -184,7 +184,7 @@ def make_preview(image, image_scale=0.1):
     image = image.get()
     h, w, *_ = image.shape
     preview_size = (int(w * image_scale), int(h * image_scale))
-    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_AREA)
 
 
 class RawPublisher(rospy.SubscribeListener):

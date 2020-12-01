@@ -32,16 +32,12 @@ camera_settings:
     - ReverseX:
       - True
       - BOOL   
+
      
     - PixelFormat:
       - BayerRG8
       - ENUM
-    - ExposureAuto:
-      - "Continuous"
-      - ENUM
-    - ExposureTime:
-      - 2000
-      - FLOAT
+
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM

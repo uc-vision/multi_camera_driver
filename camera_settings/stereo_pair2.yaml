@@ -29,12 +29,7 @@ camera_settings:
     - PixelFormat:
       - BayerRG8
       - ENUM
-    - ExposureAuto:
-      - "Off"
-      - ENUM
-    - ExposureTime:
-      - 2000
-      - FLOAT
+
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM
