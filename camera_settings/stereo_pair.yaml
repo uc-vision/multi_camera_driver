@@ -32,7 +32,7 @@ camera_settings:
     - ReverseX:
       - True
       - BOOL   
-
+ 
      
     - PixelFormat:
       - BayerRG8
@@ -47,6 +47,9 @@ camera_settings:
     - AcquisitionFrameRateEnable:
       - False
       - BOOL
+    - WhiteBalanceAutoProfile:
+      - "Outdoor"
+      - ENUM
   transport_layer:
     - StreamBufferCountMode:
       - Manual

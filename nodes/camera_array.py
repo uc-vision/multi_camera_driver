@@ -114,7 +114,7 @@ def set_exposure(camera, exposure_time):
     node_map = camera.GetNodeMap()
     if exposure_time > 0:
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Off")
-        spinnaker_helpers.set_float(node_map, "ExposureTime", exposure_time)
+        return spinnaker_helpers.try_set_float(node_map, "ExposureTime", exposure_time)
     else:
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
 
@@ -124,16 +124,16 @@ def set_gain(camera, gain):
     node_map = camera.GetNodeMap()
     if gain > 0:
         spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
-        spinnaker_helpers.set_float(node_map, "Gain", gain)
+        return spinnaker_helpers.try_set_float(node_map, "Gain", gain)
     else:
         spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
 
 
 def set_balance_ratio(camera, balance_ratio):
     node_map = camera.GetNodeMap()
-    if balance_ratio >= 1:
+    if balance_ratio >= 0.5:
         spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Off")
-        spinnaker_helpers.set_float(node_map, "BalanceRatio", balance_ratio)
+        return spinnaker_helpers.try_set_float(node_map, "BalanceRatio", balance_ratio)
     else:
         spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Continuous")
 
@@ -142,7 +142,7 @@ def set_grey_value(camera, value):
     node_map = camera.GetNodeMap()
     if value > 0:
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Off")
-        spinnaker_helpers.set_float(node_map, "AutoExposureTargetGreyValue", value)
+        return spinnaker_helpers.try_set_float(node_map, "AutoExposureTargetGreyValue", value)
     else:
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
@@ -178,29 +178,32 @@ class CameraArrayNode(object):
         return self.camera_dict[self.camera_aliases[alias]]
 
 
-    def set_property(self, config, key, setter):
+    def set_property(self, config, key, setter, force):
         value = config[key]
+        try:
+            if force or (not key in self.config or self.config[key] != value):
+                rospy.loginfo(f"set_property {key}: {config[key]}")
 
-        if not key in self.config or self.config[key] != value:
-            rospy.loginfo(f"set_property {key}: {config[key]}")
+                for camera in self.camera_dict.values():
+                    setter(camera, value)      
+        except PySpin.SpinnakerException as e:
+            rospy.loginfo("set_property: {key} {value} {e} ")
 
-            for camera in self.camera_dict.values():
-                setter(camera, value)      
+    def set_config_properties(self, config, force=False):
+        self.set_property(config, 'exposure', set_exposure, force)
+        self.set_property(config, 'balance_ratio', set_balance_ratio, force)
+        self.set_property(config, 'gain', set_gain, force)    
+        self.set_property(config, 'grey_value', set_grey_value, force)    
+
 
     def reconfigure_callback(self, config, _):
         if self.cameras_initialised:
-            self.set_property(config, 'exposure', set_exposure)
-            self.set_property(config, 'balance_ratio', set_balance_ratio)
-            self.set_property(config, 'gain', set_gain)    
-            self.set_property(config, 'grey_value', set_grey_value)    
+            self.set_config_properties(config)    
 
-
-            if 'max_framerate' in config:
-              self.max_rate = config['max_framerate']
-
-            self.config = config
+        self.max_rate = config['max_framerate']
+        self.config = config
         return config
-
+            
 
     def warn_cameras_missing(self):
         if self.camera_serials is not None:
@@ -240,6 +243,8 @@ class CameraArrayNode(object):
                 self.event_handlers.append(event_handler)
                 self.started.append(camera)
             del camera
+
+        self.set_config_properties(self.config, force=True)
 
         self.cameras_initialised = True
 

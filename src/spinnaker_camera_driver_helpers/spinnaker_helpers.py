@@ -6,7 +6,6 @@ from time import sleep
 
 import gc
 
-
 def set_enum(nodemap, node_name, value):
     node = PySpin.CEnumerationPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
@@ -53,6 +52,7 @@ def set_bool(nodemap, node_name, value):
 
     # Set integer value from entry node as new value of enumeration node
     node.SetValue(value)
+    return value
 
 
 def set_float(nodemap, node_name, value):
@@ -63,7 +63,7 @@ def set_float(nodemap, node_name, value):
 
     # Set integer value from entry node as new value of enumeration node
     node.SetValue(value)
-
+    return value
 
 def set_int(nodemap, node_name, value):
     node = PySpin.CIntegerPtr(nodemap.GetNode(node_name))
@@ -73,8 +73,15 @@ def set_int(nodemap, node_name, value):
 
     # Set integer value from entry node as new value of enumeration node
     node.SetValue(value)
+    return value
 
 
+def try_set_float(nodemap, node_name, value):
+    try:
+        return set_float(nodemap, node_name, value)
+    except PySpin.SpinnakerException as e:
+        rospy.loginfo(f"try_set_float {node_name} {value}: {e}")
+        return get_float(nodemap, node_name)
 
 def activate_image_chunks(nodemap):
     try:
