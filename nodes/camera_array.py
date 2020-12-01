@@ -131,7 +131,12 @@ def set_gain(camera, gain):
 
 def set_balance_ratio(camera, balance_ratio):
     node_map = camera.GetNodeMap()
-    spinnaker_helpers.set_float(node_map, "BalanceRatio", balance_ratio)
+    if balance_ratio >= 1:
+        spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Off")
+        spinnaker_helpers.set_float(node_map, "BalanceRatio", balance_ratio)
+    else:
+        spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Continuous")
+
 
 
 class CameraArrayNode(object):
@@ -165,6 +170,8 @@ class CameraArrayNode(object):
 
 
     def set_property(self, config, key, setter):
+        rospy.loginfo(f"Dynamic reconfigure {key}: {config[key]}")
+
         if key in config and config[key] > 0:
             value = config[key]
             for camera in self.camera_dict.values():
