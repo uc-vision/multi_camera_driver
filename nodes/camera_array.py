@@ -147,6 +147,17 @@ def set_grey_value(camera, value):
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
 
+def set_gamma(camera, value):
+    """Set the gamma value. If 0 set to off"""
+    node_map = camera.GetNodeMap()
+    if value > 0:
+        spinnaker_helpers.set_bool(node_map, "GammaEnable", True)
+        return spinnaker_helpers.try_set_float(node_map, "Gamma", value)
+    else:
+        spinnaker_helpers.set_bool(node_map, "GammaEnable", False)
+        
+
+
 class CameraArrayNode(object):
     def __init__(self, config=None, calibrations={}):
         self.system = PySpin.System.GetInstance()
@@ -194,6 +205,7 @@ class CameraArrayNode(object):
         self.set_property(config, 'balance_ratio', set_balance_ratio, force)
         self.set_property(config, 'gain', set_gain, force)    
         self.set_property(config, 'grey_value', set_grey_value, force)    
+        self.set_property(config, 'gamma', set_gamma, force)    
 
 
     def reconfigure_callback(self, config, _):
