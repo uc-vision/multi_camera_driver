@@ -147,6 +147,12 @@ def set_grey_value(camera, value):
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
 
+def set_ev_comp(camera, value):
+    """Set the EV Compensation"""
+    node_map = camera.GetNodeMap()
+    return spinnaker_helpers.try_set_float(node_map, "AutoExposureEVCompensation", value)
+
+
 def set_gamma(camera, value):
     """Set the gamma value. If 0 set to off"""
     node_map = camera.GetNodeMap()
@@ -205,6 +211,8 @@ class CameraArrayNode(object):
         self.set_property(config, 'balance_ratio', set_balance_ratio, force)
         self.set_property(config, 'gain', set_gain, force)    
         self.set_property(config, 'grey_value', set_grey_value, force)    
+        self.set_property(config, 'ev_comp', set_ev_comp, force)    
+
         self.set_property(config, 'gamma', set_gamma, force)    
 
 
