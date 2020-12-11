@@ -41,8 +41,7 @@ camera_settings:
       - 2
       - INT
     - PixelFormat:
-      - BGR8
-            #  - BayerRG8
+      - BayerRG8
       - ENUM
     - ExposureAuto:
       - "Off"

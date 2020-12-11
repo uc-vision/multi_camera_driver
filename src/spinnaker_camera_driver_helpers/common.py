@@ -292,6 +292,7 @@ class ImagePublisher(rospy.SubscribeListener):
 
         
     def publish(self, image, timestamp, cam_info=None):
+
         header = make_header(self.name, timestamp, self.seq + 1)
 
         cam_info = cam_info or CameraInfo()        
