@@ -71,7 +71,6 @@ class SpinnakerPublisher(object):
         else:
             image_data = image.GetNDArray()
             image.Release()
-
             self.publisher.publish(image_data, stamp)
 
     def stop(self):
@@ -212,7 +211,6 @@ class CameraArrayNode(object):
         self.set_property(config, 'gain', set_gain, force)    
         self.set_property(config, 'grey_value', set_grey_value, force)    
         self.set_property(config, 'ev_comp', set_ev_comp, force)    
-
         self.set_property(config, 'gamma', set_gamma, force)    
 
 
