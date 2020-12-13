@@ -102,7 +102,6 @@ def init_camera(camera, image_topic, calibration=None, trigger_master=None, desc
         else:
             camera.RegisterEventHandler(event_handler)
             
-        camera.BeginAcquisition()
         return event_handler
     except PySpin.SpinnakerException as e:
         rospy.logerr("Could not initialise camera {}: {}".format(desc, str(e)))
@@ -162,6 +161,31 @@ def set_gamma(camera, value):
         spinnaker_helpers.set_bool(node_map, "GammaEnable", False)
         
 
+def set_binning(camera, value):
+    """Set the gamma value. If 0 set to off"""
+    node_map = camera.GetNodeMap()
+    spinnaker_helpers.try_set_int(node_map, "BinningHorizontal", value)
+    spinnaker_helpers.try_set_int(node_map, "BinningVertical", value)
+
+
+
+def set_internal(camera, value):
+    """Set internal setting (no camera setting)"""
+    pass
+
+property_setters = dict(
+    exposure = set_exposure,
+    balance_ratio = set_balance_ratio,
+    gain = set_gain,
+    grey_value = set_grey_value,
+    ev_comp = set_ev_comp,
+    gamma = set_gamma,
+    max_framerate = set_internal
+)
+
+delayed_setters = dict(    
+    binning = set_binning
+)
 
 class CameraArrayNode(object):
     def __init__(self, config=None, calibrations={}):
@@ -173,12 +197,16 @@ class CameraArrayNode(object):
 
         self.calibrations = calibrations
         self.config = {}
+        self.pending_config = {}
 
         self.master_id = config.get("master", None)
         self.camera_serials = config.get("camera_aliases", None)  # serial -> alias
         self.camera_aliases = {v: k for k, v in self.camera_serials.items()}  # alias -> serial
+        
         self.event_handlers = []
+        self.initialised = []
         self.cameras_initialised = False
+        self.started = False
 
         camera_list = self.system.GetCameras()
         self.camera_dict = spinnaker_helpers.camera_list_to_dict(camera_list)  # serial -> camera
@@ -194,34 +222,38 @@ class CameraArrayNode(object):
         return self.camera_dict[self.camera_aliases[alias]]
 
 
-    def set_property(self, config, key, setter, force):
-        value = config[key]
+    def set_property(self, key, value, setter):
         try:
-            if force or (not key in self.config or self.config[key] != value):
-                rospy.loginfo(f"set_property {key}: {config[key]}")
-
-                for camera in self.camera_dict.values():
-                    setter(camera, value)      
+            rospy.loginfo(f"set_property {key}: {value}")
+            for camera in self.camera_dict.values():
+                setter(camera, value)      
         except PySpin.SpinnakerException as e:
-            rospy.loginfo("set_property: {key} {value} {e} ")
-
-    def set_config_properties(self, config, force=False):
-        self.set_property(config, 'exposure', set_exposure, force)
-        self.set_property(config, 'balance_ratio', set_balance_ratio, force)
-        self.set_property(config, 'gain', set_gain, force)    
-        self.set_property(config, 'grey_value', set_grey_value, force)    
-        self.set_property(config, 'ev_comp', set_ev_comp, force)    
-        self.set_property(config, 'gamma', set_gamma, force)    
+            rospy.loginfo(f"set_property: {key} {value} {e} ")
 
 
+
+    def set_config_properties(self, config):
+        for k, v in config.items():
+            setter = property_setters.get(k, None) or delayed_setters.get(k, None)
+            if setter is None:
+                return
+
+            if self.config.get(k, None) != v and setter is not None:
+                if self.started and k in delayed_setters:
+                    self.pending_config[k] = v   
+                else:
+                    self.set_property(k, v, setter)
+                    self.config[k] = v
+
+
+      
     def reconfigure_callback(self, config, _):
         if self.cameras_initialised:
-            self.set_config_properties(config)    
+            self.set_config_properties(config)  
+        else:
+            self.pending_config.update(config)  
 
-        self.max_rate = config['max_framerate']
-        self.config = config
         return config
-            
 
     def warn_cameras_missing(self):
         if self.camera_serials is not None:
@@ -240,13 +272,24 @@ class CameraArrayNode(object):
 
 
     def start(self):
-        rospy.loginfo("Starting cameras")
+        rospy.loginfo("Begin acquisition")
+        for camera in self.initialised:
+           camera.BeginAcquisition()
+
+        self.started = True
+
+    def stop(self):
+        rospy.loginfo("End acquisition")
+        for camera in self.initialised:
+            camera.EndAcquisition()
+        self.started = False
+
+
+    def initialise(self):
+        rospy.loginfo("Initialising cameras")
         if len(self.camera_dict) == 0:
             rospy.logerr("No cameras found")
             return
-
-        self.event_handlers = []
-        self.started = []
 
         for serial, camera in self.camera_dict.items():
             if self.camera_serials is None:
@@ -259,56 +302,73 @@ class CameraArrayNode(object):
 
             if event_handler is not None:
                 self.event_handlers.append(event_handler)
-                self.started.append(camera)
+                self.initialised.append(camera)
             del camera
-
-        self.set_config_properties(self.config, force=True)
 
         self.cameras_initialised = True
 
-        if len(self.event_handlers) > 0:
-            rospy.loginfo("Acquisition Started")
+        rospy.loginfo(f"Applying initial settings")
+        self.update_pending()
 
-            stamp = rospy.Time.now()
-            for handler in self.event_handlers:
-                handler.stamp = stamp
+        rospy.loginfo(f"{len(self.initialised)} Cameras initialised")
 
-            self.trigger()
+    def update_pending(self):
+        if self.started and len(self.pending_config) > 0:
+            rospy.loginfo(f"Applying pending settings")
 
-            while not rospy.is_shutdown():
-                ready = all([handler.sent for handler in self.event_handlers])
-                delay = rospy.Time.now() - stamp
+            self.stop()
+            self.set_config_properties(self.pending_config)
+            self.start()
+        else:
+            self.set_config_properties(self.pending_config)
 
-                if delay.to_sec() > self.timeout:
-                    rospy.logwarn("Capture timed out, re-triggering")
-                    stamp = rospy.Time.now()
-                    self.trigger()
+        self.pending_config = {}
 
-                if ready and (self.max_rate == 0 or delay.to_sec() > 1.0/self.max_rate):
-                    stamp = rospy.Time.now()
-                    for handler in self.event_handlers:
-                        handler.sent = False
-                        handler.stamp = stamp
-                    self.trigger()
+    def capture(self):
+        assert len(self.initialised) > 0 and not self.started 
+        self.start()
 
-            rospy.loginfo("Acquisition ended")
-            for camera in self.started:
-                camera.EndAcquisition()
-                # TODO: UnregisterEventHandler?
+        stamp = rospy.Time.now()
+        for handler in self.event_handlers:
+            handler.stamp = stamp
+
+        self.trigger()
+
+        while not rospy.is_shutdown():
+            ready = all([handler.sent for handler in self.event_handlers])
+            delay = rospy.Time.now() - stamp
+
+            if delay.to_sec() > self.timeout:
+                rospy.logwarn("Capture timed out, re-triggering")
+                stamp = rospy.Time.now()
+                self.trigger()
+
+            if ready and (self.max_rate == 0 or delay.to_sec() > 1.0/self.max_rate):
+                self.update_pending()    
+
+                stamp = rospy.Time.now()
+                for handler in self.event_handlers:
+                    handler.sent = False
+                    handler.stamp = stamp
+                self.trigger()
+
+        self.stop()
 
 
-    def stop(self):
+    def cleanup(self):
         for handler in self.event_handlers:
             handler.stop()
 
-        del self.started
+        del self.initialised
         del self.event_handlers
+        gc.collect()
 
         rospy.loginfo("Stopping cameras")
         for camera in self.camera_dict.values():
             spinnaker_helpers.load_defaults(camera)
             # Why are we doing this here?
             # Otherwise the camera can't be examined in spinview (trigger mode etc.)
+
             camera.DeInit()
         del camera
         del self.camera_dict
@@ -329,9 +389,9 @@ def main():
         rospy.sleep(2)
 
     camera_calibs = {}
+    config = load_config(config_file)
 
     try:
-      config = load_config(config_file)
       camera_calibs, extrinsics, _ = load_calibration(calibration_file)   
       broadcaster = publish_extrinsics(extrinsics)
     except FileNotFoundError:
@@ -342,10 +402,11 @@ def main():
 
 
     try:
-        camera_node.start()
+        camera_node.initialise()
+        camera_node.capture()
     except KeyboardInterrupt:
         pass
-    camera_node.stop()
+    camera_node.cleanup()
 
 
 if __name__ == "__main__":

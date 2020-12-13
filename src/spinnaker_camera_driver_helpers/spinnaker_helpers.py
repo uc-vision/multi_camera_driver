@@ -44,6 +44,18 @@ def get_float(nodemap, node_name):
     # Set integer value from entry node as new value of enumeration node
     return node.GetValue()
 
+
+
+def get_int(nodemap, node_name):
+    node = PySpin.CIntegerPtr(nodemap.GetNode(node_name))
+    if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
+        rospy.logerr('Unable to read {} (int retrieval). '.format(node_name))
+        return False
+
+    # Set integer value from entry node as new value of enumeration node
+    return node.GetValue()
+
+
 def set_bool(nodemap, node_name, value):
     node = PySpin.CBooleanPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
@@ -82,6 +94,15 @@ def try_set_float(nodemap, node_name, value):
     except PySpin.SpinnakerException as e:
         rospy.loginfo(f"try_set_float {node_name} {value}: {e}")
         return get_float(nodemap, node_name)
+
+def try_set_int(nodemap, node_name, value):
+    try:
+        return set_int(nodemap, node_name, value)
+    except PySpin.SpinnakerException as e:
+        rospy.loginfo(f"try_set_int {node_name} {value}: {e}")
+        return get_int(nodemap, node_name)
+
+
 
 def activate_image_chunks(nodemap):
     try:

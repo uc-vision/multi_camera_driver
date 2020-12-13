@@ -172,19 +172,21 @@ class Lazy(object):
         self.result = self.f() if self.result is None else self.result
         return self.result
 
-def make_crop(image, image_scale=0.1):
+def make_crop(image, width=1200):
     image = image.get()
     h, w, *_ = image.shape
-    cx, cy = int(w * image_scale), int(h * image_scale)
+    cx, cy = (width, int((width / w) * h))
+
     x = (w // 2) - (cx // 2)
     y = (h // 2) - (cy // 2)    
     return image[y:y + cy, x:x + cx]
 
-def make_preview(image, image_scale=0.1):
+def make_preview(image, width=400):
     image = image.get()
     h, w, *_ = image.shape
-    preview_size = (int(w * image_scale), int(h * image_scale))
-    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_AREA)
+    height = int((width / w) * h)
+
+    return cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_AREA)
 
 
 class RawPublisher(rospy.SubscribeListener):
@@ -308,9 +310,9 @@ class ImagePublisher(rospy.SubscribeListener):
         else:
           assert False, f"TODO: implement conversion for {self.raw_encoding}"
         
-        preview_image = Lazy(make_preview, color_image, 0.1)
-        medium_image = Lazy(make_preview, color_image, 1/3.0)
-        centre_image = Lazy(make_crop, color_image, 1/3.0)
+        preview_image = Lazy(make_preview, color_image, 400)
+        medium_image = Lazy(make_preview, color_image, 1200)
+        centre_image = Lazy(make_crop, color_image, 1200)
 
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     

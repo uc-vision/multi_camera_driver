@@ -17,23 +17,16 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
-      #- GlobalReset
       - Rolling
       - ENUM
-    - BinningHorizontal:
-      - 1
-      - INT
-    - BinningVertical:
-      - 1
-      - INT
+
     - ReverseY:
       - True
       - BOOL
     - ReverseX:
       - True
       - BOOL   
- 
-     
+      
     - PixelFormat:
       - BayerRG8
       - ENUM
