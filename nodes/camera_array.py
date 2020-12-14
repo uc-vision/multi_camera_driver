@@ -168,6 +168,13 @@ def set_binning(camera, value):
     spinnaker_helpers.try_set_int(node_map, "BinningHorizontal", value)
     spinnaker_helpers.try_set_int(node_map, "BinningVertical", value)
 
+    w = spinnaker_helpers.get_int(node_map, "WidthMax")
+    h = spinnaker_helpers.get_int(node_map, "HeightMax")
+
+    spinnaker_helpers.try_set_int(node_map, "Width", w)
+    spinnaker_helpers.try_set_int(node_map, "Height", h)
+
+
 
 
 def set_internal(camera, value):
@@ -276,7 +283,6 @@ class CameraArrayNode(object):
         rospy.loginfo("Begin acquisition")
         for camera in self.initialised:
            camera.BeginAcquisition()
-
         self.started = True
 
     def stop(self):
