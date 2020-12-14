@@ -314,6 +314,7 @@ class ImagePublisher(rospy.SubscribeListener):
         medium_image = Lazy(make_preview, color_image, 1200)
         centre_image = Lazy(make_crop, color_image, 1200)
 
+
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     
         self.publish_image(self.color_publisher, header, color_image, encoding="bgr8")     

@@ -70,6 +70,7 @@ class SpinnakerPublisher(object):
             rospy.logerr('Image incomplete with image status %d ...' % image.GetImageStatus())
         else:
             image_data = image.GetNDArray()
+
             image.Release()
             self.publisher.publish(image_data, stamp)
 
