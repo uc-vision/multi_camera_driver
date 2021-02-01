@@ -221,9 +221,7 @@ class CameraArrayNode(object):
         self.warn_cameras_missing()
 
         self.reconfigure_srv = Server(CameraArraySettingsConfig, self.reconfigure_callback)
-
         self.timeout = config.get("timeout", 1.0)
-        self.max_rate = config.get("max_framerate", math.inf)
 
 
     def get_cam_by_alias(self, alias):
@@ -350,7 +348,8 @@ class CameraArrayNode(object):
                 stamp = rospy.Time.now()
                 self.trigger()
 
-            if ready and (self.max_rate == 0 or delay.to_sec() > 1.0/self.max_rate):
+            max_rate = self.config.get("max_framerate", math.inf)
+            if ready and (max_rate == 0 or delay.to_sec() > 1.0/max_rate):
                 self.update_pending()    
 
                 stamp = rospy.Time.now()
