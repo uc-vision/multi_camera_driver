@@ -8,20 +8,18 @@ from functools import partial
 
 import cv2
 from cv_bridge import CvBridge
-
+ 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CompressedImage
 from sensor_msgs.msg import CameraInfo
 from maara_msgs.msg import StereoCameraInfo
 
-from camera_geometry.camera import Camera, Transform
-
 import camera_geometry_ros.conversions as conversions
-from camera_geometry.import_calibration import import_cameras
-from camera_geometry import image_utils, json, util, stereo_pair
+from camera_geometry.calib import import_rig
+from camera_geometry import json, transforms
 
 from camera_geometry_ros.conversions import camera_info_msg
-from camera_geometry_ros.stereo_pair import stereo_info_msg, stereo_pair_from_msg
+from camera_geometry_ros.stereo_pair import stereo_info_msg
 
 from threading import Thread
 from turbojpeg import TurboJPEG
@@ -38,14 +36,6 @@ def load_config(config_file):
         return None
 
 
-def load_calibration(calibration_file):
-    if calibration_file is not None:
-        calib_data = json.load_json(calibration_file)
-        cameras, extrinsics = import_cameras(calib_data)
-
-        return cameras, extrinsics, calib_data['stereo_pairs']
-    else:
-        return {}, {}, {}
 
 
 def defer(f, args):
@@ -115,7 +105,7 @@ class StereoPublisher(object):
             _, transform = conversions.transform_from_msg(msg)
                     
             left = conversions.camera_from_msg(left_info)
-            right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
+            right = conversions.camera_from_msg(right_info, parent_to_camera = transform.transform)
 
             # For logging purposes - output full size stereo_info
             pair_full = stereo_pair.rectify_pair(left, right)
@@ -135,7 +125,7 @@ class StereoPublisher(object):
 
                 print(self.pair)
     
-                # Broadcast the rectification induced rotation as a static transform
+                # Broadcast the rectification induced rotation as a transform
                 transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
                 msg = conversions.transform_msg(transform, self.name + "/left", timestamp)
                 self.broadcaster.sendTransform(msg)
@@ -368,12 +358,14 @@ class CalibratedPublisher(object):
     def stop(self):
         self.publisher.stop()
 
-def publish_extrinsics(extrinsics):
+def publish_extrinsics(parent_frame, cameras):
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-    for child_id, transform in extrinsics.items():      
-        msg = conversions.transform_msg(transform, child_id, stamp)
+    for child_id, camera in cameras.items():      
+
+        msg = conversions.transform_msg(camera.parent_to_camera, parent_frame, child_id, stamp)
         broadcaster.sendTransform(msg)
+
     return broadcaster

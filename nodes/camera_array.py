@@ -11,6 +11,8 @@ LICENSE file.
 
 from __future__ import print_function
 
+from camera_geometry.json import load_json
+
 import cv_bridge
 import cv2
 
@@ -398,8 +400,10 @@ def main():
     config = load_config(config_file)
 
     try:
-      camera_calibs, extrinsics, _ = load_calibration(calibration_file)   
-      broadcaster = publish_extrinsics(extrinsics)
+      calib = load_json(calibration_file)   
+      cameras = import_rig(calib)
+
+      broadcaster = publish_extrinsics(rospy.get_namespace(), cameras)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {config_file}")
 

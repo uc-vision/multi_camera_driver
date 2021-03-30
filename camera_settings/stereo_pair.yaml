@@ -1,8 +1,9 @@
 camera_aliases:
-  19423933: cam1
-  20068364: cam2
+  20068364: cam1
+  19423933: cam2
+  
 
-master: 19423933
+master: 20068364
 
 stereo_pairs:
   stereo1:
