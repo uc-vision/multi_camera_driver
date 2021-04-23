@@ -400,10 +400,11 @@ def main():
     config = load_config(config_file)
 
     try:
-      calib = load_json(calibration_file)   
-      cameras = import_rig(calib)
+      if calibration_file is not None:
+        calib = load_json(calibration_file)   
+        cameras = import_rig(calib)
 
-      broadcaster = publish_extrinsics(rospy.get_namespace(), cameras)
+        broadcaster = publish_extrinsics(rospy.get_namespace(), cameras)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {config_file}")
 

@@ -22,10 +22,28 @@ from camera_geometry_ros.conversions import camera_info_msg
 from camera_geometry_ros.stereo_pair import stereo_info_msg
 
 from threading import Thread
-from turbojpeg import TurboJPEG
+
+
 from cv_bridge import CvBridge
 
 from queue import Queue
+
+def gpu_encoder():
+  try:
+    from nvjpeg import NvJpeg
+    return NvJpeg()
+  except ModuleNotFoundError:
+    rospy.logwarn(f"nvjpeg not found, falling back on turbojpeg encoder")
+
+
+def jpeg_encoder():
+  encoder = gpu_encoder()
+  
+  if encoder is None:
+    from turbojpeg import TurboJPEG
+    encoder = TurboJPEG()
+  
+  return encoder
 
 
 def load_config(config_file):
@@ -35,9 +53,6 @@ def load_config(config_file):
     else:
         return None
 
-
-
-
 def defer(f, args):
     thread = Thread(target=f, args=args)
     thread.start()
@@ -46,8 +61,6 @@ def defer(f, args):
 
 def equal_pair(pair, left, right):
     return pair.cameras[0].approx_eq(left) and pair.cameras[1].approx_eq(right)
-
-
 
 
 class StereoPublisher(object):
@@ -228,8 +241,8 @@ class ImagePublisher(rospy.SubscribeListener):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
-        self.jpeg = TurboJPEG()
         self.quality = quality
+        self.jpeg = jpeg_encoder()
 
         self.raw_encoding = raw_encoding
 
