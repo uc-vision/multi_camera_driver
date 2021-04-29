@@ -1,15 +1,15 @@
 camera_aliases:
-  19195147: cam1
-  19280415: cam2
+  19355742: cam1
+  19421960: cam2
 
-master: 19195147
+master: 19355742
 
 stereo_pairs:
   stereo1:
     - cam1
     - cam2
 
-encoding: bgr8
+encoding: "bayer_bggr8"
 
 camera_settings:
   device:
@@ -17,30 +17,27 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
+      #- GlobalReset
       - Rolling
       - ENUM
     - BinningHorizontal:
-      - 2
+      - 1
       - INT
     - BinningVertical:
-      - 2
+      - 1
       - INT
-    - PixelFormat:
-      - BGR8
-            #  - BayerRG8
-      - ENUM
-   - ReverseY:
+    - ReverseY:
       - True
       - BOOL
     - ReverseX:
       - True
-      - BOOL         
-    - ExposureAuto:
-      - "Off"
+      - BOOL   
+ 
+     
+    - PixelFormat:
+      - BayerRG8
       - ENUM
-    - ExposureTime:
-      - 4000
-      - FLOAT
+
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM
@@ -50,6 +47,9 @@ camera_settings:
     - AcquisitionFrameRateEnable:
       - False
       - BOOL
+    - WhiteBalanceAutoProfile:
+      - "Outdoor"
+      - ENUM
   transport_layer:
     - StreamBufferCountMode:
       - Manual
