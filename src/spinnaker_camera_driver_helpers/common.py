@@ -8,26 +8,42 @@ from functools import partial
 
 import cv2
 from cv_bridge import CvBridge
-
+ 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CompressedImage
 from sensor_msgs.msg import CameraInfo
 from maara_msgs.msg import StereoCameraInfo
 
-from camera_geometry.camera import Camera, Transform
-
 import camera_geometry_ros.conversions as conversions
-from camera_geometry.import_calibration import import_cameras
-from camera_geometry import image_utils, json, util, stereo_pair
+from camera_geometry.calib import import_rig
+from camera_geometry import json, transforms
 
 from camera_geometry_ros.conversions import camera_info_msg
-from camera_geometry_ros.stereo_pair import stereo_info_msg, stereo_pair_from_msg
+from camera_geometry_ros.stereo_pair import stereo_info_msg
 
 from threading import Thread
-from turbojpeg import TurboJPEG
+
+
 from cv_bridge import CvBridge
 
 from queue import Queue
+
+def gpu_encoder():
+  try:
+    from nvjpeg import NvJpeg
+    return NvJpeg()
+  except ModuleNotFoundError:
+    rospy.logwarn(f"nvjpeg not found, falling back on turbojpeg encoder")
+
+
+def jpeg_encoder():
+  encoder = gpu_encoder()
+  
+  if encoder is None:
+    from turbojpeg import TurboJPEG
+    encoder = TurboJPEG()
+  
+  return encoder
 
 
 def load_config(config_file):
@@ -37,17 +53,6 @@ def load_config(config_file):
     else:
         return None
 
-
-def load_calibration(calibration_file):
-    if calibration_file is not None:
-        calib_data = json.load_json(calibration_file)
-        cameras, extrinsics = import_cameras(calib_data)
-
-        return cameras, extrinsics, calib_data['stereo_pairs']
-    else:
-        return {}, {}, {}
-
-
 def defer(f, args):
     thread = Thread(target=f, args=args)
     thread.start()
@@ -56,8 +61,6 @@ def defer(f, args):
 
 def equal_pair(pair, left, right):
     return pair.cameras[0].approx_eq(left) and pair.cameras[1].approx_eq(right)
-
-
 
 
 class StereoPublisher(object):
@@ -115,7 +118,7 @@ class StereoPublisher(object):
             _, transform = conversions.transform_from_msg(msg)
                     
             left = conversions.camera_from_msg(left_info)
-            right = conversions.camera_from_msg(right_info, extrinsic = transform.extrinsic)
+            right = conversions.camera_from_msg(right_info, parent_to_camera = transform.transform)
 
             # For logging purposes - output full size stereo_info
             pair_full = stereo_pair.rectify_pair(left, right)
@@ -135,7 +138,7 @@ class StereoPublisher(object):
 
                 print(self.pair)
     
-                # Broadcast the rectification induced rotation as a static transform
+                # Broadcast the rectification induced rotation as a transform
                 transform = Transform(self.frames[0], rotation=self.pair.left.rotation)
                 msg = conversions.transform_msg(transform, self.name + "/left", timestamp)
                 self.broadcaster.sendTransform(msg)
@@ -172,19 +175,21 @@ class Lazy(object):
         self.result = self.f() if self.result is None else self.result
         return self.result
 
-def make_crop(image, image_scale=0.1):
+def make_crop(image, width=1200):
     image = image.get()
     h, w, *_ = image.shape
-    cx, cy = int(w * image_scale), int(h * image_scale)
+    cx, cy = (width, int((width / w) * h))
+
     x = (w // 2) - (cx // 2)
     y = (h // 2) - (cy // 2)    
     return image[y:y + cy, x:x + cx]
 
-def make_preview(image, image_scale=0.1):
+def make_preview(image, width=400):
     image = image.get()
     h, w, *_ = image.shape
-    preview_size = (int(w * image_scale), int(h * image_scale))
-    return cv2.resize(image, dsize=preview_size, interpolation=cv2.INTER_AREA)
+    height = int((width / w) * h)
+
+    return cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_AREA)
 
 
 class RawPublisher(rospy.SubscribeListener):
@@ -236,8 +241,8 @@ class ImagePublisher(rospy.SubscribeListener):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
-        self.jpeg = TurboJPEG()
         self.quality = quality
+        self.jpeg = jpeg_encoder()
 
         self.raw_encoding = raw_encoding
 
@@ -292,6 +297,7 @@ class ImagePublisher(rospy.SubscribeListener):
 
         
     def publish(self, image, timestamp, cam_info=None):
+
         header = make_header(self.name, timestamp, self.seq + 1)
 
         cam_info = cam_info or CameraInfo()        
@@ -307,9 +313,10 @@ class ImagePublisher(rospy.SubscribeListener):
         else:
           assert False, f"TODO: implement conversion for {self.raw_encoding}"
         
-        preview_image = Lazy(make_preview, color_image, 0.1)
-        medium_image = Lazy(make_preview, color_image, 1/3.0)
-        centre_image = Lazy(make_crop, color_image, 1/3.0)
+        preview_image = Lazy(make_preview, color_image, 400)
+        medium_image = Lazy(make_preview, color_image, 1200)
+        centre_image = Lazy(make_crop, color_image, 1200)
+
 
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(lambda: image), encoding=self.raw_encoding)     
@@ -364,12 +371,14 @@ class CalibratedPublisher(object):
     def stop(self):
         self.publisher.stop()
 
-def publish_extrinsics(extrinsics):
+def publish_extrinsics(parent_frame, cameras):
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-    for child_id, transform in extrinsics.items():      
-        msg = conversions.transform_msg(transform, child_id, stamp)
+    for child_id, camera in cameras.items():      
+
+        msg = conversions.transform_msg(camera.parent_to_camera, parent_frame, child_id, stamp)
         broadcaster.sendTransform(msg)
+
     return broadcaster

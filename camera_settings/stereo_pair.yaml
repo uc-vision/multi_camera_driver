@@ -1,6 +1,7 @@
 camera_aliases:
-  19423933: cam1
-  20068364: cam2
+  20068364: cam1
+  19423933: cam2
+  
 
 master: 20068364
 
@@ -17,23 +18,16 @@ camera_settings:
       - Default
       - ENUM
     - SensorShutterMode:
-      #- GlobalReset
       - Rolling
       - ENUM
-    - BinningHorizontal:
-      - 1
-      - INT
-    - BinningVertical:
-      - 1
-      - INT
+
     - ReverseY:
       - True
       - BOOL
     - ReverseX:
       - True
       - BOOL   
- 
-     
+      
     - PixelFormat:
       - BayerRG8
       - ENUM
