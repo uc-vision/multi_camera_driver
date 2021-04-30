@@ -12,7 +12,7 @@ from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CompressedImage
 from sensor_msgs.msg import CameraInfo
-from maara_msgs.msg import StereoCameraInfo
+from cares_msgs.msg import StereoCameraInfo
 
 import camera_geometry_ros.conversions as conversions
 from camera_geometry.calib import import_rig
