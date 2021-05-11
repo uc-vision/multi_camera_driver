@@ -9,6 +9,7 @@ from spinnaker_camera_driver_helpers.common import *
 
 import rospy
 from os import path
+from camera_geometry.image import find_image_dirs
 
 jpeg = TurboJPEG()
 
@@ -51,21 +52,18 @@ def main():
     image_path = rospy.get_param("~image_path")
 
     calibration_file = rospy.get_param("~calibration_file", None)
-    camera_calibs = {}
-
-    try:
-      camera_calibs, extrinsics, stereo_pairs = load_calibration(calibration_file)   
-      broadcaster = publish_extrinsics(extrinsics)
-    except FileNotFoundError:
-        rospy.logwarn(f"Calibration file not found: {calibration_file}")
+    camera_calibrations = load_calibrations(calibration_file)   
 
    
-    camera_dirs, image_sets =  image_utils.find_image_dirs(image_path)
+    camera_dirs, image_sets =  find_image_dirs(image_path)
     print("Found camera directories {} with {} matching images".format(str(camera_dirs), len(image_sets)))
 
     def publisher(dir):
         name = path.basename(dir)
-        return CalibratedPublisher(name, camera_calibs.get(name), raw_encoding='bgr8')
+        if name not in camera_calibrations:
+          rospy.logwarn(f"camera {name} does not exist in calibrations!")
+
+        return CalibratedPublisher(name, camera_calibrations.get(name), raw_encoding='bgr8')
 
     publishers = [publisher(dir) for dir in camera_dirs]
 

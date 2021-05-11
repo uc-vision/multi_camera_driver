@@ -304,6 +304,9 @@ class CameraArrayNode(object):
             else:
                 alias = self.camera_serials.get(serial, "cam_{}".format(serial))
 
+            if alias not in self.calibrations:
+              rospy.logwarn(f"camera {alias} does not exist in calibrations!")
+
             event_handler = init_camera(camera, alias, self.calibrations.get(alias, None), 
                 serial == self.master_id, alias, self.camera_settings, self.raw_encoding)
 
@@ -396,20 +399,13 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(2)
 
-    camera_calibs = {}
+    
     config = load_config(config_file)
-
-    try:
-      if calibration_file is not None:
-        calib = load_json(calibration_file)   
-        cameras = import_rig(calib)
-
-        broadcaster = publish_extrinsics(rospy.get_namespace(), cameras)
-    except FileNotFoundError:
-        rospy.logwarn(f"Calibration file not found: {config_file}")
+    camera_calibrations = load_calibrations(calibration_file)
 
 
-    camera_node = CameraArrayNode(config, camera_calibs)
+
+    camera_node = CameraArrayNode(config, camera_calibrations)
 
 
     try:

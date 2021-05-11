@@ -21,8 +21,7 @@ def main():
     right = rospy.get_param("~right")
 
     topic = rospy.get_param("~topic")
-
-    processor = StereoPublisher(topic, left, right, resize=resize)
+    processor = StereoPublisher(topic, left, right, resize=resize, publish_transform=False)
     
     rospy.spin()
 
