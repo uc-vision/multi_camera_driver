@@ -52,7 +52,7 @@ def main():
     image_path = rospy.get_param("~image_path")
 
     calibration_file = rospy.get_param("~calibration_file", None)
-    camera_calibrations = load_calibrations(calibration_file)   
+    camera_calibrations = load_calibrations(rospy.get_namespace(), calibration_file)   
 
    
     camera_dirs, image_sets =  find_image_dirs(image_path)

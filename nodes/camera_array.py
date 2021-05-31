@@ -401,9 +401,7 @@ def main():
 
     
     config = load_config(config_file)
-    camera_calibrations = load_calibrations(calibration_file)
-
-
+    camera_calibrations = load_calibrations(rospy.get_namespace(), calibration_file)
 
     camera_node = CameraArrayNode(config, camera_calibrations)
 

@@ -397,7 +397,7 @@ class CalibratedPublisher(object):
         self.publisher.stop()
 
 
-def load_calibrations(calibration_file):
+def load_calibrations(namespace, calibration_file):
     camera_calibrations = {}
     try:
         if calibration_file is not None:
@@ -405,7 +405,7 @@ def load_calibrations(calibration_file):
             camera_calibrations = import_rig(calib)
 
             broadcaster = publish_extrinsics(
-                "camera_array", camera_calibrations)
+                namespace, camera_calibrations)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
     return camera_calibrations

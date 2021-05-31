@@ -1,14 +1,14 @@
 camera_aliases:
-  20068364: cam1
-  19423933: cam2
+  20068364: left
+  19423933: right
   
 
 master: 20068364
 
 stereo_pairs:
   stereo1:
-    - cam1
-    - cam2
+    - left
+    - right
 
 encoding: "bayer_bggr8"
 
