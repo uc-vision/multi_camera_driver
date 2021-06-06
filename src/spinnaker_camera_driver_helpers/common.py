@@ -398,6 +398,9 @@ class CalibratedPublisher(object):
 
 
 def load_calibrations(namespace, calibration_file):
+    rospy.loginfo(f"Loading calibrations from: {calibration_file}")
+
+
     camera_calibrations = {}
     try:
         if calibration_file is not None:

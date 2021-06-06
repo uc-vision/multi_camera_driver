@@ -1,20 +1,21 @@
 {
   "cameras": {
-    "cam1": {
+    "left": {
+      "model": "standard",
       "image_size": [
-        2000,
-        1500
+        4000,
+        3000
       ],
       "K": [
         [
-          2262.996702410344,
+          3062.97481338471,
           0.0,
-          978.9004214369744
+          1977.8451209856432
         ],
         [
           0.0,
-          2263.7422300268004,
-          732.8048654211799
+          3063.5051533744704,
+          1484.5401864838943
         ],
         [
           0.0,
@@ -24,29 +25,30 @@
       ],
       "dist": [
         [
-          -0.10441038467503788,
-          0.10917043821884428,
-          -0.0013110750859138532,
-          -0.0014811979831101934,
-          0.42849879629320614
+          -0.13048148879720353,
+          0.14174072543409758,
+          0.0004019181665641458,
+          0.0006477418639987853,
+          -0.027441716183167014
         ]
       ]
     },
-    "cam2": {
+    "right": {
+      "model": "standard",
       "image_size": [
-        2000,
-        1500
+        4000,
+        3000
       ],
       "K": [
         [
-          2255.9851587343037,
+          3051.537656692974,
           0.0,
-          983.7039051570599
+          1919.445089962688
         ],
         [
           0.0,
-          2255.0979789289154,
-          730.2989460183574
+          3051.2517620507565,
+          1495.4645095231426
         ],
         [
           0.0,
@@ -56,169 +58,306 @@
       ],
       "dist": [
         [
-          -0.10969944702375717,
-          0.13552122151675325,
-          -0.00048276942049072424,
-          0.0003287682642482853,
-          0.5442104909949875
+          -0.13101633778557842,
+          0.14572521641282687,
+          -0.0009571540663754448,
+          0.0017346520092212114,
+          -0.030227525660918676
         ]
       ]
     }
   },
-  "extrinsics": {
-    "cam2": {
+  "camera_poses": {
+    "left": {
       "R": [
         [
-          0.9999238448109092,
-          -0.0009672311349751552,
-          0.01230321269020477
+          1.0,
+          1.0568523607453088e-42,
+          0.0
         ],
         [
-          0.0009040073015791817,
-          0.9999863643679685,
-          0.00514333052906503
+          -1.4712109642238512e-41,
+          1.0,
+          0.0
         ],
         [
-          -0.012308019717548899,
-          -0.0051318166436512035,
-          0.99991108460131
+          0.0,
+          0.0,
+          1.0
         ]
       ],
       "T": [
-        0.038358174276980725,
-        0.0012241602631385853,
-        0.0007436895738230547
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "right_to_left": {
+      "R": [
+        [
+          0.9999784948380016,
+          0.005772635047073657,
+          -0.003112321663668789
+        ],
+        [
+          -0.005775264393910493,
+          0.9999829731544716,
+          -0.0008364940668217938
+        ],
+        [
+          0.0031074398956817827,
+          0.0008544505583679587,
+          0.9999948068522846
+        ]
       ],
-      "parent": "cam1"
+      "T": [
+        0.049169994750640336,
+        -0.00020703924213310904,
+        0.0005812307164253921
+      ]
     }
-  },
-  "stereo_pairs": {
-    "stereo1": [
-      "cam1",
-      "cam2"
-    ]
   },
   "image_sets": {
     "rgb": [
       {
-        "cam1": "cam1/00000.jpg",
-        "cam2": "cam2/00000.jpg"
+        "left": "0_left_rgb.png",
+        "right": "0_right_rgb.png"
       },
       {
-        "cam1": "cam1/00001.jpg",
-        "cam2": "cam2/00001.jpg"
+        "left": "1_left_rgb.png",
+        "right": "1_right_rgb.png"
       },
       {
-        "cam1": "cam1/00002.jpg",
-        "cam2": "cam2/00002.jpg"
+        "left": "2_left_rgb.png",
+        "right": "2_right_rgb.png"
       },
       {
-        "cam1": "cam1/00003.jpg",
-        "cam2": "cam2/00003.jpg"
+        "left": "3_left_rgb.png",
+        "right": "3_right_rgb.png"
       },
       {
-        "cam1": "cam1/00004.jpg",
-        "cam2": "cam2/00004.jpg"
+        "left": "4_left_rgb.png",
+        "right": "4_right_rgb.png"
       },
       {
-        "cam1": "cam1/00005.jpg",
-        "cam2": "cam2/00005.jpg"
+        "left": "5_left_rgb.png",
+        "right": "5_right_rgb.png"
       },
       {
-        "cam1": "cam1/00006.jpg",
-        "cam2": "cam2/00006.jpg"
+        "left": "6_left_rgb.png",
+        "right": "6_right_rgb.png"
       },
       {
-        "cam1": "cam1/00007.jpg",
-        "cam2": "cam2/00007.jpg"
+        "left": "7_left_rgb.png",
+        "right": "7_right_rgb.png"
       },
       {
-        "cam1": "cam1/00008.jpg",
-        "cam2": "cam2/00008.jpg"
+        "left": "8_left_rgb.png",
+        "right": "8_right_rgb.png"
       },
       {
-        "cam1": "cam1/00009.jpg",
-        "cam2": "cam2/00009.jpg"
+        "left": "9_left_rgb.png",
+        "right": "9_right_rgb.png"
       },
       {
-        "cam1": "cam1/00010.jpg",
-        "cam2": "cam2/00010.jpg"
+        "left": "10_left_rgb.png",
+        "right": "10_right_rgb.png"
       },
       {
-        "cam1": "cam1/00011.jpg",
-        "cam2": "cam2/00011.jpg"
+        "left": "11_left_rgb.png",
+        "right": "11_right_rgb.png"
       },
       {
-        "cam1": "cam1/00012.jpg",
-        "cam2": "cam2/00012.jpg"
+        "left": "12_left_rgb.png",
+        "right": "12_right_rgb.png"
       },
       {
-        "cam1": "cam1/00013.jpg",
-        "cam2": "cam2/00013.jpg"
+        "left": "13_left_rgb.png",
+        "right": "13_right_rgb.png"
       },
       {
-        "cam1": "cam1/00014.jpg",
-        "cam2": "cam2/00014.jpg"
+        "left": "14_left_rgb.png",
+        "right": "14_right_rgb.png"
       },
       {
-        "cam1": "cam1/00015.jpg",
-        "cam2": "cam2/00015.jpg"
+        "left": "15_left_rgb.png",
+        "right": "15_right_rgb.png"
       },
       {
-        "cam1": "cam1/00016.jpg",
-        "cam2": "cam2/00016.jpg"
+        "left": "16_left_rgb.png",
+        "right": "16_right_rgb.png"
       },
       {
-        "cam1": "cam1/00017.jpg",
-        "cam2": "cam2/00017.jpg"
+        "left": "17_left_rgb.png",
+        "right": "17_right_rgb.png"
       },
       {
-        "cam1": "cam1/00018.jpg",
-        "cam2": "cam2/00018.jpg"
+        "left": "18_left_rgb.png",
+        "right": "18_right_rgb.png"
       },
       {
-        "cam1": "cam1/00019.jpg",
-        "cam2": "cam2/00019.jpg"
+        "left": "19_left_rgb.png",
+        "right": "19_right_rgb.png"
       },
       {
-        "cam1": "cam1/00020.jpg",
-        "cam2": "cam2/00020.jpg"
+        "left": "20_left_rgb.png",
+        "right": "20_right_rgb.png"
       },
       {
-        "cam1": "cam1/00021.jpg",
-        "cam2": "cam2/00021.jpg"
+        "left": "21_left_rgb.png",
+        "right": "21_right_rgb.png"
       },
       {
-        "cam1": "cam1/00022.jpg",
-        "cam2": "cam2/00022.jpg"
+        "left": "22_left_rgb.png",
+        "right": "22_right_rgb.png"
       },
       {
-        "cam1": "cam1/00023.jpg",
-        "cam2": "cam2/00023.jpg"
+        "left": "23_left_rgb.png",
+        "right": "23_right_rgb.png"
       },
       {
-        "cam1": "cam1/00024.jpg",
-        "cam2": "cam2/00024.jpg"
+        "left": "24_left_rgb.png",
+        "right": "24_right_rgb.png"
       },
       {
-        "cam1": "cam1/00025.jpg",
-        "cam2": "cam2/00025.jpg"
+        "left": "25_left_rgb.png",
+        "right": "25_right_rgb.png"
       },
       {
-        "cam1": "cam1/00026.jpg",
-        "cam2": "cam2/00026.jpg"
+        "left": "26_left_rgb.png",
+        "right": "26_right_rgb.png"
       },
       {
-        "cam1": "cam1/00027.jpg",
-        "cam2": "cam2/00027.jpg"
+        "left": "27_left_rgb.png",
+        "right": "27_right_rgb.png"
       },
       {
-        "cam1": "cam1/00028.jpg",
-        "cam2": "cam2/00028.jpg"
+        "left": "28_left_rgb.png",
+        "right": "28_right_rgb.png"
       },
       {
-        "cam1": "cam1/00029.jpg",
-        "cam2": "cam2/00029.jpg"
+        "left": "29_left_rgb.png",
+        "right": "29_right_rgb.png"
+      },
+      {
+        "left": "30_left_rgb.png",
+        "right": "30_right_rgb.png"
+      },
+      {
+        "left": "31_left_rgb.png",
+        "right": "31_right_rgb.png"
+      },
+      {
+        "left": "32_left_rgb.png",
+        "right": "32_right_rgb.png"
+      },
+      {
+        "left": "33_left_rgb.png",
+        "right": "33_right_rgb.png"
+      },
+      {
+        "left": "34_left_rgb.png",
+        "right": "34_right_rgb.png"
+      },
+      {
+        "left": "35_left_rgb.png",
+        "right": "35_right_rgb.png"
+      },
+      {
+        "left": "36_left_rgb.png",
+        "right": "36_right_rgb.png"
+      },
+      {
+        "left": "37_left_rgb.png",
+        "right": "37_right_rgb.png"
+      },
+      {
+        "left": "38_left_rgb.png",
+        "right": "38_right_rgb.png"
+      },
+      {
+        "left": "39_left_rgb.png",
+        "right": "39_right_rgb.png"
+      },
+      {
+        "left": "40_left_rgb.png",
+        "right": "40_right_rgb.png"
+      },
+      {
+        "left": "41_left_rgb.png",
+        "right": "41_right_rgb.png"
+      },
+      {
+        "left": "42_left_rgb.png",
+        "right": "42_right_rgb.png"
+      },
+      {
+        "left": "43_left_rgb.png",
+        "right": "43_right_rgb.png"
+      },
+      {
+        "left": "44_left_rgb.png",
+        "right": "44_right_rgb.png"
+      },
+      {
+        "left": "45_left_rgb.png",
+        "right": "45_right_rgb.png"
+      },
+      {
+        "left": "46_left_rgb.png",
+        "right": "46_right_rgb.png"
+      },
+      {
+        "left": "47_left_rgb.png",
+        "right": "47_right_rgb.png"
+      },
+      {
+        "left": "48_left_rgb.png",
+        "right": "48_right_rgb.png"
+      },
+      {
+        "left": "49_left_rgb.png",
+        "right": "49_right_rgb.png"
+      },
+      {
+        "left": "50_left_rgb.png",
+        "right": "50_right_rgb.png"
+      },
+      {
+        "left": "51_left_rgb.png",
+        "right": "51_right_rgb.png"
+      },
+      {
+        "left": "52_left_rgb.png",
+        "right": "52_right_rgb.png"
+      },
+      {
+        "left": "53_left_rgb.png",
+        "right": "53_right_rgb.png"
+      },
+      {
+        "left": "54_left_rgb.png",
+        "right": "54_right_rgb.png"
+      },
+      {
+        "left": "55_left_rgb.png",
+        "right": "55_right_rgb.png"
+      },
+      {
+        "left": "56_left_rgb.png",
+        "right": "56_right_rgb.png"
+      },
+      {
+        "left": "57_left_rgb.png",
+        "right": "57_right_rgb.png"
+      },
+      {
+        "left": "58_left_rgb.png",
+        "right": "58_right_rgb.png"
+      },
+      {
+        "left": "59_left_rgb.png",
+        "right": "59_right_rgb.png"
       }
     ]
   }
