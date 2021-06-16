@@ -41,9 +41,6 @@ camera_settings:
     - AcquisitionMode:
       - Continuous
       - ENUM
-    - AcquisitionFrameRateEnable:
-      - False
-      - BOOL
   transport_layer:
     - StreamBufferCountMode:
       - Manual

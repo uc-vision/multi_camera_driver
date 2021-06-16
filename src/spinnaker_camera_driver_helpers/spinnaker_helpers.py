@@ -247,7 +247,7 @@ def trigger(camera):
     execute(nodemap, "TriggerSoftware")
 
 
-def enable_triggering(camera, software_trigger=True, master=True):
+def enable_triggering(camera, free_running=False, master=True):
     nodemap = camera.GetNodeMap()
 
     if master:
@@ -255,8 +255,8 @@ def enable_triggering(camera, software_trigger=True, master=True):
         set_enum(nodemap, "LineMode", "Output")
         set_enum(nodemap, "TriggerSource", "Software")
 
-        if software_trigger:
-            set_enum(nodemap, "TriggerMode", "On")
+        if not free_running:
+          set_enum(nodemap, "TriggerMode", "On")
 
     else:
         set_enum(nodemap, "LineSelector", "Line3")
@@ -323,9 +323,10 @@ def find_cameras(camera_serials):
     serial_dict = camera_list_to_dict(camera_list)
 
     cameras = {}
-    for serial, alias in camera_serials:
+    for serial, alias in camera_serials.items():
         if serial not in serial_dict:
             rospy.logerr(f"Could not find camera {serial} : {alias}")
 
         cameras[alias] = serial_dict[serial]
+
     return cameras

@@ -132,7 +132,7 @@ class RawPublisher(rospy.SubscribeListener):
 
 
 class ImagePublisher(rospy.SubscribeListener):
-    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96):
+    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96, preview_sizes={}):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
@@ -143,6 +143,8 @@ class ImagePublisher(rospy.SubscribeListener):
 
         self.name = name
         self.peers = {}
+
+        self.preview_sizes = preview_sizes
 
         self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
                                              Image, subscriber_listener=self, queue_size=queue_size)
@@ -209,9 +211,11 @@ class ImagePublisher(rospy.SubscribeListener):
         else:
             assert False, f"TODO: implement conversion for {self.raw_encoding}"
 
-        preview_image = Lazy(make_preview, color_image, 400)
-        medium_image = Lazy(make_preview, color_image, 1200)
-        centre_image = Lazy(make_crop, color_image, 1200)
+        display_size = self.preview_sizes.get('display', 1200)
+
+        preview_image = Lazy(make_preview, color_image, self.preview_sizes.get('preview', 400))
+        medium_image = Lazy(make_preview, color_image, display_size)
+        centre_image = Lazy(make_crop, color_image, display_size)
 
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(

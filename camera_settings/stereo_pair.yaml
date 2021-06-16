@@ -38,9 +38,11 @@ camera_settings:
     - AcquisitionMode:
       - Continuous
       - ENUM
-    - AcquisitionFrameRateEnable:
-      - False
-      - BOOL
+
+    - AcquisitionFrameRate:
+      - 16
+      - FLOAT
+      
     - WhiteBalanceAutoProfile:
       - "Outdoor"
       - ENUM
@@ -49,7 +51,7 @@ camera_settings:
       - Manual
       - ENUM
     - StreamBufferCountManual:
-      - 1
+      - 8
       - INT
 
     - StreamBufferHandlingMode:
