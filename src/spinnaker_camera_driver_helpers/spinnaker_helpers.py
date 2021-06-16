@@ -247,13 +247,17 @@ def trigger(camera):
     execute(nodemap, "TriggerSoftware")
 
 
-def enable_triggering(camera, master=True):
+def enable_triggering(camera, software_trigger=True, master=True):
     nodemap = camera.GetNodeMap()
 
     if master:
         set_enum(nodemap, "LineSelector", "Line2")
         set_enum(nodemap, "LineMode", "Output")
         set_enum(nodemap, "TriggerSource", "Software")
+
+        if software_trigger:
+            set_enum(nodemap, "TriggerMode", "On")
+
     else:
         set_enum(nodemap, "LineSelector", "Line3")
         set_enum(nodemap, "TriggerSource", "Line3")
@@ -261,8 +265,7 @@ def enable_triggering(camera, master=True):
         set_enum(nodemap, "LineMode", "Input")
         set_enum(nodemap, "TriggerOverlap", "ReadOut")
         set_enum(nodemap, "TriggerActivation", "RisingEdge")
-
-    set_enum(nodemap, "TriggerMode", "On")
+        set_enum(nodemap, "TriggerMode", "On")
 
     # set_bool(nodemap, "DeviceReset", True)
 
@@ -302,11 +305,27 @@ def get_camera_info(camera):
     return dict(DeviceCurrentSpeed = get_enum(d_node_map, "DeviceCurrentSpeed"))
 
 
+def get_camera_serial(cam):
+    nodemap_tldevice = cam.GetTLDeviceNodeMap()
+    node_device_serial_number = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
+    device_serial_number = node_device_serial_number.GetValue()
+    return int(device_serial_number)
+
+
 def camera_list_to_dict(camera_list):
     camera_dict = {}
     for cam in camera_list:
-        nodemap_tldevice = cam.GetTLDeviceNodeMap()
-        node_device_serial_number = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
-        device_serial_number = node_device_serial_number.GetValue()
-        camera_dict[int(device_serial_number)] = cam
+        camera_dict[get_camera_serial(cam)] = cam
     return camera_dict
+
+def find_cameras(camera_serials):
+    camera_list = PySpin.System.GetInstance().GetCameras()
+    serial_dict = camera_list_to_dict(camera_list)
+
+    cameras = {}
+    for serial, alias in camera_serials:
+        if serial not in serial_dict:
+            rospy.logerr(f"Could not find camera {serial} : {alias}")
+
+        cameras[alias] = serial_dict[serial]
+    return cameras
