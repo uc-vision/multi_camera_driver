@@ -1,16 +1,13 @@
 camera_aliases:
-  19423933: left
-  20068364: right
+  20068364: left
+  19423933: right
     
-
 master: 20068364
 
 stereo_pairs:
   stereo1:
     - left
     - right
-
-encoding: "bayer_bggr8"
 
 camera_settings:
   device:
@@ -20,14 +17,6 @@ camera_settings:
     - SensorShutterMode:
       - Rolling
       - ENUM
-
-    - ReverseY:
-      - True
-      - BOOL
-    - ReverseX:
-      - True
-      - BOOL   
-      
     - PixelFormat:
       - BayerRG8
       - ENUM
@@ -38,14 +27,13 @@ camera_settings:
     - AcquisitionMode:
       - Continuous
       - ENUM
-
-    - AcquisitionFrameRate:
-      - 16
-      - FLOAT
-      
     - WhiteBalanceAutoProfile:
       - "Outdoor"
       - ENUM
+    - LightingMode:
+      - "Backlight"
+      - ENUM
+      
   transport_layer:
     - StreamBufferCountMode:
       - Manual

@@ -1,16 +1,16 @@
 camera_aliases:
-  19195147: cam1
-  19280415: cam2
+  19423933: left
+  20068364: right
+    
 
-master: 19195147
+master: 20068364
 
 stereo_pairs:
   stereo1:
-    - cam1
-    - cam2
+    - left
+    - right
 
 encoding: "bayer_bggr8"
-
 
 camera_settings:
   device:
@@ -20,6 +20,14 @@ camera_settings:
     - SensorShutterMode:
       - Rolling
       - ENUM
+
+    - ReverseY:
+      - True
+      - BOOL
+    - ReverseX:
+      - True
+      - BOOL   
+      
     - PixelFormat:
       - BayerRG8
       - ENUM
@@ -30,15 +38,15 @@ camera_settings:
     - AcquisitionMode:
       - Continuous
       - ENUM
-    - AcquisitionFrameRateEnable:
-      - False
-      - BOOL
+    - WhiteBalanceAutoProfile:
+      - "Outdoor"
+      - ENUM
   transport_layer:
     - StreamBufferCountMode:
       - Manual
       - ENUM
     - StreamBufferCountManual:
-      - 1
+      - 8
       - INT
 
     - StreamBufferHandlingMode:
