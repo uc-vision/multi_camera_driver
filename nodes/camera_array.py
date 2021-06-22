@@ -224,7 +224,6 @@ class CameraArrayNode(object):
             rospy.loginfo(f"set_property: {key} {value} {e} ")
 
 
-
     def set_config_properties(self, config):
         for k, v in config.items():
             setter = property_setters.get(k, None) or delayed_setters.get(k, None)
@@ -413,12 +412,14 @@ class CameraArrayNode(object):
         gc.collect()
 
         rospy.loginfo("Stopping cameras")
+
+        # Why are we doing this here?
+        # Otherwise the camera can't be examined in spinview (trigger mode etc.)
         for camera in self.camera_dict.values():
             spinnaker_helpers.load_defaults(camera)
-            # Why are we doing this here?
-            # Otherwise the camera can't be examined in spinview (trigger mode etc.)
-
             camera.DeInit()
+            
+
         del camera
         del self.camera_dict
         gc.collect()

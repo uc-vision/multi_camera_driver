@@ -247,9 +247,7 @@ class AsyncPublisher(object):
         self.publisher = publisher
 
         self.queue = Queue(queue_size)
-        self.thread = Thread(target=publisher_worker,
-                             args=(self.queue, self.publisher))
-
+        self.thread = Thread(target=publisher_worker, args=(self.queue, self.publisher))
         self.thread.start()
 
     def publish(self, image, timestamp):
@@ -294,7 +292,6 @@ def load_calibrations(namespace, calibration_file):
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
     return camera_calibrations
-
 
 def publish_extrinsics(parent_frame, cameras):
 
