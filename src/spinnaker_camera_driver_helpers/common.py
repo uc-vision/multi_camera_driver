@@ -196,7 +196,7 @@ class ImagePublisher(rospy.SubscribeListener):
 
     def publish(self, image, timestamp, cam_info=None):
 
-        header = Header(frame_id=self.name, stamp=timestamp, seq=self.seq + 1)
+        header = Header(frame_id=rospy.get_namespace() + self.name, stamp=timestamp, seq=self.seq + 1)
 
         cam_info = cam_info or CameraInfo()
         cam_info.header = header
@@ -280,7 +280,6 @@ class CalibratedPublisher(object):
 def load_calibrations(namespace, calibration_file):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
-
     camera_calibrations = {}
     try:
         if calibration_file is not None:
@@ -293,12 +292,12 @@ def load_calibrations(namespace, calibration_file):
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
     return camera_calibrations
 
-def publish_extrinsics(parent_frame, cameras):
+def publish_extrinsics(namespace, cameras):
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-    msgs = [conversions.transform_msg(camera.parent_to_camera, parent_frame, child_id, stamp)
+    msgs = [conversions.transform_msg(camera.parent_to_camera, namespace, f"{namespace}/{child_id}", stamp)
             for child_id, camera in cameras.items()]
 
     broadcaster.sendTransform(msgs)

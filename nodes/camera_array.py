@@ -151,8 +151,6 @@ def set_binning(camera, value):
     spinnaker_helpers.try_set_int(node_map, "Height", h)
 
 
-
-
 def set_internal(camera, value):
     """Set internal setting (no camera setting)"""
     pass
@@ -436,7 +434,7 @@ def main():
     calibration_file = rospy.get_param("~calibration_file", None)
    
     config = load_config(config_file)
-    camera_calibrations = load_calibrations(rospy.get_namespace(), calibration_file)
+    camera_calibrations = load_calibrations(rospy.get_namespace()[:-1], calibration_file)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
