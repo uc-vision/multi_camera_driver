@@ -277,7 +277,7 @@ class CalibratedPublisher(object):
         self.publisher.stop()
 
 
-def load_calibrations(namespace, calibration_file):
+def load_calibrations(calibration_file):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
     camera_calibrations = {}
@@ -285,21 +285,17 @@ def load_calibrations(namespace, calibration_file):
         if calibration_file is not None:
             calib = json.load_json(calibration_file)
             camera_calibrations = import_rig(calib)
-
-            broadcaster = publish_extrinsics(
-                namespace, camera_calibrations)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
     return camera_calibrations
 
-def publish_extrinsics(namespace, cameras):
+def publish_extrinsics(namespace, transforms):
 
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-    msgs = [conversions.transform_msg(camera.parent_to_camera, namespace, f"{namespace}/{child_id}", stamp)
-            for child_id, camera in cameras.items()]
+    msgs = [conversions.transform_msg(parent_to_cam, namespace, f"{namespace}/{child_id}", stamp)
+            for child_id, parent_to_cam in transforms.items()]
 
     broadcaster.sendTransform(msgs)
-
     return broadcaster

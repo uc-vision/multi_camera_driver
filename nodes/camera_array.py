@@ -12,6 +12,7 @@ LICENSE file.
 from __future__ import print_function
 
 from camera_geometry.json import load_json
+import numpy as np
 
 import cv_bridge
 import cv2
@@ -267,6 +268,15 @@ class CameraArrayNode(object):
             camera.EndAcquisition()
         self.started = False
 
+    def publish_extrinsics(self):
+      found = {k:camera.parent_to_camera 
+        for k, camera in  self.calibrations.items()}
+
+      extrinsics = {alias:found.get(alias, np.eye(4))
+        for alias in self.camera_dict.keys()}
+
+      namespace = rospy.get_namespace().strip('/')
+      self.static_broadcaster = publish_extrinsics(namespace, extrinsics)
 
     def initialise(self):
         rospy.loginfo("Initialising cameras")
@@ -275,7 +285,6 @@ class CameraArrayNode(object):
             return
 
         for alias, camera in self.camera_dict.items():
-
             if alias not in self.calibrations:
               rospy.logwarn(f"camera {alias} does not exist in calibrations!")
 
@@ -434,7 +443,7 @@ def main():
     calibration_file = rospy.get_param("~calibration_file", None)
    
     config = load_config(config_file)
-    camera_calibrations = load_calibrations(rospy.get_namespace()[:-1], calibration_file)
+    camera_calibrations = load_calibrations(calibration_file)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
@@ -445,11 +454,12 @@ def main():
         display = rospy.get_param("~display_width", 1200)
     )
 
-
     camera_node = CameraArrayNode(config, camera_calibrations, preview_sizes)
 
     try:
-        camera_node.initialise()       
+        camera_node.initialise()  
+        camera_node.publish_extrinsics()
+
         camera_node.capture()
 
     except KeyboardInterrupt:
