@@ -62,6 +62,7 @@ class ImageEventHandler(ImageEvent):
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
 
+
     def stop(self):
         self.stamp = None
         self.publisher.stop()
@@ -78,6 +79,11 @@ class SpinnakerPublisher(object):
 
             image.Release()
             self.publisher.publish(image_data, stamp)
+
+    def set_option(self, key, value):
+        self.publisher.set_option(key, value)
+
+
 
     def stop(self):
         self.publisher.stop()
@@ -222,19 +228,34 @@ class CameraArrayNode(object):
         except PySpin.SpinnakerException as e:
             rospy.loginfo(f"set_property: {key} {value} {e} ")
 
-
+    
+    def set_quality(self, quality):
+        rospy.loginfo(f"set jpeg quality at {quality}")
+        for handler in self.event_handlers:
+            handler.publisher.set_option('quality', quality)
+    
     def set_config_properties(self, config):
-        for k, v in config.items():
-            setter = property_setters.get(k, None) or delayed_setters.get(k, None)
-            if setter is None:
-                return
+        for k, v in config.items():           
+            if k == "groups":
+                pass
+            elif k == "jpeg_quality":
+                self.set_quality(v)
+            else:
+                self.set_camera_property(k, v)
+            
+    
+    def set_camera_property(self, k, v):
+        setter = property_setters.get(k, None) or delayed_setters.get(k, None)       
+        if setter is None:
+            rospy.logerr(f"reconfigure: no property {k}")
+            return
 
-            if self.config.get(k, None) != v and setter is not None:
-                if self.started and k in delayed_setters:
-                    self.pending_config[k] = v   
-                else:
-                    self.set_property(k, v, setter)
-                    self.config[k] = v
+        if self.config.get(k, None) != v and setter is not None:
+            if self.started and k in delayed_setters:
+                self.pending_config[k] = v   
+            else:
+                self.set_property(k, v, setter)
+                self.config[k] = v
 
 
       

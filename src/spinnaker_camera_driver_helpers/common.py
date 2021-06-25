@@ -30,20 +30,19 @@ from cv_bridge import CvBridge
 from queue import Queue
 
 
-def gpu_encoder():
-    try:
-        from nvjpeg import NvJpeg
-        return NvJpeg()
-    except ModuleNotFoundError:
-        rospy.logwarn(f"nvjpeg not found, falling back on turbojpeg encoder")
+# def gpu_encoder():
+#     try:
+#         from nvjpeg import NvJpeg
+#         return NvJpeg()
+#     except ModuleNotFoundError:
+#         rospy.logwarn(f"nvjpeg not found, falling back on turbojpeg encoder")
 
 
 def jpeg_encoder():
-    encoder = gpu_encoder()
-
-    if encoder is None:
-        from turbojpeg import TurboJPEG
-        encoder = TurboJPEG()
+    # encoder = gpu_encoder()
+    # if encoder is None:
+    from turbojpeg import TurboJPEG
+    encoder = TurboJPEG()
 
     return encoder
 
@@ -132,7 +131,7 @@ class RawPublisher(rospy.SubscribeListener):
 
 
 class ImagePublisher(rospy.SubscribeListener):
-    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=96, preview_sizes={}):
+    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=90, preview_sizes={}):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
@@ -183,6 +182,12 @@ class ImagePublisher(rospy.SubscribeListener):
             image_msg.header = header
             publisher.publish(image_msg)
 
+    def set_option(self, key, value):
+        if key == "quality":
+            self.quality = int(value)
+        else:
+            rospy.logerr(f"ImagePublisher: unhandled publisher option key {key}")
+
     def publish_compressed(self, publisher, header, lazy_image):
         if self.peers.get(publisher.name, 0) > 0:
             compressed = self.jpeg.encode(lazy_image.get(), self.quality)
@@ -193,6 +198,9 @@ class ImagePublisher(rospy.SubscribeListener):
             image_msg.data = compressed
 
             publisher.publish(image_msg)
+    
+
+
 
     def publish(self, image, timestamp, cam_info=None):
 
@@ -253,6 +261,11 @@ class AsyncPublisher(object):
     def publish(self, image, timestamp):
         self.queue.put((image, timestamp))
 
+    def set_option(self, key, value):
+        self.publisher.set_option(key, value)
+
+
+
     def stop(self):
         self.queue.put(None)
 
@@ -272,6 +285,13 @@ class CalibratedPublisher(object):
             cam_info = camera_info_msg(calibration)
 
         self.publisher.publish(image, timestamp, cam_info)
+
+
+    def set_option(self, key, value):
+        if key=='calibration':
+            self.calibration = value
+
+        self.publisher.set_option(key, value)
 
     def stop(self):
         self.publisher.stop()
