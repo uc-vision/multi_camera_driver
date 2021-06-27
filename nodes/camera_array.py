@@ -424,7 +424,7 @@ class CameraArrayNode(object):
     def publish_camera(self, camera_name, camera):
       calibration = self.calibrations.get(camera_name, None)
       
-      publisher = CalibratedPublisher(camera_name, self.jpeg_encoder, calibration=calibration, 
+      publisher = CalibratedPublisher(camera_name, jpeg_encoder=self.jpeg_encoder, calibration=calibration, 
         raw_encoding=self.raw_encoding, preview_sizes=self.preview_sizes)
 
       publisher = SpinnakerPublisher(publisher)
