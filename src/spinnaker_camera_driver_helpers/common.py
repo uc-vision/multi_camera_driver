@@ -181,9 +181,9 @@ class ImagePublisher(rospy.SubscribeListener):
         self.info_publisher = self.publisher(CameraInfo, "camera_info")
         self.seq = 0
 
-    def publisher(self, topic):
+    def publisher(self, type, topic):
         rospy.Publisher(f"{self.name}/{topic}",
-              Image, subscriber_listener=self, queue_size=self.queue_size)
+              type, subscriber_listener=self, queue_size=self.queue_size)
 
 
     def peer_subscribe(self, topic_name, topic_publish, peer_publish):
