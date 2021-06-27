@@ -129,29 +129,35 @@ def jpeg_encoder(use_gpu = True):
 
 
 class AsyncEncoder(object):
-  def __init__(self, queue_size):
+  def __init__(self, queue_size, threads=1):
 
     self.queue = Queue(queue_size)
-    self.thread = Thread(target=self.encode_thread, args=()) 
+    self.threads = [Thread(target=self.encode_thread, args=()) 
+      for _ in range(threads)]
 
+    self.encoder = jpeg_encoder(True)
+
+    for thread in self.threads:
+      thread.start()
 
   def encode_thread(self):
-    encoder = jpeg_encoder()
-
     item = self.queue.get()
     while item is not None:
         image, quality, f = item
         
-        result = encoder.encode(image, quality)
+        result = self.encoder.encode(image, quality)
         f(result)
         
         item = self.queue.get()
 
   def encode_then(self, image, f, quality=90):
     input = (image, quality, f)
-    self.queue.push(input)
+    self.queue.put(input)
 
-
+  def stop(self):
+    self.queue.put(None)
+    for thread in self.threads:
+      thread.join()
 
 class ImagePublisher(rospy.SubscribeListener):
     def __init__(self, name, jpeg_encoder, raw_encoding="passthrough", queue_size=4, quality=90, preview_sizes={}):
@@ -182,7 +188,7 @@ class ImagePublisher(rospy.SubscribeListener):
         self.seq = 0
 
     def publisher(self, type, topic):
-        rospy.Publisher(f"{self.name}/{topic}",
+        return rospy.Publisher(f"{self.name}/{topic}",
               type, subscriber_listener=self, queue_size=self.queue_size)
 
 
@@ -217,7 +223,7 @@ class ImagePublisher(rospy.SubscribeListener):
           publisher.publish(image_msg)
 
         if self.peers.get(publisher.name, 0) > 0:
-            self.encoder.encode_then(
+            self.jpeg_encoder.encode_then(
                 lazy_image.get(), do_publish, quality=self.quality)
 
 

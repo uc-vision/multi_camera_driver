@@ -85,7 +85,6 @@ class SpinnakerPublisher(object):
         self.publisher.set_option(key, value)
 
 
-
     def stop(self):
         self.publisher.stop()
 
@@ -286,6 +285,12 @@ class CameraArrayNode(object):
         self.started = True
 
     def stop(self):
+      for handler in self.event_handlers:
+        handler.stop()
+
+      self.jpeg_encoder.stop()
+
+      if self.started:
         rospy.loginfo("End acquisition")
         for camera in self.initialised:
             camera.EndAcquisition()
