@@ -417,8 +417,8 @@ class CameraArrayNode(object):
 
 
     @cached_property
-    def jpeg_encoder():
-      return AsyncEncoder
+    def jpeg_encoder(self):
+      return AsyncEncoder(queue_size=12)
 
 
     def publish_camera(self, camera_name, camera):

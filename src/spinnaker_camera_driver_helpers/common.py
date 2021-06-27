@@ -129,9 +129,9 @@ def jpeg_encoder(use_gpu = True):
 
 
 class AsyncEncoder(object):
-  def __init__(self, size, jpeg):
+  def __init__(self, queue_size):
 
-    self.queue = Queue(size)
+    self.queue = Queue(queue_size)
     self.thread = Thread(target=self.encode_thread, args=()) 
 
 
