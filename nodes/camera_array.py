@@ -39,6 +39,7 @@ from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
 import tf2_ros
 
 import gc
+from cached_property import cached_property
 
 
 ImageEvent = getattr(PySpin, 'ImageEventHandler', None) or getattr(PySpin, 'ImageEvent')
@@ -201,6 +202,7 @@ class CameraArrayNode(object):
         
         self.event_handlers = []
         self.initialised = []
+        
         self.cameras_initialised = False
         self.started = False
 
@@ -414,10 +416,15 @@ class CameraArrayNode(object):
           rospy.logerr("Could not initialise camera {}: {}".format(camera_name, str(e)))
 
 
+    @cached_property
+    def jpeg_encoder():
+      return AsyncEncoder
+
+
     def publish_camera(self, camera_name, camera):
       calibration = self.calibrations.get(camera_name, None)
       
-      publisher = CalibratedPublisher(camera_name, calibration=calibration, 
+      publisher = CalibratedPublisher(camera_name, self.jpeg_encoder, calibration=calibration, 
         raw_encoding=self.raw_encoding, preview_sizes=self.preview_sizes)
 
       publisher = SpinnakerPublisher(publisher)

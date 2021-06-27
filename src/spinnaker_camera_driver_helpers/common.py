@@ -30,21 +30,6 @@ from cv_bridge import CvBridge
 from queue import Queue
 
 
-# def gpu_encoder():
-#     try:
-#         from nvjpeg import NvJpeg
-#         return NvJpeg()
-#     except ModuleNotFoundError:
-#         rospy.logwarn(f"nvjpeg not found, falling back on turbojpeg encoder")
-
-
-def jpeg_encoder():
-    # encoder = gpu_encoder()
-    # if encoder is None:
-    from turbojpeg import TurboJPEG
-    encoder = TurboJPEG()
-
-    return encoder
 
 
 def load_config(config_file):
@@ -130,42 +115,76 @@ class RawPublisher(rospy.SubscribeListener):
         pass
 
 
+
+def jpeg_encoder(use_gpu = True):
+    if use_gpu:
+      try:
+          from nvjpeg import NvJpeg
+          return NvJpeg()
+      except ModuleNotFoundError:
+          rospy.logwarn(f"nvjpeg not found, falling back on cpu encoder")
+
+    from turbojpeg import TurboJPEG
+    return TurboJPEG()
+
+
+class AsyncEncoder(object):
+  def __init__(self, size, jpeg):
+
+    self.queue = Queue(size)
+    self.thread = Thread(target=self.encode_thread, args=()) 
+
+
+  def encode_thread(self):
+    encoder = jpeg_encoder()
+
+    item = self.queue.get()
+    while item is not None:
+        image, quality, f = item
+        
+        result = encoder.encode(image, quality)
+        f(result)
+        
+        item = self.queue.get()
+
+  def encode_then(self, image, f, quality=90):
+    input = (image, quality, f)
+    self.queue.push(input)
+
+
+
 class ImagePublisher(rospy.SubscribeListener):
-    def __init__(self, name, raw_encoding="passthrough", queue_size=4, quality=90, preview_sizes={}):
+    def __init__(self, name, jpeg_encoder, raw_encoding="passthrough", queue_size=4, quality=90, preview_sizes={}):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
         self.quality = quality
-        self.jpeg = jpeg_encoder()
+
+        self.jpeg_encoder = jpeg_encoder
 
         self.raw_encoding = raw_encoding
+        self.queue_size = queue_size
 
         self.name = name
         self.peers = {}
 
         self.preview_sizes = preview_sizes
 
-        self.raw_publisher = rospy.Publisher("{}/{}".format(self.name, "image_raw"),
-                                             Image, subscriber_listener=self, queue_size=queue_size)
+        self.raw_publisher = self.publisher(Image, "image_raw")
+        self.color_publisher = self.publisher(Image, "image_color")
+        self.compressed_publisher = self.publisher(CompressedImage, "compressed")
 
-        self.color_publisher = rospy.Publisher("{}/{}".format(self.name, "image_color"),
-                                               Image, subscriber_listener=self, queue_size=queue_size)
+        self.medium_publisher = self.publisher(CompressedImage, "medium/compressed")
+        self.preview_publisher = self.publisher(CompressedImage, "preview/compressed")
+        self.centre_publisher = self.publisher(CompressedImage, "centre/compressed")
 
-        self.compressed_publisher = rospy.Publisher("{}/{}".format(self.name, "compressed"),
-                                                    CompressedImage, subscriber_listener=self, queue_size=queue_size)
-
-        self.medium_publisher = rospy.Publisher("{}/{}".format(self.name, "medium/compressed"),
-                                                CompressedImage, subscriber_listener=self, queue_size=queue_size)
-
-        self.preview_publisher = rospy.Publisher("{}/{}".format(self.name, "preview/compressed"),
-                                                 CompressedImage, subscriber_listener=self, queue_size=queue_size)
-
-        self.centre_publisher = rospy.Publisher("{}/{}".format(self.name, "centre/compressed"),
-                                                CompressedImage, subscriber_listener=self, queue_size=queue_size)
-
-        self.info_publisher = rospy.Publisher(
-            "{}/camera_info".format(self.name), CameraInfo, queue_size=queue_size)
+        self.info_publisher = self.publisher(CameraInfo, "camera_info")
         self.seq = 0
+
+    def publisher(self, topic):
+        rospy.Publisher(f"{self.name}/{topic}",
+              Image, subscriber_listener=self, queue_size=self.queue_size)
+
 
     def peer_subscribe(self, topic_name, topic_publish, peer_publish):
         peers = self.peers.get(topic_name, 0) + 1
@@ -188,17 +207,18 @@ class ImagePublisher(rospy.SubscribeListener):
         else:
             rospy.logerr(f"ImagePublisher: unhandled publisher option key {key}")
 
-    def publish_compressed(self, publisher, header, lazy_image):
+
+    def publish_encode(self, publisher, header, lazy_image):
+        def do_publish(compressed):
+          image_msg = CompressedImage()
+          image_msg.header = header
+          image_msg.format = "jpeg"
+          image_msg.data = compressed          
+          publisher.publish(image_msg)
+
         if self.peers.get(publisher.name, 0) > 0:
-            compressed = self.jpeg.encode(lazy_image.get(), self.quality)
-
-            image_msg = CompressedImage()
-            image_msg.header = header
-            image_msg.format = "jpeg"
-            image_msg.data = compressed
-
-            publisher.publish(image_msg)
-    
+            self.encoder.encode_then(
+                lazy_image.get(), do_publish, quality=self.quality)
 
 
 
@@ -231,10 +251,10 @@ class ImagePublisher(rospy.SubscribeListener):
         self.publish_image(self.color_publisher, header,
                            color_image, encoding="bgr8")
 
-        self.publish_compressed(self.compressed_publisher, header, color_image)
-        self.publish_compressed(self.medium_publisher, header, medium_image)
-        self.publish_compressed(self.centre_publisher, header, centre_image)
-        self.publish_compressed(self.preview_publisher, header, preview_image)
+        self.publish_encode(self.compressed_publisher, header, color_image)
+        self.publish_encode(self.medium_publisher, header, medium_image)
+        self.publish_encode(self.centre_publisher, header, centre_image)
+        self.publish_encode(self.preview_publisher, header, preview_image)
 
         self.seq += 1
 
@@ -263,8 +283,6 @@ class AsyncPublisher(object):
 
     def set_option(self, key, value):
         self.publisher.set_option(key, value)
-
-
 
     def stop(self):
         self.queue.put(None)
