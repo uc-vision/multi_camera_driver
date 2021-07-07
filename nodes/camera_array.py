@@ -129,6 +129,12 @@ def set_grey_value(camera, value):
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
 
+def set_black_level(camera, value):
+    """Set the target grey value. If 0 set to auto"""
+    node_map = camera.GetNodeMap()
+    return spinnaker_helpers.try_set_float(node_map, "BlackLevel", value)
+
+
 def set_ev_comp(camera, value):
     """Set the EV Compensation"""
     node_map = camera.GetNodeMap()
@@ -167,6 +173,7 @@ property_setters = dict(
     balance_ratio = set_balance_ratio,
     gain = set_gain,
     grey_value = set_grey_value,
+    black_level = set_black_level,
     ev_comp = set_ev_comp,
     gamma = set_gamma,
     max_framerate = set_internal

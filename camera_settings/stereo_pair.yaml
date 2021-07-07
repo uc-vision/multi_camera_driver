@@ -39,7 +39,7 @@ camera_settings:
       - Manual
       - ENUM
     - StreamBufferCountManual:
-      - 8
+      - 1
       - INT
 
     - StreamBufferHandlingMode:

@@ -2,8 +2,6 @@ import tf2_ros
 import yaml
 
 import rospy
-import message_filters
-
 from functools import partial
 
 import cv2
@@ -12,22 +10,15 @@ from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CompressedImage
 from sensor_msgs.msg import CameraInfo
-from cares_msgs.msg import StereoCameraInfo
 
 import camera_geometry_ros.conversions as conversions
 from camera_geometry.calib import import_rig
-from camera_geometry import json, transforms
-from camera_geometry.camera_models import rectify_pair
+from camera_geometry import json
 
 from camera_geometry_ros.conversions import camera_info_msg
-from camera_geometry_ros.stereo_pair import stereo_info_msg
-
-from threading import Thread
-
-
-from cv_bridge import CvBridge
 
 from queue import Queue
+from threading import Thread
 
 
 
@@ -219,7 +210,7 @@ class ImagePublisher(rospy.SubscribeListener):
           image_msg = CompressedImage()
           image_msg.header = header
           image_msg.format = "jpeg"
-          image_msg.data = compressed          
+          image_msg.data = compressed
           publisher.publish(image_msg)
 
         if self.peers.get(publisher.name, 0) > 0:
