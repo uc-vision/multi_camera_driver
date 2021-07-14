@@ -35,7 +35,7 @@ import traceback
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.common import *
-from spinnaker_camera_driver_ros.cfg import CameraArraySettingsConfig
+from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 import tf2_ros
 
 import gc
@@ -212,7 +212,7 @@ class CameraArrayNode(object):
         self.cameras_initialised = False
         self.started = False
 
-        self.reconfigure_srv = Server(CameraArraySettingsConfig, self.reconfigure_callback)
+        self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
         self.timeout = config.get("timeout", 1.0)
       
 
