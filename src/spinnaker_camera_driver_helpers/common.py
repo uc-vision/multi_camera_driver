@@ -151,7 +151,7 @@ class AsyncEncoder(object):
       thread.join()
 
 class ImagePublisher(rospy.SubscribeListener):
-    def __init__(self, name, jpeg_encoder, raw_encoding="passthrough", queue_size=4, quality=90, preview_sizes={}):
+    def __init__(self, name, jpeg_encoder, raw_encoding="passthrough", queue_size=4, quality=90, preview_size=400):
         super(ImagePublisher, self).__init__()
 
         self.bridge = CvBridge()
@@ -165,15 +165,13 @@ class ImagePublisher(rospy.SubscribeListener):
         self.name = name
         self.peers = {}
 
-        self.preview_sizes = preview_sizes
+        self.preview_size = 400
 
         self.raw_publisher = self.publisher(Image, "image_raw")
         self.color_publisher = self.publisher(Image, "image_color")
         self.compressed_publisher = self.publisher(CompressedImage, "compressed")
 
-        self.medium_publisher = self.publisher(CompressedImage, "medium/compressed")
         self.preview_publisher = self.publisher(CompressedImage, "preview/compressed")
-        self.centre_publisher = self.publisher(CompressedImage, "centre/compressed")
 
         self.info_publisher = self.publisher(CameraInfo, "camera_info")
         self.seq = 0
@@ -236,11 +234,7 @@ class ImagePublisher(rospy.SubscribeListener):
         else:
             assert False, f"TODO: implement conversion for {self.raw_encoding}"
 
-        display_size = self.preview_sizes.get('display', 1200)
-
-        preview_image = Lazy(make_preview, color_image, self.preview_sizes.get('preview', 400))
-        medium_image = Lazy(make_preview, color_image, display_size)
-        centre_image = Lazy(make_crop, color_image, display_size)
+        preview_image = Lazy(make_preview, color_image, self.preview_size)
 
         self.info_publisher.publish(cam_info)
         self.publish_image(self.raw_publisher, header, Lazy(
@@ -249,8 +243,6 @@ class ImagePublisher(rospy.SubscribeListener):
                            color_image, encoding="bgr8")
 
         self.publish_encode(self.compressed_publisher, header, color_image)
-        self.publish_encode(self.medium_publisher, header, medium_image)
-        self.publish_encode(self.centre_publisher, header, centre_image)
         self.publish_encode(self.preview_publisher, header, preview_image)
 
         self.seq += 1
