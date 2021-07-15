@@ -69,13 +69,18 @@ class ImageEventHandler(ImageEvent):
         self.publisher.stop()
 
 class SpinnakerPublisher(object):
-    def __init__(self, publisher):
+    def __init__(self, publisher, time_offset):
         self.publisher = publisher
+        self.time_offset = time_offset
 
     def publish(self, image, stamp):
         if image.IsIncomplete():
             rospy.logerr('Image incomplete with image status %d ...' % image.GetImageStatus())
         else:
+            timestamp = image.GetTimeStamp() / 1e9 + self.time_offset
+            frame_id = image.GetFrameID()
+
+            print(frame_id, timestamp - stamp.to_sec())
             image_data = image.GetNDArray()
 
             image.Release()
@@ -416,14 +421,17 @@ class CameraArrayNode(object):
           rospy.loginfo("Initialising: {} {}".format(camera_name, serial.GetValue()))
 
           spinnaker_helpers.set_camera_settings(camera, self.camera_settings)
-          info = spinnaker_helpers.get_camera_info(camera)
 
-          rospy.loginfo("{}: {}".format(camera_name, str(info)))
+          time_offset = spinnaker_helpers.camera_time_offset(camera)
+          rospy.loginfo(f"{camera_name} time offset: {time_offset} (s)")
+
+          info = spinnaker_helpers.get_camera_info(camera)
+          rospy.loginfo(f"{camera_name}: {info}")
 
           if self.master_id is not None:
               spinnaker_helpers.enable_triggering(camera, master=camera_name == self.master_name, free_running=self.free_running)
 
-          return self.publish_camera(camera_name, camera)
+          return self.publish_camera(camera_name, camera, time_offset)
       except PySpin.SpinnakerException as e:
           rospy.logerr("Could not initialise camera {}: {}".format(camera_name, str(e)))
 
@@ -433,13 +441,13 @@ class CameraArrayNode(object):
       return AsyncEncoder(queue_size=12)
 
 
-    def publish_camera(self, camera_name, camera):
+    def publish_camera(self, camera_name, camera, time_offset):
       calibration = self.calibrations.get(camera_name, None)
       
       publisher = CalibratedPublisher(camera_name, jpeg_encoder=self.jpeg_encoder, calibration=calibration, 
         raw_encoding=self.raw_encoding, preview_sizes=self.preview_sizes)
 
-      publisher = SpinnakerPublisher(publisher)
+      publisher = SpinnakerPublisher(publisher, time_offset)
       event_handler = ImageEventHandler(AsyncPublisher(publisher), camera)
 
       if getattr(camera, 'RegisterEvent', None):

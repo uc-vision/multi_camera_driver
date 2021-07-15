@@ -1,7 +1,11 @@
 from __future__ import print_function
+from logging import disable
 
 import PySpin
+import statistics
 import rospy
+
+from disable_gc import disable_gc
 from time import sleep
 
 import gc
@@ -104,10 +108,34 @@ def try_set_int(nodemap, node_name, value):
 
 
 
+@disable_gc
+def camera_time_offset(cam, iters=250):
+    """ Gets timestamp offset in seconds from input camera """
+
+    # This method is required because the timestamp stored in the camera is relative to when it was powered on, so an
+    # offset needs to be applied to get it into epoch time; from tests I've done, this appears to be accurate to ~1e-3
+    # seconds.
+
+    timestamp_offsets = []
+    for i in range(iters):
+        # Latch timestamp. This basically "freezes" the current camera timer into a variable that can be read with
+        # TimestampLatchValue()
+        cam.TimestampLatch.Execute()
+
+        # Compute timestamp offset in seconds; note that timestamp latch value is in nanoseconds
+        timestamp_offset = rospy.get_time() - cam.TimestampLatchValue.GetValue()/1e9
+
+        # Append
+        timestamp_offsets.append(timestamp_offset)
+
+    # Return the median value
+    return statistics.median(timestamp_offsets)
+
+
+
 def activate_image_chunks(nodemap):
     try:
         result = True
-        rospy.logdebug('\n*** CONFIGURING CHUNK DATA ***\n')
 
         # Activate chunk mode
         #
