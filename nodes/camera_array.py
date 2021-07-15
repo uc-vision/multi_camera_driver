@@ -184,7 +184,7 @@ delayed_setters = dict(
 )
 
 class CameraArrayNode(object):
-    def __init__(self, config, calibrations={}, preview_sizes={}):
+    def __init__(self, config, calibrations={}, preview_size=400):
         self.system = PySpin.System.GetInstance()
         assert config is not None
 
@@ -202,7 +202,7 @@ class CameraArrayNode(object):
 
         self.calibrations = calibrations
         self.config = {}
-        self.preview_sizes = preview_sizes
+        self.preview_size = preview_size
 
         self.pending_config = {}
         
@@ -437,7 +437,7 @@ class CameraArrayNode(object):
       calibration = self.calibrations.get(camera_name, None)
       
       publisher = CalibratedPublisher(camera_name, jpeg_encoder=self.jpeg_encoder, calibration=calibration, 
-        raw_encoding=self.raw_encoding, preview_sizes=self.preview_sizes)
+        raw_encoding=self.raw_encoding, preview_size=self.preview_size)
 
       publisher = SpinnakerPublisher(publisher)
       event_handler = ImageEventHandler(AsyncPublisher(publisher), camera)
@@ -489,12 +489,8 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(2)
 
-    preview_sizes = dict(
-        preview = rospy.get_param("~preview_width", 400),
-        display = rospy.get_param("~display_width", 1200)
-    )
-
-    camera_node = CameraArrayNode(config, camera_calibrations, preview_sizes)
+    preview_size = rospy.get_param("~preview_width", 400)
+    camera_node = CameraArrayNode(config, camera_calibrations, preview_size)
 
     try:
         camera_node.initialise()  
