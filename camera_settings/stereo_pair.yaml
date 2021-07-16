@@ -4,6 +4,8 @@ camera_aliases:
     
 master: 20068364
 
+# free_running: True
+
 stereo_pairs:
   stereo1:
     - left
@@ -38,6 +40,7 @@ camera_settings:
     - StreamBufferCountMode:
       - Manual
       - ENUM
+
     - StreamBufferCountManual:
       - 1
       - INT
