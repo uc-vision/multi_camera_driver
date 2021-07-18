@@ -6,7 +6,7 @@ setup_args = generate_distutils_setup(
     package_dir={
         "spinnaker_camera_driver_helpers": 'src/spinnaker_camera_driver_helpers'
     },
-    install_requires=['PySpin', 'yaml', 'camera_geometry_python', 'pyturbojpeg', 'disablegc']
+    install_requires=['PySpin', 'yaml', 'camera_geometry_python', 'pyturbojpeg', 'disable_gc']
 )
 
 setup(**setup_args)

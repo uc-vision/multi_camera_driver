@@ -21,7 +21,7 @@ import traceback
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.common import *
-from spinnaker_camera_driver_helpers.publisher import ImagePublisher
+from spinnaker_camera_driver_helpers.publisher import SyncPublisher, SyncHandler
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
 import gc
@@ -31,7 +31,7 @@ from cached_property import cached_property
 ImageEvent = getattr(PySpin, 'ImageEventHandler', None) or getattr(PySpin, 'ImageEvent')
 
 class ImageEventHandler(ImageEvent):
-    def __init__(self, publisher : ImagePublisher, camera_name, time_offset_sec):
+    def __init__(self, publisher, camera_name, time_offset_sec):
         super(ImageEventHandler, self).__init__()
         self.publisher = publisher
         self.camera_name = camera_name
@@ -39,7 +39,8 @@ class ImageEventHandler(ImageEvent):
 
     def OnImageEvent(self, image):
         try:
-            self.publisher.onImage(self.camera_name, image, self.time_offset_sec)
+            self.publisher.process_camera_image(
+                self.camera_name, image, self.time_offset_sec)
         except:
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
@@ -138,14 +139,12 @@ delayed_setters = dict(
 )
 
 class CameraArrayNode(object):
-    def __init__(self, config, publisher):
+    def __init__(self, config, handler):
         self.system = PySpin.System.GetInstance()
         assert config is not None
 
-        self.publisher = publisher
-
+        self.handler = handler
         self.camera_settings = config["camera_settings"]
-        self.raw_encoding = config.get("encoding", "bayer_rggb8")
 
         self.camera_serials = config["camera_aliases"] # serial -> alias
         self.master_id = config.get("master", None)   
@@ -167,7 +166,6 @@ class CameraArrayNode(object):
         self.timeout = config.get("timeout", 1.0)
 
               
-
     def get_cam_by_alias(self, alias):
         return self.camera_dict[alias]
 
@@ -189,17 +187,12 @@ class CameraArrayNode(object):
             rospy.loginfo(f"set_property: {key} {value} {e} ")
 
     
-    def set_quality(self, quality):
-        rospy.loginfo(f"set jpeg quality at {quality}")
-        for handler in self.event_handlers:
-            handler.publisher.set_option('quality', quality)
-    
     def set_config_properties(self, config):
         for k, v in config.items():           
             if k == "groups":
                 pass
             elif k == "jpeg_quality":
-                self.publisher.set_quality(v)
+                self.handler.set_quality(v)
             else:
                 self.set_camera_property(k, v)
             
@@ -220,12 +213,11 @@ class CameraArrayNode(object):
 
       
     def reconfigure_callback(self, config, _):
-        if self.cameras_initialised:
-            self.set_config_properties(config)  
-        else:
-            self.pending_config.update(config)  
-
-        return config
+      if self.cameras_initialised:
+          self.set_config_properties(config)  
+      else:
+          self.pending_config.update(config)  
+      return config
 
 
 
@@ -301,7 +293,7 @@ class CameraArrayNode(object):
             self.trigger()           
 
             time = rospy.Time.now()
-            rate = self.config.get("max_framerate", math.inf)
+            rate = 0 # self.config.get("max_framerate", math.inf)
 
             if rate > 0:
               rospy.sleep(1.0/rate)
@@ -350,7 +342,7 @@ class CameraArrayNode(object):
 
 
     def publish_camera(self, camera_name, camera, time_offset_sec):      
-      event_handler = ImageEventHandler(self.publisher, camera_name, time_offset_sec)
+      event_handler = ImageEventHandler(self.handler, camera_name, time_offset_sec)
 
       if getattr(camera, 'RegisterEvent', None):
           camera.RegisterEvent(event_handler)
@@ -397,9 +389,17 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(2)
 
-    preview_size = rospy.get_param("~preview_width", 400)
-    publisher = ImagePublisher(camera_names, camera_calibrations, preview_size)
-    camera_node = CameraArrayNode(config, publisher)
+    publisher = SyncPublisher(camera_names, camera_calibrations, 
+        preview_size = rospy.get_param("~preview_width", 400),
+        encoding     = config.get("encoding", "bayer_rggb8")
+    )
+
+    handler = SyncHandler(publisher, camera_names, 
+      sync_threshold_msec = rospy.get_param("~sync_threshold_msec", 2))
+
+    camera_node = CameraArrayNode(config, handler)
+
+
 
     try:
         camera_node.initialise()  
