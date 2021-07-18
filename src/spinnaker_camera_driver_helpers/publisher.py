@@ -147,14 +147,16 @@ class SyncPublisher():
 
 
 class SyncHandler():
-  def __init__(self, publisher, camera_names, sync_threshold_msec=2.0):
+  def __init__(self, publisher, camera_names, sync_threshold_msec=2.0, publish_partial=False):
 
     self.publisher = publisher
+    self.publish_partial = publish_partial
 
     self.camera_names = camera_names
     self.current_frame = {}
+    self.current_timestamp = None
 
-    self.threshold_msec=sync_threshold_msec
+    self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0) 
 
     self.recieved_times = []
     self.queue = Queue(len(camera_names))
@@ -169,6 +171,10 @@ class SyncHandler():
     self.thread.join()
 
 
+  @property
+  def num_cameras(self):
+    return len(self.camera_names)
+
   def set_quality(self, quality):
     self.publisher.set_quality(quality)
 
@@ -177,7 +183,7 @@ class SyncHandler():
     if image.IsIncomplete():
       rospy.logwarn('Image incomplete with image status %d ...' % image.GetImageStatus())
 
-    timestamp = image.GetTimeStamp() / 1e9 + time_offset_sec 
+    timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + time_offset_sec)
     frame = struct(
       timestamp = timestamp,
       frame_id = image.GetFrameID(),
@@ -197,50 +203,64 @@ class SyncHandler():
 
 
   def process_frame(self, camera_name, frame):
-    if camera_name in self.current_frame:
-        self.publish_current()
+    dt = (rospy.Duration() if self.current_timestamp is None 
+      else abs(self.current_timestamp - frame.timestamp))
 
-    for k, current in self.current_frame.items():
-      time_diff_msec = abs(frame.timestamp - current.timestamp) * 1000.0
-      print(k, time_diff_msec)
-      if time_diff_msec > self.threshold_msec:
-        rospy.logwarn(f"Frame time for {camera_name} differs from {k} by {time_diff_msec} ms")
+    if self.current_timestamp is None:
+      # First frame arriving from a camera - use this as reference timestamp
+      self.current_timestamp = frame.timestamp
 
+    elif camera_name in self.current_frame:
+      # Already have a frame from this camera - publish current 
+      self.publish_current()
 
+    elif dt > self.sync_threshold: 
+      # Frame arrived outside of time sync threshold
+      if (self.current_timestamp - frame.timestamp) < rospy.Duration.from_sec(0.0):
+        return # From the past - discard it and continue
+      else:
+        rospy.logwarn(f"{camera_name}: dropping frame dt={dt.to_sec() * 1000 : .2f} ms")
+        self.publish_current()  
+       
     self.current_frame[camera_name] = frame
     if len(self.camera_names) == len(self.current_frame):
+      # Got a complete set of frames, publish them
       self.publish_current()    
 
-  def update_rate(self, latest):
-    while len(self.recieved_times) > 0 and latest - self.recieved_times[0] > 5.0:
+  def update_rate(self, latest, num_frames):
+    while len(self.recieved_times) > 0 and latest - self.recieved_times[0].time > rospy.Duration.from_sec(5.0):
       self.recieved_times.pop(0)
 
-    self.recieved_times.append(latest)
+    self.recieved_times.append(struct(time=latest, count=num_frames))
+    dt = (latest - self.recieved_times[0].time)
+    num_frames = sum([frame.count for frame in self.recieved_times])
 
-    dt = (latest - self.recieved_times[0])
-    num_frames = len(self.recieved_times)
-
-    return num_frames / dt if dt > 0 else 0
-
+    return num_frames / (dt.to_sec() * self.num_cameras) if dt > rospy.Duration() else 0
 
 
   def publish_current(self):
-    assert len(self.current_frame) > 0
+    if len(self.current_frame) == self.num_cameras or self.publish_partial:
+      self.publish_frame(self.current_frame, self.current_timestamp)
 
-    frame_times = [frame.timestamp for frame in self.current_frame.values()]
-    latest = min(frame_times)
+    self.current_frame = {}
+    self.current_timestamp = None
 
-    missing = set(self.camera_names) - set(self.current_frame.keys())
+
+  def publish_frame(self, frame, timestamp):
+    assert len(frame) > 0
+
+    missing = set(self.camera_names) - set(frame.keys())
     if len(missing) > 0:
       rospy.logwarn(f"Incomplete trigger, missing: {missing}")
 
-    rate = self.update_rate(latest)
+    rate = self.update_rate(timestamp, len(frame.keys()))
     rospy.loginfo(f"{rate:.2f} Hz")
 
     self.publisher.publish(
-      timestamp=rospy.Time.from_sec(latest), 
-      images={k:frame.image_data for k, frame in self.current_frame.items()})
+      timestamp=timestamp, 
+      images={k:frame.image_data for k, frame in frame.items()})
 
-    self.current_frame = {}
+    
+    
 
 

@@ -293,7 +293,7 @@ class CameraArrayNode(object):
             self.trigger()           
 
             time = rospy.Time.now()
-            rate = 0 # self.config.get("max_framerate", math.inf)
+            rate = self.config.get("max_framerate", math.inf)
 
             if rate > 0:
               rospy.sleep(1.0/rate)
