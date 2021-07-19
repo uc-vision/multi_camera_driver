@@ -139,7 +139,7 @@ delayed_setters = dict(
 )
 
 class CameraArrayNode(object):
-    def __init__(self, config, handler):
+    def __init__(self, config):
         self.system = PySpin.System.GetInstance()
         assert config is not None
 
@@ -279,16 +279,15 @@ class CameraArrayNode(object):
 
     def capture(self):
       return self.capture_free() if self.free_running\
-        else self.capture_sync()
+        else self.capture_software()
 
-    def capture_sync(self):
+    def capture_software(self):
         assert len(self.initialised) > 0 and not self.started 
         self.start()
 
         last_time = rospy.Time.now()
         self.trigger()
-        while not rospy.is_shutdown():
-            
+        while not rospy.is_shutdown():           
             self.update_pending()    
             self.trigger()           
 
@@ -299,7 +298,6 @@ class CameraArrayNode(object):
               rospy.sleep(1.0/rate)
             else:
               rospy.sleep(0)
-            
             last_time = time
 
 

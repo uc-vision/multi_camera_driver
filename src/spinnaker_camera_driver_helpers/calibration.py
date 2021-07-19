@@ -1,3 +1,4 @@
+import numpy as np
 import rospy
 
 import tf2_ros
@@ -18,17 +19,6 @@ def load_config(config_file):
         return None
 
 
-class Lazy(object):
-    def __init__(self, f, *args, **kwargs):
-        self.f = partial(f, *args, **kwargs)
-        self.result = None
-
-    def get(self):
-        self.result = self.f() if self.result is None else self.result
-        return self.result
-
-
-
 def load_calibrations(calibration_file, camera_names):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
@@ -47,13 +37,21 @@ def load_calibrations(calibration_file, camera_names):
 
     return camera_calibrations
 
-def publish_extrinsics(namespace, transforms):
-
+def publish_transforms(namespace, transforms):
     stamp = rospy.Time.now()
     broadcaster = tf2_ros.StaticTransformBroadcaster()
 
     msgs = [conversions.transform_msg(parent_to_cam, namespace, f"{namespace}/{child_id}", stamp)
             for child_id, parent_to_cam in transforms.items()]
-
     broadcaster.sendTransform(msgs)
     return broadcaster
+    
+def publish_extrinsics(calibrations, camera_names):
+  found = {k:camera.parent_to_camera 
+    for k, camera in  calibrations.items()}
+
+  extrinsics = {alias:found.get(alias, np.eye(4))
+    for alias in camera_names}
+
+  namespace = rospy.get_namespace().strip('/')
+  return publish_transforms(namespace, extrinsics)   

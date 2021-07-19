@@ -6,8 +6,7 @@ from threading import Thread
 import numpy as np
 from structs.struct import struct
 
-from spinnaker_camera_driver_helpers.common import publish_extrinsics
-from camera_geometry_ros.image_publisher import RawPublisher
+from camera_geometry_ros.lazy_publisher import LazyPublisher
 from camera_geometry_ros.conversions import camera_info_msg
 
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
@@ -17,248 +16,191 @@ from nvjpeg_torch import Jpeg
 import torch
 from debayer import Debayer3x3
 
+from cv_bridge import CvBridge
+from dataclasses import dataclass
+from cached_property import cached_property
 
 
-class CameraPublisher(rospy.SubscribeListener):
-    def __init__(self, name, queue_size=4):
-        super(CameraPublisher, self).__init__()
 
-        self.name = name
-        self.queue_size = queue_size
-        self.peers = {}
-
-        self.publishers = struct(
-          info = self.publisher("camera_info", CameraInfo),
-          raw = self.publisher("image_raw", Image),
-          compressed = self.publisher("compressed", CompressedImage),
-          preview = self.publisher("preview/compressed", CompressedImage)
-        )
-
-    def publisher(self, topic_name, topic_type):
-      return rospy.Publisher(f"{self.name}/{topic_name}", topic_type, 
-                subscriber_listener=self, queue_size=self.queue_size)
+@dataclass
+class ImageSettings:
+  preview_size : int = 400
+  encoding : str = 'bayer_bggr8' 
+  device : str = 'cuda:0'
+  queue_size : int = 4
+  quality : int = 90
 
 
-    def peer_subscribe(self, topic_name, topic_publish, peer_publish):
-        peers = self.peers.get(topic_name, 0) + 1
-        self.peers[topic_name] = peers
 
-    def peer_unsubscribe(self, topic_name, num_peers):
-        self.peers[topic_name] = num_peers
 
-    @property
-    def subscribed(self):
-      has_subs = {k : self.peers.get(publisher.name, 0)
-        for k, publisher in self.publishers.items()}
-      return struct(**has_subs)
+
+class SpinnakerPublisher(object):
+    def __init__(self, publisher, time_offset_sec):
+        self.publisher = publisher
+        self.time_offset_sec = time_offset_sec
+
+    def publish(self, image):
+        if image.IsIncomplete():
+            rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
+        else:
+
+            self.publisher.publish(
+              image_data = image.GetNDArray(),
+              timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + self.time_offset_sec),
+              seq = image.GetFrameID()
+            )
+
+            image.Release()            
+
+    def set_option(self, key, value):
+        self.publisher.set_option(key, value)
+
+    def stop(self):
+        self.queue.put(None)
+
+class AsyncPublisher(object):
+    def __init__(self, publisher, queue_size=2):
+        self.publisher = publisher
+
+        self.queue = Queue(queue_size)
+        self.thread = Thread(target=self.worker)
+        self.thread.start()
+
+    def worker(self):
+      item = self.queue.get()
+      while item is not None:
+          self.publisher.publish(item)
+          item = self.queue.get()
+
+      self.publisher.stop()
+
+    def publish(self, image):
+        self.queue.put(image)
+
+    def set_option(self, key, value):
+        self.publisher.set_option(key, value)
+
+    def stop(self):
+        self.queue.put(None)
+
+
+
+class CameraOutputs(object):
+    def __init__(self, parent, image_raw):
+        self.parent = parent
+        self.image_raw = image_raw
+
 
     @property 
-    def has_subscribers(self, topic_name):
-      assert topic_name in self.publishers
-      return self.subscribed[topic_name] > 0
+    def settings(self) -> ImageSettings:
+      return self.parent.settings
 
-    def publish_image(self, topic_name, header, image, encoding):
-        if self.has_subscribers(topic_name):
-            image_msg = self.bridge.cv2_to_imgmsg(image, encoding=encoding)
-            image_msg.header = header
-            self.publishers[topic_name].publish(image_msg)
+    @cached_property
+    def cuda_rgb(self):
+      bayer = torch.from_numpy(self.image_raw).cuda()
 
-    def publish_info(self, cam_info : CameraInfo, header : Header):
-      cam_info.header = header
-      self.publishers.info.publish(cam_info)
+      rgb = self.debayer(bayer.unsqueeze(1).to(dtype=torch.float16))
+      return rgb.permute(0, 2, 3, 1).to(dtype=torch.uint8).squeeze(0)
 
 
-    def publish_compressed(self, topic_name, data : bytes, header : Header):
-      msg = CompressedImage(header = header, format = "jpeg", data = data)
-      self.publishers[topic_name].publish(msg)
+    @cached_property
+    def image_color(self):
+      return self.cuda_rgb.cpu().numpy()
+
+    @cached_property 
+    def compressed(self):
+      self.parent.encoder.encode(self.cuda_rgb, quality=self.quality)
 
 
+    @cached_property 
+    def preview(self):
+      self.parent.encoder.encode(self.cuda_rgb, quality=self.quality)
 
 
-class SyncPublisher():
-  def __init__(self, camera_names, calibrations={}, device='cuda:0', 
-      publish_queue=4, preview_size=400, encoding='bayer_bggr8'):
+    @cached_property
+    def camera_info(self):
+      if self.parent.calibration is not None:
+        calibration = self.calibration.resize_image(
+                (self.bayer_image.shape[1], self.bayer_image.shape[0]))
+        return camera_info_msg(calibration)
+      else:
+        return CameraInfo()
 
-    self.device = device
-    self.publish_queue = publish_queue
-    self.camera_names = camera_names
 
-    self.preview_size = preview_size
-    self.encoding = encoding
+class CameraPublisher():
+  def __init__(self, camera_name, settings, calibration=None):
+    
+    self.camera_name = camera_name
+    self.settings = settings
 
-    self.publish_queue = publish_queue
     self.encoder = Jpeg()
-
-    self.quality = 90
-    self.seq = 0
-
-    self.publishers = {k : CameraPublisher(k, queue_size=publish_queue) 
-      for k in camera_names}
-
-    self.calibrations = calibrations
-    self.cam_info = {k : camera_info_msg(self.calibrations[k]) 
-      if k in self.calibrations else CameraInfo()
-        for k in camera_names}
-
-    self.device = device
     self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.device)
+    self.calibration = calibration
+    
+    bridge = CvBridge()
+
+    topics = dict(
+        image_raw        = (Image, lambda data: bridge.cv2_to_imgmsg(data.image_raw, encoding=settings.encoding)),
+        image_color      = (Image, lambda data: bridge.cv2_to_imgmsg(data.image_color, encoding="bgr8")),
+        compressed = (CompressedImage, lambda data: CompressedImage(data = data.compressed, format = "jpeg")), 
+        preview    =  (CompressedImage, lambda data: CompressedImage(data = data.preview, format = "jpeg")),
+        camera_info = (CameraInfo, lambda data: data.camera_info)
+    )
+
+    self.publisher = LazyPublisher(topics, self.register)
+
+  def register(self):
+    return []     # Here's where the lazy subscriber subscribes to it's inputs (none for this)
+
 
   def set_quality(self, quality):
     self.quality = quality
 
 
-  def header(self, timestamp, seq):
-    return Header(frame_id=self.name, stamp=timestamp, seq=seq)
+  def set_option(self, option, value):
+    if option == "preview_size":
+      self.settings.preview_size = value
+    elif option == "quality":
+      assert value > 0 and value <= 100
+      self.settings.quality = value
+    else:
+      assert False, f"unknown option {option}"
 
 
-  def publish(self, timestamp, images):
-    with torch.no_grad():
-      pinned = [ torch.from_numpy(image).pin_memory()
-        for image in images.values()
-      ]
-
-      bayer = torch.stack([ image.cuda() for image in pinned ])
-      rgb = self.debayer(bayer.unsqueeze(1).to(dtype=torch.float16))
-      rgb = rgb.permute(0, 2, 3, 1).to(dtype=torch.uint8).contiguous()
-
-      jpeg_data = [self.encoder.encode(image, quality=self.quality) for image in rgb]
-
-      header = Header()
-      for k, data in zip(images.keys(), jpeg_data):
-        # self.publishers[k].publish_image("raw", images[k], header, encoding=self.encoding)
-        self.publishers[k].publish_compressed("compressed", data.numpy().tobytes(), header)
-
-    self.seq += 1
-
-  def publish_extrinsics(self):
-    found = {k:camera.parent_to_camera 
-      for k, camera in  self.calibrations.items()}
-
-    extrinsics = {alias:found.get(alias, np.eye(4))
-      for alias in self.camera_names}
-
-    namespace = rospy.get_namespace().strip('/')
-    self.static_broadcaster = publish_extrinsics(namespace, extrinsics)    
+  def publish(self, image_data, timestamp, seq):
+    return self.publisher.publish(
+      data = CameraOutputs(self, image_data), 
+      header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
+    )
 
 
   def stop(self):
     pass
 
 
+class CameraSet(object):
+  def __init__(self, camera_properties, settings=ImageSettings()):
+    self.camera_properties = camera_properties
+    self.publishers = {
+      k: AsyncPublisher (
+        SpinnakerPublisher(
+          CameraPublisher(k, settings), properties.time_offset_sec)
+      ) for k, properties in camera_properties.items()
+    }
 
-class SyncHandler():
-  def __init__(self, publisher, camera_names, sync_threshold_msec=2.0, publish_partial=False):
 
-    self.publisher = publisher
-    self.publish_partial = publish_partial
+  def publish(self, camera_name, image):
+    self.publishers[camera_name].publish(image)
 
-    self.camera_names = camera_names
-    self.current_frame = {}
-    self.current_timestamp = None
 
-    self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0) 
-
-    self.recieved_times = []
-    self.queue = Queue(len(camera_names))
-    self.thread = Thread(target=self.process_thread, args=())
-
-    self.thread.start()
-
+  def set_option(self, key, value):
+    for publisher in self.publishers:
+      publisher.set_option(key, value)
 
   def stop(self):
-    rospy.loginfo("Waiting for publisher thread...")
-    self.queue.put(None)
-    self.thread.join()
+    for publisher in self.publishers:
+      publisher.stop()  
 
-
-  @property
-  def num_cameras(self):
-    return len(self.camera_names)
-
-  def set_quality(self, quality):
-    self.publisher.set_quality(quality)
-
-  def process_camera_image(self, camera_name, image, time_offset_sec):
-    assert camera_name in self.camera_names
-    if image.IsIncomplete():
-      rospy.logwarn('Image incomplete with image status %d ...' % image.GetImageStatus())
-
-    timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + time_offset_sec)
-    frame = struct(
-      timestamp = timestamp,
-      frame_id = image.GetFrameID(),
-      image_data = image.GetNDArray()
-    )
-
-    self.queue.put( (camera_name, frame) )
-    image.Release()
-
-
-  def process_thread(self):
-    item = self.queue.get()
-    while item is not None: 
-      (camera_name, frame) = item
-      self.process_frame(camera_name, frame)
-      item = self.queue.get()
-
-
-  def process_frame(self, camera_name, frame):
-    dt = (rospy.Duration() if self.current_timestamp is None 
-      else abs(self.current_timestamp - frame.timestamp))
-
-    if self.current_timestamp is None:
-      # First frame arriving from a camera - use this as reference timestamp
-      self.current_timestamp = frame.timestamp
-
-    elif camera_name in self.current_frame:
-      # Already have a frame from this camera - publish current 
-      self.publish_current()
-
-    elif dt > self.sync_threshold: 
-      # Frame arrived outside of time sync threshold
-      if (self.current_timestamp - frame.timestamp) < rospy.Duration.from_sec(0.0):
-        return # From the past - discard it and continue
-      else:
-        rospy.logwarn(f"{camera_name}: dropping frame dt={dt.to_sec() * 1000 : .2f} ms")
-        self.publish_current()  
-       
-    self.current_frame[camera_name] = frame
-    if len(self.camera_names) == len(self.current_frame):
-      # Got a complete set of frames, publish them
-      self.publish_current()    
-
-  def update_rate(self, latest, num_frames):
-    while len(self.recieved_times) > 0 and latest - self.recieved_times[0].time > rospy.Duration.from_sec(5.0):
-      self.recieved_times.pop(0)
-
-    self.recieved_times.append(struct(time=latest, count=num_frames))
-    dt = (latest - self.recieved_times[0].time)
-    num_frames = sum([frame.count for frame in self.recieved_times])
-
-    return num_frames / (dt.to_sec() * self.num_cameras) if dt > rospy.Duration() else 0
-
-
-  def publish_current(self):
-    if len(self.current_frame) == self.num_cameras or self.publish_partial:
-      self.publish_frame(self.current_frame, self.current_timestamp)
-
-    self.current_frame = {}
-    self.current_timestamp = None
-
-
-  def publish_frame(self, frame, timestamp):
-    assert len(frame) > 0
-
-    missing = set(self.camera_names) - set(frame.keys())
-    if len(missing) > 0:
-      rospy.logwarn(f"Incomplete trigger, missing: {missing}")
-
-    rate = self.update_rate(timestamp, len(frame.keys()))
-    rospy.loginfo(f"{rate:.2f} Hz")
-
-    self.publisher.publish(
-      timestamp=timestamp, 
-      images={k:frame.image_data for k, frame in frame.items()})
 
     
     
