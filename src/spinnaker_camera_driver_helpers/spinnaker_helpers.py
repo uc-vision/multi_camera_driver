@@ -6,7 +6,7 @@ import statistics
 import rospy
 
 from disable_gc import disable_gc
-from time import sleep
+from time import sleep, struct_time
 
 import gc
 
@@ -330,7 +330,12 @@ def set_camera_settings(camera, settings):
 
 def get_camera_info(camera):
     d_node_map = camera.GetTLDeviceNodeMap()
-    return dict(DeviceCurrentSpeed = get_enum(d_node_map, "DeviceCurrentSpeed"))
+
+    return struct_time(
+      connection_speed = get_enum(d_node_map, "DeviceCurrentSpeed"),
+      serial =  get_camera_serial(camera),
+      time_offset_sec = camera_time_offset(camera)
+    )
 
 
 def get_camera_serial(cam):

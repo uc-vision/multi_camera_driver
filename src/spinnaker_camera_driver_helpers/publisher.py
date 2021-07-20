@@ -31,22 +31,20 @@ class ImageSettings:
   quality : int = 90
 
 
-
-
-
 class SpinnakerPublisher(object):
-    def __init__(self, publisher, time_offset_sec):
+    def __init__(self, publisher):
         self.publisher = publisher
-        self.time_offset_sec = time_offset_sec
 
-    def publish(self, image):
+    def publish(self, item):
+        image, camera_info = item
+        
         if image.IsIncomplete():
             rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
         else:
 
             self.publisher.publish(
               image_data = image.GetNDArray(),
-              timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + self.time_offset_sec),
+              timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
               seq = image.GetFrameID()
             )
 
@@ -178,28 +176,6 @@ class CameraPublisher():
     pass
 
 
-class CameraSet(object):
-  def __init__(self, camera_properties, settings=ImageSettings()):
-    self.camera_properties = camera_properties
-    self.publishers = {
-      k: AsyncPublisher (
-        SpinnakerPublisher(
-          CameraPublisher(k, settings), properties.time_offset_sec)
-      ) for k, properties in camera_properties.items()
-    }
-
-
-  def publish(self, camera_name, image):
-    self.publishers[camera_name].publish(image)
-
-
-  def set_option(self, key, value):
-    for publisher in self.publishers:
-      publisher.set_option(key, value)
-
-  def stop(self):
-    for publisher in self.publishers:
-      publisher.stop()  
 
 
     
