@@ -16,6 +16,8 @@ from nvjpeg_torch import Jpeg
 import torch
 from debayer import Debayer3x3
 
+import torch.nn.functional as F
+
 from cv_bridge import CvBridge
 from dataclasses import dataclass
 from cached_property import cached_property
@@ -97,23 +99,31 @@ class CameraOutputs(object):
     def cuda_rgb(self):
       bayer = torch.from_numpy(self.image_raw).cuda()
 
-      rgb = self.debayer(bayer.unsqueeze(1).to(dtype=torch.float16))
-      return rgb.permute(0, 2, 3, 1).to(dtype=torch.uint8).squeeze(0)
+      batched = bayer.view(1, 1, *bayer.shape)
+      rgb = self.parent.debayer(batched.to(dtype=torch.float16))
+      return rgb.to(dtype=torch.uint8).flip(1)
 
 
     @cached_property
     def image_color(self):
-      return self.cuda_rgb.cpu().numpy()
+      image = self.cuda_rgb.permute(0, 2, 3, 1).squeeze(0).cpu().numpy()
+      return image
+
+    def encode(self, image):
+      channels_last = image.permute(0, 2, 3, 1).squeeze(0).contiguous()
+
+      return self.parent.encoder.encode(
+          channels_last, quality=self.settings.quality).numpy().tobytes()
 
     @cached_property 
     def compressed(self):
-      self.parent.encoder.encode(self.cuda_rgb, quality=self.quality)
+      return self.encode(self.cuda_rgb)
 
 
     @cached_property 
     def preview(self):
-      self.parent.encoder.encode(self.cuda_rgb, quality=self.quality)
-
+      preview_rgb = F.interpolate(self.cuda_rgb, size=self.settings.preview_size)
+      return self.encode(preview_rgb)
 
     @cached_property
     def camera_info(self):
@@ -137,15 +147,15 @@ class CameraPublisher():
     
     bridge = CvBridge()
 
-    topics = dict(
-        image_raw        = (Image, lambda data: bridge.cv2_to_imgmsg(data.image_raw, encoding=settings.encoding)),
-        image_color      = (Image, lambda data: bridge.cv2_to_imgmsg(data.image_color, encoding="bgr8")),
-        compressed = (CompressedImage, lambda data: CompressedImage(data = data.compressed, format = "jpeg")), 
-        preview    =  (CompressedImage, lambda data: CompressedImage(data = data.preview, format = "jpeg")),
-        camera_info = (CameraInfo, lambda data: data.camera_info)
-    )
+    topics = {
+        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image_raw, encoding=settings.encoding)),
+        "image_color"      : (Image, lambda data: bridge.cv2_to_imgmsg(data.image_color, encoding="bgr8")),
+        "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.compressed, format = "jpeg")), 
+        "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.preview, format = "jpeg")),
+        "camera_info" : (CameraInfo, lambda data: data.camera_info)
+    }
 
-    self.publisher = LazyPublisher(topics, self.register)
+    self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)
 
   def register(self):
     return []     # Here's where the lazy subscriber subscribes to it's inputs (none for this)

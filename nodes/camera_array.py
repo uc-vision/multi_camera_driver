@@ -78,7 +78,6 @@ class CameraArrayNode(object):
             if k == "groups":
                 continue
 
-            self.config[k] = v
             if k == "jpeg_quality":
                 self.publisher.set_option('quality', v)
             else:
@@ -97,14 +96,13 @@ class CameraArrayNode(object):
                 self.pending_config[k] = v   
             else:
                 self.set_property(k, v, setter)
+                self.config[k] = v
 
 
       
     def reconfigure_callback(self, config, _):
       self.set_config_properties(config)  
-
-      print(self.config)
-      return self.config
+      return config
 
 
     def trigger(self):
