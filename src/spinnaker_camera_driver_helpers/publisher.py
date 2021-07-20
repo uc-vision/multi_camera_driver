@@ -54,7 +54,7 @@ class SpinnakerPublisher(object):
         self.publisher.set_option(key, value)
 
     def stop(self):
-        self.queue.put(None)
+        self.publisher.stop()
 
 class AsyncPublisher(object):
     def __init__(self, publisher, queue_size=2):
@@ -132,7 +132,7 @@ class CameraPublisher():
     self.settings = settings
 
     self.encoder = Jpeg()
-    self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.device)
+    self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
     self.calibration = calibration
     
     bridge = CvBridge()

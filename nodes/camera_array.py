@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 
-from inspect import Traceback
+from traceback import format_exc
 from functools import partial
 
 import math
@@ -12,7 +12,7 @@ from dynamic_reconfigure.server import Server
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.image_handler import CameraSet
-from spinnaker_camera_driver_helpers.publisher import ImageSettings, SyncPublisher, SyncHandler
+from spinnaker_camera_driver_helpers.publisher import ImageSettings
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
 from spinnaker_camera_driver_helpers.camera_setters import delayed_setters, property_setters
@@ -21,7 +21,7 @@ from spinnaker_camera_driver_helpers.config import load_calibrations, load_confi
 import gc
 
 
-class ImageEventHandler(PySpin.ImageEvent):
+class ImageEventHandler(PySpin.ImageEventHandler):
   def __init__(self, on_image):
     super(ImageEventHandler, self).__init__()
     self.on_image = on_image
@@ -30,29 +30,30 @@ class ImageEventHandler(PySpin.ImageEvent):
     try:
         self.on_image(image)
     except:
-      trace = Traceback.format_exc()
-      rospy.logerr(f"ImageEventHandler exception: {trace}")
+      rospy.logerr(f"ImageEventHandler exception: {format_exc()}")
 
 
 
 
 class CameraArrayNode(object):
-    def __init__(self, publisher, camera_serials, master_id=None, free_running=False):
+    def __init__(self, publisher, camera_serials, camera_settings,
+       master_id=None, free_running=False):
+
         self.config = {}
         self.pending_config = {}
         self.started = False
         self.free_running = free_running
-
-        assert self.master_id is None or self.master_id in self.camera_serials
-        self.master_name = camera_serials.get(master_id, None)
-        self.camera_dict = spinnaker_helpers.find_cameras(self.camera_serials)  # camera_name -> camera
-
-        rospy.loginfo("Initialising cameras")
-        self.camera_info = {k : self.init_camera(camera, k) for k, camera in self.camera_dict.items()}
-        self.handlers = self.add_handlers()
-
         self.publisher = publisher
 
+        assert master_id is None or master_id in camera_serials
+        self.master_name = camera_serials.get(master_id, None)
+        self.camera_dict = spinnaker_helpers.find_cameras(camera_serials)  # camera_name -> camera
+
+        rospy.loginfo("Initialising cameras")
+        self.camera_info = {k : self.init_camera(camera, k, camera_settings) 
+          for k, camera in self.camera_dict.items()}
+        self.event_handlers = self.add_handlers()
+        
         self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
         rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
 
@@ -63,7 +64,7 @@ class CameraArrayNode(object):
           return self.camera_dict[self.master_name]      
 
 
-    def _set_property(self, key, value, setter):
+    def set_property(self, key, value, setter):
         try:
             rospy.loginfo(f"set_property {key}: {value}")
             for camera in self.camera_dict.values():
@@ -75,11 +76,14 @@ class CameraArrayNode(object):
     def set_config_properties(self, config):
         for k, v in config.items():           
             if k == "groups":
-                pass
-            elif k == "jpeg_quality":
+                continue
+
+            self.config[k] = v
+            if k == "jpeg_quality":
                 self.publisher.set_option('quality', v)
             else:
                 self.set_camera_property(k, v)
+            
             
     
     def set_camera_property(self, k, v):
@@ -93,20 +97,17 @@ class CameraArrayNode(object):
                 self.pending_config[k] = v   
             else:
                 self.set_property(k, v, setter)
-                self.config[k] = v
 
 
       
     def reconfigure_callback(self, config, _):
-      if self.cameras_initialised:
-          self.set_config_properties(config)  
-      else:
-          self.pending_config.update(config)  
-      return config
+      self.set_config_properties(config)  
+
+      print(self.config)
+      return self.config
 
 
-
-    def _trigger(self):
+    def trigger(self):
         assert self.master_name is not None
         try:
             spinnaker_helpers.trigger(self.master)
@@ -116,7 +117,7 @@ class CameraArrayNode(object):
 
     def start(self):
         rospy.loginfo("Begin acquisition")
-        for camera in self.initialised:
+        for camera in self.camera_dict.values():
            camera.BeginAcquisition()
         self.started = True
 
@@ -124,11 +125,9 @@ class CameraArrayNode(object):
 
       if self.started:
         rospy.loginfo("End acquisition")
-        for camera in self.initialised:
+        for camera in self.camera_dict.values():
             camera.EndAcquisition()
         self.started = False
-
-
 
 
     def update_pending(self):
@@ -172,14 +171,14 @@ class CameraArrayNode(object):
 
 
 
-    def init_camera(self, camera, camera_name):
+    def init_camera(self, camera, camera_name, camera_settings):
       try:
           camera.Init()
 
           info = spinnaker_helpers.get_camera_info(camera)
           rospy.loginfo(f"Initialising {camera_name}: {info}") 
 
-          spinnaker_helpers.set_camera_settings(camera, self.camera_settings)
+          spinnaker_helpers.set_camera_settings(camera, camera_settings)
           is_master = camera_name == self.master_name
 
           if self.master_name is not None:
@@ -193,26 +192,25 @@ class CameraArrayNode(object):
 
 
     def add_handlers(self):      
-      self.unregister_handler()
 
       def register_handler(k, camera):
-        on_image = partial(self.publisher.publish, camera_name=k, camera_info=self.camera_info[k])
+        on_image = lambda image: self.publisher.publish(
+          image, camera_name=k, camera_info=self.camera_info[k])
 
         handler = ImageEventHandler(on_image)
-        camera.RegisterEvent(handler)
+        camera.RegisterEventHandler(handler)
+        return handler
       
       return {k : register_handler(k, camera) for k, camera in self.camera_dict.items() }
        
 
-    def add_publisher(self, publisher):
-      self.publishers.append(publisher)
 
 
     def cleanup(self):
         rospy.loginfo("Stopping cameras")
         
         for k, camera in self.camera_dict.items():
-            camera.UnregisterEvent(self.event_handlers[k])
+            camera.UnregisterEventHandler(self.event_handlers[k])
 
             spinnaker_helpers.load_defaults(camera)
             camera.DeInit()
@@ -225,8 +223,8 @@ def main():
     calibration_file = rospy.get_param("~calibration_file", None)
    
     config = load_config(config_file)
-    camera_aliases = config["camera_aliases"]
-    camera_calibrations = load_calibrations(calibration_file, camera_aliases.values())
+    camera_names = config["camera_aliases"]
+    camera_calibrations = load_calibrations(calibration_file, camera_names.values())
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
@@ -240,14 +238,16 @@ def main():
     )
  
     system = PySpin.System.GetInstance()
-
+    publisher = CameraSet(camera_names.values(), image_settings)
+    
     camera_node = CameraArrayNode(
-      publisher = CameraSet(camera_aliases.values(), image_settings),
-      camera_serials = camera_aliases,
+      publisher = publisher,
+      camera_serials = camera_names,
+      camera_settings = config["camera_settings"],
       master_id = config.get("master", None)
     )
 
-    publish_extrinsics(camera_calibrations)
+    publish_extrinsics(camera_calibrations, camera_names)
 
     try:
         camera_node.capture()
@@ -256,7 +256,7 @@ def main():
     except PySpin.SpinnakerException as e:
         rospy.logerr("Error capturing:" + str(e))
 
-    # publisher.stop()
+    publisher.stop()
     camera_node.cleanup()
     del camera_node
     gc.collect()
