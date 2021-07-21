@@ -59,6 +59,15 @@ def get_int(nodemap, node_name):
     # Set integer value from entry node as new value of enumeration node
     return node.GetValue()
 
+def get_bool(nodemap, node_name):
+    node = PySpin.CBooleanPtr(nodemap.GetNode(node_name))
+    if not PySpin.IsAvailable(node) or not PySpin.IsReadable(node):
+        rospy.logerr('Unable to read {} (int retrieval). '.format(node_name))
+        return False
+
+    # Set integer value from entry node as new value of enumeration node
+    return node.GetBool()
+
 
 def set_bool(nodemap, node_name, value):
     node = PySpin.CBooleanPtr(nodemap.GetNode(node_name))
@@ -106,6 +115,12 @@ def try_set_int(nodemap, node_name, value):
         rospy.loginfo(f"try_set_int {node_name} {value}: {e}")
         return get_int(nodemap, node_name)
 
+def try_set_bool(nodemap, node_name, value):
+    try:
+        return set_bool(nodemap, node_name, value)
+    except PySpin.SpinnakerException as e:
+        rospy.loginfo(f"try_set_bool {node_name} {value}: {e}")
+        return get_bool(nodemap, node_name)
 
 
 @disable_gc
@@ -275,27 +290,29 @@ def trigger(camera):
     execute(nodemap, "TriggerSoftware")
 
 
-def enable_triggering(camera, free_running=False, master=True):
+def trigger_slave(camera : PySpin.Camera):
     nodemap = camera.GetNodeMap()
 
-    if master:
-        set_enum(nodemap, "LineSelector", "Line2")
-        set_enum(nodemap, "LineMode", "Output")
-        set_enum(nodemap, "TriggerSource", "Software")
+    set_enum(nodemap, "LineSelector", "Line3")
+    set_enum(nodemap, "TriggerSource", "Line3")
+    set_enum(nodemap, "TriggerSelector", "FrameStart")
+    set_enum(nodemap, "LineMode", "Input")
+    set_enum(nodemap, "TriggerOverlap", "ReadOut")
+    set_enum(nodemap, "TriggerActivation", "RisingEdge")
+    set_enum(nodemap, "TriggerMode", "On")
 
-        if not free_running:
-          set_enum(nodemap, "TriggerMode", "On")
 
-    else:
-        set_enum(nodemap, "LineSelector", "Line3")
-        set_enum(nodemap, "TriggerSource", "Line3")
-        set_enum(nodemap, "TriggerSelector", "FrameStart")
-        set_enum(nodemap, "LineMode", "Input")
-        set_enum(nodemap, "TriggerOverlap", "ReadOut")
-        set_enum(nodemap, "TriggerActivation", "RisingEdge")
-        set_enum(nodemap, "TriggerMode", "On")
+def trigger_master(camera : PySpin.Camera, free_running : bool):
+  nodemap = camera.GetNodeMap()
 
-    # set_bool(nodemap, "DeviceReset", True)
+  set_enum(nodemap, "LineSelector", "Line2")
+  set_enum(nodemap, "LineMode", "Output")
+  set_enum(nodemap, "TriggerSource", "Software")
+
+  if not free_running:
+    set_enum(nodemap, "TriggerMode", "On")
+
+
 
 
 def set_settings(nodemap, settings):
@@ -328,15 +345,10 @@ def set_camera_settings(camera, settings):
     s_node_map = camera.GetTLStreamNodeMap()
     set_settings(s_node_map, settings["transport_layer"])
 
-def get_camera_info(camera):
+def get_current_speed(camera):
     d_node_map = camera.GetTLDeviceNodeMap()
-
-    return struct(
-      connection_speed = get_enum(d_node_map, "DeviceCurrentSpeed"),
-      serial =  get_camera_serial(camera),
-      time_offset_sec = camera_time_offset(camera)
-    )
-
+    return get_enum(d_node_map, "DeviceCurrentSpeed")
+ 
 
 def get_camera_serial(cam):
     nodemap_tldevice = cam.GetTLDeviceNodeMap()
@@ -363,3 +375,12 @@ def find_cameras(camera_serials):
         cameras[alias] = serial_dict[serial]
 
     return cameras
+
+
+
+def validate_init(camera):
+    return camera.IsValid() and camera.IsInitialized()
+
+
+def validate_streaming(camera):
+    return validate_init(camera) and camera.IsStreaming()

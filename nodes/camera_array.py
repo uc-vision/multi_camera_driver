@@ -6,6 +6,7 @@ from functools import partial
 
 import math
 import PySpin
+from structs.struct import struct
 import rospy
 
 from dynamic_reconfigure.server import Server
@@ -67,8 +68,8 @@ class CameraArrayNode(object):
     def set_property(self, key, value, setter):
         try:
             rospy.loginfo(f"set_property {key}: {value}")
-            for camera in self.camera_dict.values():
-                setter(camera, value)      
+            for k, camera in self.camera_dict.items():
+                setter(camera, value, self.camera_info[k])      
         except PySpin.SpinnakerException as e:
             rospy.loginfo(f"set_property: {key} {value} {e} ")
 
@@ -115,23 +116,25 @@ class CameraArrayNode(object):
 
     def start(self):
         rospy.loginfo("Begin acquisition")
-        for camera in self.camera_dict.values():
-           camera.BeginAcquisition()
 
         self.publisher.start()
+        for k, camera in self.camera_dict.items():
+           camera.BeginAcquisition()
+           assert spinnaker_helpers.validate_streaming(camera),\
+             f"Camera {k} did not begin streaming"
+
         self.started = True
 
     def stop(self):
-
       if self.started:
+      
         rospy.loginfo("End acquisition")
+        self.publisher.stop()
+
         for camera in self.camera_dict.values():
             camera.EndAcquisition()
 
-        self.publisher.stop()
-
         self.started = False
-
 
     def update_pending(self):
         if self.started and len(self.pending_config) > 0:
@@ -150,6 +153,7 @@ class CameraArrayNode(object):
         else self.capture_software()
 
     def capture_software(self):
+        assert not self.started 
         self.start()
 
         self.trigger()
@@ -163,7 +167,7 @@ class CameraArrayNode(object):
         self.stop()
 
     def capture_free(self):
-        assert len(self.initialised) > 0 and not self.started 
+        assert not self.started 
         self.start()
 
         while not rospy.is_shutdown():
@@ -174,19 +178,30 @@ class CameraArrayNode(object):
 
 
 
-    def init_camera(self, camera, camera_name, camera_settings):
+    def init_camera(self, camera : PySpin.Camera, camera_name, camera_settings):
       try:
           camera.Init()
+          assert spinnaker_helpers.validate_init(camera),\
+              f"Camera {camera_name} did not initialise"
 
-          info = spinnaker_helpers.get_camera_info(camera)
-          rospy.loginfo(f"Initialising {camera_name}: {info}") 
-
-          spinnaker_helpers.set_camera_settings(camera, camera_settings)
           is_master = camera_name == self.master_name
 
+          info = struct(
+            connection_speed = spinnaker_helpers.get_current_speed(camera),
+            serial =  spinnaker_helpers.get_camera_serial(camera),
+            time_offset_sec = spinnaker_helpers.camera_time_offset(camera),
+            is_triggered = self.master_name is None, 
+            is_master = is_master,
+            is_free_running = self.free_running and is_master or self.master is None 
+          )
+
+          rospy.loginfo(f"{camera_name}: {info}") 
+
+          spinnaker_helpers.set_camera_settings(camera, camera_settings)
+
           if self.master_name is not None:
-              spinnaker_helpers.enable_triggering(camera, 
-                master=is_master, free_running=self.free_running)
+            spinnaker_helpers.trigger_master(camera, self.free_running)\
+              if info.is_master else spinnaker_helpers.trigger_slave(camera)
 
           return info
       except PySpin.SpinnakerException as e:
@@ -204,9 +219,9 @@ class CameraArrayNode(object):
         camera.RegisterEventHandler(handler)
         return handler
       
-      return {k : register_handler(k, camera) for k, camera in self.camera_dict.items() }
+      return {k : register_handler(k, camera) 
+        for k, camera in self.camera_dict.items() }
        
-
 
 
     def cleanup(self):
@@ -247,7 +262,8 @@ def main():
       publisher = publisher,
       camera_serials = config["camera_aliases"],
       camera_settings = config["camera_settings"],
-      master_id = config.get("master", None)
+      master_id = config.get("master", None),
+      free_running=True
     )
 
     publish_extrinsics(camera_calibrations, camera_names)
@@ -260,6 +276,8 @@ def main():
         rospy.logerr("Error capturing:" + str(e))
 
     publisher.stop()
+    camera_node.stop()
+
     camera_node.cleanup()
     del camera_node
     gc.collect()
