@@ -1,10 +1,4 @@
-import rospy
 
-from queue import Queue
-from threading import Thread
-
-import numpy as np
-from structs.struct import struct
 
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 from camera_geometry_ros.conversions import camera_info_msg
@@ -32,56 +26,6 @@ class ImageSettings:
   queue_size : int = 4
   quality : int = 90
 
-
-class SpinnakerPublisher(object):
-    def __init__(self, publisher):
-        self.publisher = publisher
-
-    def publish(self, item):
-        image, camera_info = item
-        
-        if image.IsIncomplete():
-            rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
-        else:
-
-            self.publisher.publish(
-              image_data = image.GetNDArray(),
-              timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
-              seq = image.GetFrameID()
-            )
-
-            image.Release()            
-
-    def set_option(self, key, value):
-        self.publisher.set_option(key, value)
-
-    def stop(self):
-        self.publisher.stop()
-
-class AsyncPublisher(object):
-    def __init__(self, publisher, queue_size=2):
-        self.publisher = publisher
-
-        self.queue = Queue(queue_size)
-        self.thread = Thread(target=self.worker)
-        self.thread.start()
-
-    def worker(self):
-      item = self.queue.get()
-      while item is not None:
-          self.publisher.publish(item)
-          item = self.queue.get()
-
-      self.publisher.stop()
-
-    def publish(self, image):
-        self.queue.put(image)
-
-    def set_option(self, key, value):
-        self.publisher.set_option(key, value)
-
-    def stop(self):
-        self.queue.put(None)
 
 
 
@@ -185,6 +129,8 @@ class CameraPublisher():
   def stop(self):
     pass
 
+  def start(self):
+    pass
 
 
 

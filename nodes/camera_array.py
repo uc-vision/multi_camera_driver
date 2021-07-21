@@ -117,6 +117,8 @@ class CameraArrayNode(object):
         rospy.loginfo("Begin acquisition")
         for camera in self.camera_dict.values():
            camera.BeginAcquisition()
+
+        self.publisher.start()
         self.started = True
 
     def stop(self):
@@ -125,6 +127,9 @@ class CameraArrayNode(object):
         rospy.loginfo("End acquisition")
         for camera in self.camera_dict.values():
             camera.EndAcquisition()
+
+        self.publisher.stop()
+
         self.started = False
 
 
@@ -221,8 +226,8 @@ def main():
     calibration_file = rospy.get_param("~calibration_file", None)
    
     config = load_config(config_file)
-    camera_names = config["camera_aliases"]
-    camera_calibrations = load_calibrations(calibration_file, camera_names.values())
+    camera_names = config["camera_aliases"].values()
+    camera_calibrations = load_calibrations(calibration_file, camera_names)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
@@ -236,11 +241,11 @@ def main():
     )
  
     system = PySpin.System.GetInstance()
-    publisher = CameraSet(camera_names.values(), image_settings)
+    publisher = CameraSet(camera_names, image_settings)
     
     camera_node = CameraArrayNode(
       publisher = publisher,
-      camera_serials = camera_names,
+      camera_serials = config["camera_aliases"],
       camera_settings = config["camera_settings"],
       master_id = config.get("master", None)
     )
