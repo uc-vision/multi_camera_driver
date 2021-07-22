@@ -12,7 +12,9 @@ import rospy
 from dynamic_reconfigure.server import Server
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-from spinnaker_camera_driver_helpers.image_handler import CameraSet
+from spinnaker_camera_driver_helpers.image_handler import ImageHandler
+from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
+
 from spinnaker_camera_driver_helpers.publisher import ImageSettings
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
@@ -20,6 +22,7 @@ from spinnaker_camera_driver_helpers.camera_setters import delayed_setters, prop
 from spinnaker_camera_driver_helpers.config import load_calibrations, load_config, publish_extrinsics
 
 import gc
+
 
 
 class ImageEventHandler(PySpin.ImageEventHandler):
@@ -256,7 +259,7 @@ def main():
     )
  
     system = PySpin.System.GetInstance()
-    publisher = CameraSet(camera_names, image_settings)
+    publisher = ImageHandler(camera_names, image_settings)
     
     camera_node = CameraArrayNode(
       publisher = publisher,

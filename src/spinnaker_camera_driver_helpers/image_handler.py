@@ -4,6 +4,22 @@ from queue import Queue
 from threading import Thread
 
 from .publisher import CameraPublisher, ImageSettings
+from structs.struct import struct
+
+def spinnaker_image(image, camera_info):
+    if image.IsIncomplete():
+      rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
+      image.Release()          
+      return None
+
+    image_info = struct(
+      image_data = image.GetNDArray(),
+      timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
+      seq = image.GetFrameID()
+    )
+
+    image.Release()    
+    return image_info
 
 
 class CameraHandler(object):
@@ -19,27 +35,20 @@ class CameraHandler(object):
 
 
     def worker(self):
+      self.publisher.start()        
+
       item = self.queue.get()
       while item is not None:
         image, camera_info = item
-        self.process_image(image, camera_info)
+        image_info = spinnaker_image(image, camera_info) 
+        if image is not None:
+          self.publisher.publish(image_info.image_data, image_info.timestamp, image_info.seq)
+
         item = self.queue.get()
 
       self.publisher.stop()
 
 
-    def process_image(self, image, camera_info):       
-        if image.IsIncomplete():
-            rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
-        else:
-
-            self.publisher.publish(
-              image_data = image.GetNDArray(),
-              timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
-              seq = image.GetFrameID()
-            )
-
-            image.Release()            
 
     def set_option(self, key, value):
         self.publisher.set_option(key, value)
@@ -50,22 +59,19 @@ class CameraHandler(object):
           rospy.loginfo("Waiting for publisher thread...")
 
           self.thread.join()
-          
         self.thread = None
 
     def start(self):
-        self.publisher.start()        
 
         self.thread = Thread(target=self.worker)        
         self.thread.start()
-
 
     def set_option(self, key, value):
         self.publisher.set_option(key, value)
 
 
 
-class CameraSet(object):
+class ImageHandler(object):
   def __init__(self, camera_names, settings=ImageSettings()):
     self.camera_names = camera_names
     self.publishers = {
@@ -89,3 +95,4 @@ class CameraSet(object):
   def stop(self):
     for publisher in self.publishers.values():
       publisher.stop()  
+
