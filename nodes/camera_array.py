@@ -240,7 +240,9 @@ def main():
     rospy.init_node('camera_array_node', anonymous=False)
 
     rospy.loginfo("Starting")
-    config_file = rospy.get_param("~config_file", None)
+    config_file = rospy.get_param("~config_file")
+
+    
     calibration_file = rospy.get_param("~calibration_file", None)
    
     config = load_config(config_file)

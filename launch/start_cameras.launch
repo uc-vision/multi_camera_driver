@@ -1,0 +1,11 @@
+<launch>
+  <arg name="camera_set"/>
+  <arg name="namespace" default="$(arg camera_set)"/>
+
+  <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="$(arg namespace)" output="screen" required="true">
+    <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg camera_set).yaml"/>
+    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/$(arg camera_set).json"/>
+    <param name="preview_width" value="400"/>
+  </node>
+</launch>
+

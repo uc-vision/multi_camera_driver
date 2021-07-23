@@ -1,0 +1,50 @@
+camera_aliases:
+  21264078 : left
+  21264079 : right
+    
+  #master: 20068364
+
+# free_running: True
+
+stereo_pairs:
+  stereo1:
+    - left
+    - right
+
+camera_settings:
+  device:
+    - UserSetSelector:
+      - Default
+      - ENUM
+    - SensorShutterMode:
+      - Global
+      - ENUM
+    - PixelFormat:
+      - BayerRG8
+      - ENUM
+    - TriggerMode:
+      - "Off"  # needs quotes otherwise is evaluated to false
+      - ENUM
+    - AcquisitionMode:
+      - Continuous
+      - ENUM
+    - WhiteBalanceAutoProfile:
+      - "Outdoor"
+      - ENUM
+    - LightingMode:
+      - "Backlight"
+      - ENUM
+      
+  transport_layer:
+    - StreamBufferCountMode:
+      - Manual
+      - ENUM
+
+    - StreamBufferCountManual:
+      - 1
+      - INT
+
+    - StreamBufferHandlingMode:
+      - NewestOnly
+      - ENUM
+#  Stream:

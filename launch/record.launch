@@ -1,5 +1,0 @@
-<launch>
-  <arg name="output_dir" default="$(env HOME)/scans"/>
-  <node pkg="rosbag" type="record" name="rosbag_record_camera_array"
-         args="record -o $(arg output_dir)/camera_array --lz4 -e '/camera_array/cam(\d)/(image_raw|camera_info)'"/>
-</launch>
