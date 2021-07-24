@@ -40,27 +40,37 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 
 
 class CameraArrayNode(object):
-    def __init__(self, publisher, camera_serials, camera_settings,
-       master_id=None, free_running=False):
+    def __init__(self, publisher, camera_serials, camera_settings, master_id=None):
 
         self.config = {}
         self.pending_config = {}
         self.started = False
-        self.free_running = free_running
         self.publisher = publisher
 
-        assert master_id is None or master_id in camera_serials
+        assert (master_id is None) or master_id in camera_serials
         self.master_name = camera_serials.get(master_id, None)
         self.camera_dict = spinnaker_helpers.find_cameras(camera_serials)  # camera_name -> camera
 
-        rospy.loginfo("Initialising cameras")
+        rospy.loginfo(f"Initialising cameras: {self.camera_dict}")
+        rospy.loginfo(f"Triggering: {'Disabled' if self.master_name is None else 'Enabled'}")
+        
         self.camera_info = {k : self.init_camera(camera, k, camera_settings) 
           for k, camera in self.camera_dict.items()}
         self.event_handlers = self.add_handlers()
+
+
         
         self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
         rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
 
+
+    @property
+    def camera_names(self):
+      return list(self.camera_dict.values())
+
+    @property
+    def camera_ids(self):
+      return list(self.camera_dict.keys())
 
     @property
     def master(self):
@@ -152,24 +162,6 @@ class CameraArrayNode(object):
         self.pending_config = {}
 
     def capture(self):
-      return self.capture_free() if self.free_running\
-        else self.capture_software()
-
-    def capture_software(self):
-        assert not self.started 
-        self.start()
-
-        self.trigger()
-        while not rospy.is_shutdown():           
-            self.update_pending()    
-            self.trigger()           
-
-            rate = self.config.get("max_framerate", math.inf)
-            rospy.sleep(1.0/rate if rate > 0 else 0)
-
-        self.stop()
-
-    def capture_free(self):
         assert not self.started 
         self.start()
 
@@ -178,8 +170,6 @@ class CameraArrayNode(object):
           rospy.sleep(0.1)
   
         self.stop()
-
-
 
     def init_camera(self, camera : PySpin.Camera, camera_name, camera_settings):
       try:
@@ -195,7 +185,7 @@ class CameraArrayNode(object):
             time_offset_sec = spinnaker_helpers.camera_time_offset(camera),
             is_triggered = self.master_name is None, 
             is_master = is_master,
-            is_free_running = self.free_running and is_master or self.master is None 
+            is_free_running = is_master or self.master is None 
           )
 
           rospy.loginfo(f"{camera_name}: {info}") 
@@ -203,7 +193,7 @@ class CameraArrayNode(object):
           spinnaker_helpers.set_camera_settings(camera, camera_settings)
 
           if self.master_name is not None:
-            spinnaker_helpers.trigger_master(camera, self.free_running)\
+            spinnaker_helpers.trigger_master(camera, True)\
               if info.is_master else spinnaker_helpers.trigger_slave(camera)
 
           return info
@@ -261,14 +251,16 @@ def main():
     )
  
     system = PySpin.System.GetInstance()
-    publisher = ImageHandler(camera_names, image_settings)
     
+    master_id = config.get("master", None)
+    HandlerType = ImageHandler if master_id is None else SyncHandler
+    publisher = HandlerType(camera_names, image_settings)
+
     camera_node = CameraArrayNode(
       publisher = publisher,
       camera_serials = config["camera_aliases"],
       camera_settings = config["camera_settings"],
-      master_id = config.get("master", None),
-      free_running=True
+      master_id = master_id
     )
 
     publish_extrinsics(camera_calibrations, camera_names)
