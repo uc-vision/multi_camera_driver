@@ -51,7 +51,7 @@ class CameraArrayNode(object):
         self.master_name = camera_serials.get(master_id, None)
         self.camera_dict = spinnaker_helpers.find_cameras(camera_serials)  # camera_name -> camera
 
-        rospy.loginfo(f"Initialising cameras: {self.camera_dict}")
+        rospy.loginfo(f"Initialising cameras: {camera_serials}")
         rospy.loginfo(f"Triggering: {'Disabled' if self.master_name is None else 'Enabled'}")
         
         self.camera_info = {k : self.init_camera(camera, k, camera_settings) 
