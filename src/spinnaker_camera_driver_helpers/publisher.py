@@ -72,8 +72,8 @@ class CameraOutputs(object):
     @cached_property
     def camera_info(self):
       if self.parent.calibration is not None:
-        calibration = self.calibration.resize_image(
-                (self.bayer_image.shape[1], self.bayer_image.shape[0]))
+        calibration = self.parent.calibration.resize_image(
+                (self.image_raw.shape[1], self.image_raw.shape[0]))
         return camera_info_msg(calibration)
       else:
         return CameraInfo()
@@ -105,9 +105,8 @@ class CameraPublisher():
     return []     # Here's where the lazy subscriber subscribes to it's inputs (none for this)
 
 
-  def set_quality(self, quality):
-    self.quality = quality
-
+  def update_calibration(self, camera):
+    self.calibration = camera
 
   def set_option(self, option, value):
     if option == "preview_size":

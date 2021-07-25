@@ -1,7 +1,7 @@
 camera_aliases:
-  21264078 : left
-  21264079 : right
-    
+  21264079 : left
+  21264078 : right    
+
 master: 21264079
 
 

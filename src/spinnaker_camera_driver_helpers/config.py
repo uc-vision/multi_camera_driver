@@ -18,6 +18,15 @@ def load_config(config_file):
     else:
         return None
 
+def import_calibrations(calib_string, camera_names):
+  calib = json.load_string(calib_string)
+  camera_calibrations = import_rig(calib)
+
+  if set(camera_names) != set(camera_calibrations.keys()):
+    rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
+
+  return camera_calibrations
+
 
 def load_calibrations(calibration_file, camera_names):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
@@ -37,16 +46,14 @@ def load_calibrations(calibration_file, camera_names):
 
     return camera_calibrations
 
-def publish_transforms(namespace, transforms):
+def publish_transforms(broadcaster, namespace, transforms):
     stamp = rospy.Time.now()
-    broadcaster = tf2_ros.StaticTransformBroadcaster()
 
     msgs = [conversions.transform_msg(parent_to_cam, namespace, f"{namespace}/{child_id}", stamp)
             for child_id, parent_to_cam in transforms.items()]
     broadcaster.sendTransform(msgs)
-    return broadcaster
     
-def publish_extrinsics(calibrations, camera_names):
+def publish_extrinsics(broadcaster, calibrations, camera_names):
   found = {k:camera.parent_to_camera 
     for k, camera in  calibrations.items()}
 
@@ -54,4 +61,4 @@ def publish_extrinsics(calibrations, camera_names):
     for alias in camera_names}
 
   namespace = rospy.get_namespace().strip('/')
-  return publish_transforms(namespace, extrinsics)   
+  publish_transforms(broadcaster, namespace, extrinsics)   

@@ -40,10 +40,13 @@ def take_group(frame_queue, sync_threshold, min_size):
 
 
 class SyncHandler(object):
-  def __init__(self, camera_names, settings=ImageSettings(), timeout_msec=1000, sync_threshold_msec=10):
+  def __init__(self, camera_names, settings=ImageSettings(), 
+    timeout_msec=1000, sync_threshold_msec=10, calibration={}):
+
     self.camera_names = camera_names
     self.publishers = {
-      k:  CameraPublisher(k, settings) for k in camera_names
+      k:  CameraPublisher(k, settings, calibration.get(k, None)) 
+        for k in camera_names
     }
 
     self.queue = Queue(len(camera_names))
@@ -52,6 +55,11 @@ class SyncHandler(object):
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)
     self.frame_queue = []
+
+
+  def update_calibration(self, calibration):
+    for k, publisher in self.publishers.items():
+      publisher.update_calibration(calibration.get(k, None))
 
   def publish(self, image, camera_name, camera_info):
       self.queue.put( (image, camera_name, camera_info) )

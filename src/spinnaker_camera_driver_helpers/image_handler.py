@@ -49,9 +49,11 @@ class CameraHandler(object):
       self.publisher.stop()
 
 
-
     def set_option(self, key, value):
         self.publisher.set_option(key, value)
+
+    def update_calibration(self, camera):
+      return self.publisher.update_calibration(camera)
 
     def stop(self):
         if self.thread is not None:
@@ -72,27 +74,32 @@ class CameraHandler(object):
 
 
 class ImageHandler(object):
-  def __init__(self, camera_names, settings=ImageSettings()):
+  def __init__(self, camera_names, settings=ImageSettings(), calibration={}):
     self.camera_names = camera_names
-    self.publishers = {
-      k:  CameraHandler(CameraPublisher(k, settings)) for k in camera_names
+    self.handlers = {
+      k:  CameraHandler(
+        CameraPublisher(k, settings, calibration.get(k, None))) 
+          for k in camera_names
     }
 
 
   def publish(self, image, camera_name, camera_info):
-    self.publishers[camera_name].publish(image, camera_info)
+    self.handlers[camera_name].publish(image, camera_info)
 
+  def update_calibration(self, calibration):
+    for k, handler in self.handlers.items():
+      handler.update_calibration(calibration.get(k, None))
 
   def set_option(self, key, value):
-    for publisher in self.publishers.values():
-      publisher.set_option(key, value)
+    for handler in self.handlers.values():
+      handler.set_option(key, value)
 
   def start(self):
-    for publisher in self.publishers.values():
-      publisher.start()  
+    for handler in self.handlers.values():
+      handler.start()  
 
 
   def stop(self):
-    for publisher in self.publishers.values():
-      publisher.stop()  
+    for handler in self.handlers.values():
+      handler.stop()  
 

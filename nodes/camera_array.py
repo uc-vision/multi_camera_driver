@@ -2,13 +2,12 @@
 from __future__ import print_function
 
 from traceback import format_exc
-from functools import partial
 
-import math
 import PySpin
 from structs.struct import struct
 import rospy
 
+from std_msgs.msg import String
 from dynamic_reconfigure.server import Server
 
 from spinnaker_camera_driver_helpers import spinnaker_helpers
@@ -19,9 +18,11 @@ from spinnaker_camera_driver_helpers.publisher import ImageSettings
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
 from spinnaker_camera_driver_helpers.camera_setters import delayed_setters, property_setters
-from spinnaker_camera_driver_helpers.config import load_calibrations, load_config, publish_extrinsics
+from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics
 
 import gc
+
+import tf2_ros
 
 
 
@@ -57,8 +58,6 @@ class CameraArrayNode(object):
         self.camera_info = {k : self.init_camera(camera, k, camera_settings) 
           for k, camera in self.camera_dict.items()}
         self.event_handlers = self.add_handlers()
-
-
         
         self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
         rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
@@ -254,16 +253,27 @@ def main():
     
     master_id = config.get("master", None)
     HandlerType = ImageHandler if master_id is None else SyncHandler
-    publisher = HandlerType(camera_names, image_settings)
+    publisher = HandlerType(camera_names, image_settings, calibration=camera_calibrations)
+    
+    broadcaster = tf2_ros.StaticTransformBroadcaster()
+    publish_extrinsics(broadcaster, camera_calibrations, camera_names)
+
+
+    def on_recalibrated(msg):
+      camera_calibrations = import_calibrations(msg.data, camera_names)
+
+      publisher.update_calibration(camera_calibrations)
+      publish_extrinsics(broadcaster, camera_calibrations, camera_names)
+
+    recalibrate_sub = rospy.Subscriber("recalibrated", String, on_recalibrated)
 
     camera_node = CameraArrayNode(
       publisher = publisher,
       camera_serials = config["camera_aliases"],
       camera_settings = config["camera_settings"],
-      master_id = master_id
+      master_id = master_id,
     )
 
-    publish_extrinsics(camera_calibrations, camera_names)
 
     try:
         camera_node.capture()
@@ -271,6 +281,8 @@ def main():
         pass
     except PySpin.SpinnakerException as e:
         rospy.logerr("Error capturing:" + str(e))
+
+    recalibrate_sub.unregister()
 
     publisher.stop()
     camera_node.stop()
