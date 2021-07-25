@@ -235,10 +235,11 @@ def main():
 
     
     calibration_file = rospy.get_param("~calibration_file", None)
+    tracking_frame = rospy.get_param("tracking_frame", None)
    
     config = load_config(config_file)
     camera_names = config["camera_aliases"].values()
-    calib = load_calibrations(calibration_file, camera_names)
+    calib = load_calibrations(calibration_file, camera_names, tracking_frame)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
@@ -258,15 +259,15 @@ def main():
     publisher = HandlerType(camera_names, image_settings, calibration=calib)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()
-    publish_extrinsics(broadcaster, calib.cameras, camera_names, calib.parent)
+    publish_extrinsics(broadcaster, calib, camera_names)
 
 
     def on_recalibrated(msg):
       try:
-        calib = import_calibrations(msg.data, camera_names)
+        calib = import_calibrations(msg.data, camera_names, tracking_frame)
 
         publisher.update_calibration(calib.cameras)
-        publish_extrinsics(broadcaster, calib.cameras, camera_names, calib.parent)
+        publish_extrinsics(broadcaster, calib, camera_names)
 
         write_calibration(calibration_file, msg.data)
       except:

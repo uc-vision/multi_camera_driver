@@ -8,14 +8,14 @@
       ],
       "K": [
         [
-          2420.899684557076,
+          2411.336061276698,
           0.0,
-          2002.5834241938396
+          2068.4068133970623
         ],
         [
           0.0,
-          2417.6595936853832,
-          1506.1714221075877
+          2425.6378682634017,
+          1496.171356091168
         ],
         [
           0.0,
@@ -25,11 +25,11 @@
       ],
       "dist": [
         [
-          -0.10759870156049116,
-          0.1001458091386007,
-          -0.0006182046024983134,
-          -0.001626007046808332,
-          -0.015170124444468266
+          -0.09822272765222581,
+          0.08349744681486074,
+          -0.0019194967869645457,
+          0.0014019529769340535,
+          -0.005281916683252868
         ]
       ]
     },
@@ -41,14 +41,14 @@
       ],
       "K": [
         [
-          2442.6634353595427,
+          2439.227640691099,
           0.0,
-          2014.8121871754267
+          2076.594155770949
         ],
         [
           0.0,
-          2439.1354901049604,
-          1511.7708039561987
+          2447.064337257853,
+          1502.565935589555
         ],
         [
           0.0,
@@ -58,11 +58,11 @@
       ],
       "dist": [
         [
-          -0.11125098659128042,
-          0.10897595742848623,
-          0.0006067690337671686,
-          -0.0009975637575887586,
-          -0.02153201848467633
+          -0.1090780003578299,
+          0.09949034686152763,
+          -0.0005447734752542953,
+          0.0032265891489704213,
+          -0.013426349716371914
         ]
       ]
     }
@@ -72,590 +72,695 @@
       "R": [
         [
           1.0,
-          -1.3002915710327891e-39,
-          6.965985738304947e-36
+          -3.174884331352234e-39,
+          -3.423377533709673e-35
         ],
         [
-          2.0953808056914643e-39,
+          1.5261304000391023e-40,
           1.0,
-          -7.747156232342662e-37
+          -1.214472687267797e-39
         ],
         [
-          -1.9866842959823876e-36,
-          3.1280174053276986e-36,
+          -1.4104663736777153e-35,
+          9.050251841244715e-37,
           1.0
         ]
       ],
       "T": [
-        -3.776268435486632e-55,
-        4.199741808845265e-56,
-        0.0
+        9.27908339821524e-55,
+        0.0,
+        -6.018531076210112e-36
       ]
     },
     "right_to_left": {
       "R": [
         [
-          0.9999795566654324,
-          -0.0006803919654572621,
-          -0.006357933467602578
+          0.9999752284362464,
+          -0.0021649469260255996,
+          -0.0066974262731547725
         ],
         [
-          0.000572928279413332,
-          0.9998572088952854,
-          -0.016888859443905495
+          0.002055216987854212,
+          0.9998642565082034,
+          -0.016347618800014556
         ],
         [
-          0.006368516655530409,
-          0.016884871539419203,
-          0.9998371582956425
+          0.0067319088681953325,
+          0.016333449179681735,
+          0.9998439377427286
         ]
       ],
       "T": [
-        -0.15057747077503247,
-        -0.0007166955274469723,
-        0.0016859873601634942
+        -0.14986897482112443,
+        -0.0013120066623023656,
+        -0.001059305494935589
       ]
     }
   },
   "image_sets": {
     "rgb": [
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00000.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00000.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00000.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00000.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00001.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00001.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00001.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00001.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00002.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00002.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00002.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00002.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00003.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00003.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00003.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00003.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00004.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00004.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00004.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00004.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00005.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00005.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00005.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00005.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00006.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00006.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00006.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00006.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00007.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00007.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00007.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00007.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00008.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00008.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00008.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00008.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00009.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00009.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00009.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00009.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00010.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00010.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00010.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00010.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00011.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00011.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00011.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00011.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00012.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00012.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00012.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00012.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00013.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00013.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00013.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00013.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00014.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00014.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00014.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00014.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00015.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00015.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00015.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00015.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00016.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00016.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00016.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00016.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00017.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00017.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00017.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00017.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00018.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00018.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00018.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00018.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00019.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00019.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00019.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00019.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00020.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00020.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00020.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00020.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00021.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00021.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00021.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00021.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00022.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00022.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00022.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00022.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00023.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00023.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00023.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00023.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00024.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00024.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00024.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00024.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00025.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00025.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00025.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00025.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00026.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00026.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00026.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00026.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00027.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00027.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00027.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00027.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00028.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00028.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00028.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00028.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00029.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00029.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00029.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00029.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00030.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00030.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00030.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00030.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00031.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00031.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00031.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00031.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00032.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00032.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00032.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00032.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00033.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00033.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00033.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00033.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00034.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00034.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00034.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00034.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00035.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00035.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00035.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00035.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00036.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00036.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00036.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00036.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00037.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00037.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00037.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00037.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00038.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00038.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00038.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00038.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00039.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00039.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00039.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00039.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00040.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00040.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00040.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00040.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00041.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00041.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00041.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00041.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00042.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00042.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00042.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00042.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00043.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00043.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00043.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00043.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00044.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00044.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00044.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00044.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00045.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00045.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00045.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00045.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00046.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00046.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00046.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00046.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00047.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00047.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00047.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00047.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00048.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00048.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00048.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00048.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00049.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00049.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00049.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00049.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00050.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00050.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00050.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00050.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00051.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00051.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00051.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00051.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00052.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00052.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00052.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00052.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00053.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00053.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00053.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00053.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00054.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00054.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00054.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00054.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00055.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00055.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00055.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00055.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00056.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00056.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00056.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00056.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00057.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00057.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00057.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00057.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00058.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00058.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00058.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00058.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00059.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00059.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00059.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00059.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00060.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00060.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00060.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00060.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00061.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00061.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00061.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00061.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00062.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00062.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00062.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00062.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00063.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00063.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00063.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00063.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00064.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00064.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00064.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00064.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00065.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00065.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00065.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00065.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00066.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00066.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00066.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00066.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00067.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00067.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00067.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00067.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00068.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00068.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00068.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00068.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00069.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00069.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00069.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00069.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00070.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00070.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00070.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00070.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00071.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00071.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00071.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00071.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00072.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00072.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00072.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00072.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00073.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00073.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00073.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00073.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00074.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00074.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00074.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00074.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00075.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00075.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00075.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00075.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00076.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00076.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00076.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00076.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00077.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00077.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00077.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00077.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00078.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00078.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00078.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00078.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00079.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00079.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00079.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00079.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00080.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00080.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00080.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00080.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00081.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00081.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00081.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00081.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00082.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00082.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00082.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00082.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00083.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00083.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00083.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00083.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00084.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00084.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00084.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00084.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00085.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00085.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00085.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00085.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00086.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00086.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00086.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00086.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00087.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00087.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00087.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00087.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00088.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00088.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00088.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00088.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00089.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00089.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00089.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00089.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00090.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00090.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00090.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00090.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00091.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00091.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00091.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00091.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00092.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00092.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00092.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00092.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00093.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00093.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00093.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00093.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00094.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00094.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00094.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00094.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00095.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00095.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00095.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00095.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00096.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00096.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00096.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00096.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00097.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00097.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00097.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00097.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00098.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00098.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00098.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00098.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00099.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00099.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00099.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00099.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00100.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00100.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00100.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00100.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00101.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00101.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00101.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00101.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00102.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00102.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00102.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00102.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00103.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00103.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00103.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00103.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00104.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00104.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00104.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00104.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00105.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00105.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00105.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00105.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00106.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00106.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00106.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00106.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00107.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00107.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00107.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00107.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00108.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00108.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00108.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00108.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00109.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00109.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00109.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00109.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00110.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00110.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00110.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00110.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00111.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00111.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00111.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00111.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00112.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00112.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00112.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00112.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00113.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00113.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00113.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00113.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00114.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00114.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00114.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00114.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00115.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00115.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00115.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00115.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00116.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00116.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00116.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00116.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00117.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00117.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00117.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00117.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00118.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00118.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00118.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00118.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00119.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00119.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00119.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00119.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00120.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00120.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00120.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00120.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00121.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00121.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00121.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00121.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00122.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00122.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00122.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00122.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00123.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00123.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00123.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00123.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00124.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00124.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00124.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00124.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00125.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00125.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00125.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00125.jpg"
       },
       {
-        "left": "/home/oliver/scans/25-07_21-45/capture_00/left/00126.jpg",
-        "right": "/home/oliver/scans/25-07_21-45/capture_00/right/00126.jpg"
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00126.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00126.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00127.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00127.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00128.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00128.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00129.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00129.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00130.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00130.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00131.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00131.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00132.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00132.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00133.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00133.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00134.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00134.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00135.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00135.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00136.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00136.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00137.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00137.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00138.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00138.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00139.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00139.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00140.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00140.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00141.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00141.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00142.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00142.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00143.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00143.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00144.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00144.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00145.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00145.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00146.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00146.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00147.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00147.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00148.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00148.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00149.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00149.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00150.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00150.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00151.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00151.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00152.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00152.jpg"
+      },
+      {
+        "left": "/home/oliver/scans/25-07_23-47/capture_00/left/00153.jpg",
+        "right": "/home/oliver/scans/25-07_23-47/capture_00/right/00153.jpg"
       }
     ]
   },
-  "camera_parent": [
-    "cam_tracking_pose_frame",
+  "tracking_rig": [
     [
-      [
-        0.04131020769525802,
-        0.026106593066938966,
-        0.9988052425466198,
-        0.0033575255102682084
-      ],
-      [
-        -0.9991410113209828,
-        -0.002194331627024161,
-        0.041381450013195466,
-        0.07011733581235689
-      ],
-      [
-        0.003272038608971958,
-        -0.9996567564455051,
-        0.025993519503782096,
-        0.06537330540208558
-      ],
-      [
-        0.0,
-        0.0,
-        0.0,
-        1.0
-      ]
+      0.03622308202505251,
+      0.060941907978925576,
+      0.9974838205106359,
+      -0.016050175571611137
+    ],
+    [
+      -0.9993151543827723,
+      0.009756931175277244,
+      0.03569348000654125,
+      0.06487366536950583
+    ],
+    [
+      -0.007557152211168628,
+      -0.9980936259419401,
+      0.06125359829861546,
+      0.05515103432808839
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
     ]
   ]
 }

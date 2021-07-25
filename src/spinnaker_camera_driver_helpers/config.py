@@ -19,23 +19,21 @@ def load_config(config_file):
     else:
         return None
 
-def import_calibrations(calib_string, camera_names):
+def import_calibrations(calib_string, camera_names, tracking_frame):
   calib = json.load_string(calib_string)
   camera_calibrations = import_rig(calib)
 
   if set(camera_names) != set(camera_calibrations.keys()):
     rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
 
-  parent = calib.get('camera_parent', None)
-  if parent is not None:
-    parent_frame, transform = parent
-    parent = (parent_frame, np.array(transform))
+  tracking = None
+  if 'tracking_rig' in calib:
+    tracking = struct(frame=tracking_frame, transform=np.array(calib.tracking_rig))
 
-  return struct(cameras = camera_calibrations, 
-    parent = parent)
+  return struct(cameras = camera_calibrations, tracking = tracking)
 
 
-def load_calibrations(calibration_file, camera_names):
+def load_calibrations(calibration_file, camera_names, tracking_frame=None):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
     camera_calibrations = {}
@@ -43,33 +41,33 @@ def load_calibrations(calibration_file, camera_names):
       if calibration_file is not None:
           with open(calibration_file, 'rt') as file:
             calib_string = file.read()
-            return import_calibrations(calib_string, camera_names)
+            return import_calibrations(calib_string, camera_names, tracking_frame=tracking_frame)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
 
 
     return camera_calibrations
 
-def camera_transforms(rig_frame, transforms, rig_parent=None):
+def camera_transforms(rig_frame, transforms, tracking=None):
     stamp = rospy.Time.now()
 
     parent_transform = []
-    if rig_parent is not None:
-      (parent_frame, transform) = rig_parent
-      parent_transform = [conversions.transform_msg(transform, parent_frame, rig_frame, stamp)]
+    if tracking is not None:
+      parent_transform = [conversions.transform_msg(
+        tracking.transform, tracking.frame, rig_frame, stamp)]
 
     return [conversions.transform_msg(rig_to_cam, rig_frame, f"{rig_frame}/{child_id}", stamp)
             for child_id, rig_to_cam in transforms.items()] + parent_transform
     
-def publish_extrinsics(broadcaster, calibrations, camera_names, rig_parent=None):
+def publish_extrinsics(broadcaster, calib, camera_names):
   found = {k:camera.parent_to_camera 
-    for k, camera in  calibrations.items()}
+    for k, camera in  calib.cameras.items()}
 
   extrinsics = {alias:found.get(alias, np.eye(4))
     for alias in camera_names}
 
   rig_frame = rospy.get_namespace().strip('/')
-  msgs = camera_transforms(rig_frame, extrinsics, rig_parent)   
+  msgs = camera_transforms(rig_frame, extrinsics, calib.tracking)   
 
   broadcaster.sendTransform(msgs)
 
