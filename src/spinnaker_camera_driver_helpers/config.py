@@ -1,10 +1,11 @@
+from os import path
+import os
 import numpy as np
+from structs.struct import struct
 import rospy
-
-import tf2_ros
+import shutil
+import errno
 import yaml
-
-from functools import partial
 
 import camera_geometry_ros.conversions as conversions
 from camera_geometry.calib import import_rig
@@ -25,7 +26,13 @@ def import_calibrations(calib_string, camera_names):
   if set(camera_names) != set(camera_calibrations.keys()):
     rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
 
-  return camera_calibrations
+  parent = calib.get('camera_parent', None)
+  if parent is not None:
+    parent_frame, transform = parent
+    parent = (parent_frame, np.array(transform))
+
+  return struct(cameras = camera_calibrations, 
+    parent = parent)
 
 
 def load_calibrations(calibration_file, camera_names):
@@ -34,31 +41,71 @@ def load_calibrations(calibration_file, camera_names):
     camera_calibrations = {}
     try:
       if calibration_file is not None:
-          calib = json.load_json(calibration_file)
-          camera_calibrations = import_rig(calib)
-
-      if set(camera_names) != set(camera_calibrations.keys()):
-        rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
-
+          with open(calibration_file, 'rt') as file:
+            calib_string = file.read()
+            return import_calibrations(calib_string, camera_names)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
 
 
     return camera_calibrations
 
-def publish_transforms(broadcaster, namespace, transforms):
+def camera_transforms(rig_frame, transforms, rig_parent=None):
     stamp = rospy.Time.now()
 
-    msgs = [conversions.transform_msg(parent_to_cam, namespace, f"{namespace}/{child_id}", stamp)
-            for child_id, parent_to_cam in transforms.items()]
-    broadcaster.sendTransform(msgs)
+    parent_transform = []
+    if rig_parent is not None:
+      (parent_frame, transform) = rig_parent
+      parent_transform = [conversions.transform_msg(transform, parent_frame, rig_frame, stamp)]
+
+    return [conversions.transform_msg(rig_to_cam, rig_frame, f"{rig_frame}/{child_id}", stamp)
+            for child_id, rig_to_cam in transforms.items()] + parent_transform
     
-def publish_extrinsics(broadcaster, calibrations, camera_names):
+def publish_extrinsics(broadcaster, calibrations, camera_names, rig_parent=None):
   found = {k:camera.parent_to_camera 
     for k, camera in  calibrations.items()}
 
   extrinsics = {alias:found.get(alias, np.eye(4))
     for alias in camera_names}
 
-  namespace = rospy.get_namespace().strip('/')
-  publish_transforms(broadcaster, namespace, extrinsics)   
+  rig_frame = rospy.get_namespace().strip('/')
+  msgs = camera_transforms(rig_frame, extrinsics, rig_parent)   
+
+  broadcaster.sendTransform(msgs)
+
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def find_unique(base, filename):
+  basename, ext = path.splitext(filename)
+  modified = filename
+  n = 0
+  while(path.exists(path.join(base, modified))):
+    n = n + 1
+    modified = f"{basename}_{n:03}{ext}"
+  return modified   
+
+
+def write_calibration(calibration_filename, calibration):
+  calib_path, filename = path.split(calibration_filename)
+
+  backups = ".backup"
+  mkdir_p(path.join(calib_path, backups))
+
+  backup = path.join(backups, 
+    find_unique(path.join(calib_path, backups), filename))
+
+  rospy.loginfo(f"Writing calibration {filename} to {backup}")
+  shutil.copy(calibration_filename, path.join(calib_path, backup))
+
+  with open(calibration_filename, "wt") as file:
+    file.write(calibration)

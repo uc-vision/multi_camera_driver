@@ -18,7 +18,7 @@ from spinnaker_camera_driver_helpers.publisher import ImageSettings
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
 from spinnaker_camera_driver_helpers.camera_setters import delayed_setters, property_setters
-from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics
+from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics, write_calibration
 
 import gc
 
@@ -225,6 +225,8 @@ class CameraArrayNode(object):
             spinnaker_helpers.load_defaults(camera)
             camera.DeInit()
         
+
+
 def main():
     rospy.init_node('camera_array_node', anonymous=False)
 
@@ -236,7 +238,7 @@ def main():
    
     config = load_config(config_file)
     camera_names = config["camera_aliases"].values()
-    camera_calibrations = load_calibrations(calibration_file, camera_names)
+    calib = load_calibrations(calibration_file, camera_names)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()
@@ -253,17 +255,23 @@ def main():
     
     master_id = config.get("master", None)
     HandlerType = ImageHandler if master_id is None else SyncHandler
-    publisher = HandlerType(camera_names, image_settings, calibration=camera_calibrations)
+    publisher = HandlerType(camera_names, image_settings, calibration=calib)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()
-    publish_extrinsics(broadcaster, camera_calibrations, camera_names)
+    publish_extrinsics(broadcaster, calib.cameras, camera_names, calib.parent)
 
 
     def on_recalibrated(msg):
-      camera_calibrations = import_calibrations(msg.data, camera_names)
+      try:
+        calib = import_calibrations(msg.data, camera_names)
 
-      publisher.update_calibration(camera_calibrations)
-      publish_extrinsics(broadcaster, camera_calibrations, camera_names)
+        publisher.update_calibration(calib.cameras)
+        publish_extrinsics(broadcaster, calib.cameras, camera_names, calib.parent)
+
+        write_calibration(calibration_file, msg.data)
+      except:
+        rospy.logerr(f"on_recalibrated exception: {format_exc()}")
+
 
     recalibrate_sub = rospy.Subscriber("recalibrated", String, on_recalibrated)
 
