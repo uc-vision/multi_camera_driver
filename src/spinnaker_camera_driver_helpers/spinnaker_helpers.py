@@ -1,12 +1,9 @@
-from __future__ import print_function
-from logging import disable
 
 import PySpin
 import statistics
 import rospy
 
 from disable_gc import disable_gc
-from structs.struct import struct
 
 import gc
 

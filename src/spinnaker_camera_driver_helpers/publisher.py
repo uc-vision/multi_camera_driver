@@ -88,6 +88,7 @@ class CameraPublisher():
     self.encoder = Jpeg()
     self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
     self.calibration = calibration
+
     
     bridge = CvBridge()
 

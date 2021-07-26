@@ -75,6 +75,7 @@ class CameraHandler(object):
 
 class ImageHandler(object):
   def __init__(self, camera_names, settings=ImageSettings(), calibration={}):
+
     self.camera_names = camera_names
     self.handlers = {
       k:  CameraHandler(

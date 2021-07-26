@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import print_function
 
 from traceback import format_exc
 
@@ -256,11 +255,10 @@ def main():
     
     master_id = config.get("master", None)
     HandlerType = ImageHandler if master_id is None else SyncHandler
-    publisher = HandlerType(camera_names, image_settings, calibration=calib)
+    publisher = HandlerType(camera_names, image_settings, calibration=calib.cameras)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()
     publish_extrinsics(broadcaster, calib, camera_names)
-
 
     def on_recalibrated(msg):
       try:
@@ -272,7 +270,6 @@ def main():
         write_calibration(calibration_file, msg.data)
       except:
         rospy.logerr(f"on_recalibrated exception: {format_exc()}")
-
 
     recalibrate_sub = rospy.Subscriber("recalibrated", String, on_recalibrated)
 
