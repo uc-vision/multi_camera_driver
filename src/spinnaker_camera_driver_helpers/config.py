@@ -36,7 +36,7 @@ def import_calibrations(calib_string, camera_names, tracking_frame):
 def load_calibrations(calibration_file, camera_names, tracking_frame=None):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
-    camera_calibrations = {}
+    camera_calibrations = struct(cameras = struct(), tracking = None)
     try:
       if calibration_file is not None:
           with open(calibration_file, 'rt') as file:
