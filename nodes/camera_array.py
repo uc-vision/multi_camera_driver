@@ -238,7 +238,8 @@ def main():
    
     config = load_config(config_file)
     camera_names = config["camera_aliases"].values()
-    calib = load_calibrations(calibration_file, camera_names, tracking_frame)
+    calib = load_calibrations(calibration_file, camera_names, 
+      tracking_frame)
 
     if rospy.get_param("~reset_cycle", False):
         spinnaker_helpers.reset_all()

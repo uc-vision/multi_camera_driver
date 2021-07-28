@@ -27,7 +27,7 @@ def import_calibrations(calib_string, camera_names, tracking_frame):
     rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
 
   tracking = None
-  if 'tracking_rig' in calib:
+  if 'tracking_rig' in calib and tracking_frame is not None:
     tracking = struct(frame=tracking_frame, transform=np.array(calib.tracking_rig))
 
   return struct(cameras = camera_calibrations, tracking = tracking)
@@ -52,6 +52,7 @@ def camera_transforms(rig_frame, transforms, tracking=None):
     stamp = rospy.Time.now()
 
     parent_transform = []
+
     if tracking is not None:
       parent_transform = [conversions.transform_msg(
         tracking.transform, tracking.frame, rig_frame, stamp)]
@@ -96,14 +97,16 @@ def find_unique(base, filename):
 def write_calibration(calibration_filename, calibration):
   calib_path, filename = path.split(calibration_filename)
 
-  backups = ".backup"
-  mkdir_p(path.join(calib_path, backups))
+  if path.exists(filename):
+    backups = ".backup"
+    mkdir_p(path.join(calib_path, backups))
 
-  backup = path.join(backups, 
-    find_unique(path.join(calib_path, backups), filename))
+    backup = path.join(backups, 
+      find_unique(path.join(calib_path, backups), filename))
 
-  rospy.loginfo(f"Writing calibration {filename} to {backup}")
-  shutil.copy(calibration_filename, path.join(calib_path, backup))
+    rospy.loginfo(f"Backing up calibration {filename} to {backup}")
+    shutil.copy(calibration_filename, path.join(calib_path, backup))
 
+  rospy.loginfo(f"Writing calibration to {filename}")
   with open(calibration_filename, "wt") as file:
     file.write(calibration)
