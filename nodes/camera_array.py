@@ -13,6 +13,8 @@ from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.image_handler import ImageHandler
 from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
+
+
 from spinnaker_camera_driver_helpers.publisher import ImageSettings
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
@@ -255,7 +257,7 @@ def main():
     system = PySpin.System.GetInstance()
     
     master_id = config.get("master", None)
-    HandlerType = ImageHandler if master_id is None else SyncHandler
+    HandlerType = ImageHandler #if master_id is None else SyncHandler
     publisher = HandlerType(camera_names, image_settings, calibration=calib.cameras)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()

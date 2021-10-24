@@ -1,21 +1,18 @@
 
 
 from camera_geometry_ros.lazy_publisher import LazyPublisher
-from camera_geometry_ros.conversions import camera_info_msg
 
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from std_msgs.msg import Header
 
-from nvjpeg_torch import Jpeg
-import torch
-from debayer import Debayer3x3
-
-import torch.nn.functional as F
-
 from cv_bridge import CvBridge
 from dataclasses import dataclass
+
+from sensor_msgs.msg import CameraInfo
+from camera_geometry_ros.conversions import camera_info_msg
 from cached_property import cached_property
 
+from .image_processor import image_backend
 
 
 @dataclass
@@ -25,58 +22,26 @@ class ImageSettings:
   device : str = 'cuda:0'
   queue_size : int = 4
   quality : int = 90
+  image_backend : str = 'turbo_jpeg'
 
 
+class CameraOutputs():
+  def __init__(self, parent, image_raw):
+    self.parent = parent
+    self.image = self.parent.image_processor(image_raw)
+    self.image_raw = image_raw
 
 
-class CameraOutputs(object):
-    def __init__(self, parent, image_raw):
-        self.parent = parent
-        self.image_raw = image_raw
+  @cached_property
+  def camera_info(self):
+    if self.parent.calibration is not None:
+      calibration = self.parent.calibration.resize_image(
+              (self.image_raw.shape[1], self.image_raw.shape[0]))
+      return camera_info_msg(calibration)
+    else:
+      return CameraInfo()
 
 
-    @property 
-    def settings(self) -> ImageSettings:
-      return self.parent.settings
-
-    @cached_property
-    def cuda_rgb(self):
-      bayer = torch.from_numpy(self.image_raw).cuda()
-
-      batched = bayer.view(1, 1, *bayer.shape)
-      rgb = self.parent.debayer(batched.to(dtype=torch.float16))
-      return rgb.to(dtype=torch.uint8).flip(1)
-
-
-    @cached_property
-    def image_color(self):
-      image = self.cuda_rgb.permute(0, 2, 3, 1).squeeze(0).cpu().numpy()
-      return image
-
-    def encode(self, image):
-      channels_last = image.permute(0, 2, 3, 1).squeeze(0).contiguous()
-
-      return self.parent.encoder.encode(
-          channels_last, quality=self.settings.quality).numpy().tobytes()
-
-    @cached_property 
-    def compressed(self):
-      return self.encode(self.cuda_rgb)
-
-
-    @cached_property 
-    def preview(self):
-      preview_rgb = F.interpolate(self.cuda_rgb, size=self.settings.preview_size)
-      return self.encode(preview_rgb)
-
-    @cached_property
-    def camera_info(self):
-      if self.parent.calibration is not None:
-        calibration = self.parent.calibration.resize_image(
-                (self.image_raw.shape[1], self.image_raw.shape[0]))
-        return camera_info_msg(calibration)
-      else:
-        return CameraInfo()
 
 
 class CameraPublisher():
@@ -85,18 +50,19 @@ class CameraPublisher():
     self.camera_name = camera_name
     self.settings = settings
 
-    self.encoder = Jpeg()
-    self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
+    processor = image_backend(settings.image_backend)
+    self.image_processor = processor(settings)
+
     self.calibration = calibration
 
     
     bridge = CvBridge()
 
     topics = {
-        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image_raw, encoding=settings.encoding)),
-        "image_color"      : (Image, lambda data: bridge.cv2_to_imgmsg(data.image_color, encoding="bgr8")),
-        "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.compressed, format = "jpeg")), 
-        "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.preview, format = "jpeg")),
+        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.raw, encoding=settings.encoding)),
+        "image_color"      : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.color, encoding="bgr8")),
+        "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.image.compressed, format = "jpeg")), 
+        "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.image.preview, format = "jpeg")),
         "camera_info" : (CameraInfo, lambda data: data.camera_info)
     }
 

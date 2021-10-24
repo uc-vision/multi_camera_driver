@@ -115,9 +115,10 @@ class SyncHandler(object):
 
     if self.thread is not None:
       self.queue.put(None)
-      rospy.loginfo("Waiting for publisher thread...")
+      rospy.loginfo(f"Waiting for publisher thread {self.thread}")
 
       self.thread.join()
+      rospy.loginfo(f"Done {self.thread}")
     self.thread = None
 
   def start(self):
