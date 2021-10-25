@@ -18,7 +18,7 @@ class Processor(object):
 class ImageOutputs(object):
     def __init__(self, parent, raw):
         self.parent = parent
-        self.raw = cv2.UMat(raw)
+        self.raw = raw
 
     @property 
     def settings(self) -> ImageSettings:
@@ -26,10 +26,10 @@ class ImageOutputs(object):
 
     @cached_property
     def image_color(self):
-      return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_BG2RGB)
+      return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_BG2BGR)
 
     def encode(self, image):
-      return self.parent.encoder.encode(image.get(), quality=self.settings.quality)
+      return self.parent.encoder.encode(image, quality=self.settings.quality)
 
     @cached_property 
     def compressed(self):
@@ -37,6 +37,11 @@ class ImageOutputs(object):
 
     @cached_property 
     def preview(self):
-      preview_rgb = cv2.resize(self.image_color, size=self.settings.preview_size)
+      img_h, img_w, _ = self.image_color.shape
+
+      w = self.settings.preview_size
+      h = int(img_h * (w / img_w)) 
+
+      preview_rgb = cv2.resize(self.image_color, dsize=(w, h))
       return self.encode(preview_rgb)
 

@@ -10,9 +10,10 @@ from cached_property import cached_property
 
 class Processor(object):
   def __init__(self, settings : ImageSettings):
+    self.settings = settings
+
     self.encoder = Jpeg()
     self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
-    self.settings = settings
 
   def __call__(self, image_raw):
     return ImageOutputs(self, image_raw)

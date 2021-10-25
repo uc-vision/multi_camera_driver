@@ -247,11 +247,23 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(2)
 
+    default_backend = "turbo_jpeg"
+    try:
+      import nvjpeg_torch
+      import torch
+
+      if torch.cuda.is_available():
+        default_backend = "torch_nvjpeg"
+    except ModuleNotFoundError:
+      pass
+
+
     image_settings = ImageSettings(
         preview_size = rospy.get_param("~preview_width", 400),
         encoding = config.get("encoding", "bayer_rggb8"),
         device = rospy.get_param("~device", 'cuda:0'),
-        quality = 90
+        quality = 90,
+        image_backend = rospy.get_param("~backend", default_backend)
     )
  
     system = PySpin.System.GetInstance()
