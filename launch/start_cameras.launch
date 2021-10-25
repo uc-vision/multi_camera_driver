@@ -6,7 +6,6 @@
     <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg camera_set).yaml"/>
     <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/$(arg camera_set).json"/>
     <param name="preview_width" value="400"/>
-    <param name="preview_width" value="400"/>
   </node>
 </launch>
 
