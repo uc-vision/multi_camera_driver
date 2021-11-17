@@ -18,6 +18,22 @@ camera_settings:
     - SensorShutterMode:
       - Global
       - ENUM
+    - BalanceWhiteAutoProfile:
+      - "Outdoor"
+      - ENUM
+    - AutoExposureLightingMode:
+      - "Backlight"
+      - ENUM
+    - AutoExposureExposureTimeUpperLimit:
+      - 2000
+      - FLOAT
+    - AutoExposureControlPriority:
+      - ExposureTime
+      - ENUM
+
+    - AutoExposureControlLoopDamping:
+      - 0.25
+      - FLOAT
     - PixelFormat:
       - BayerRG8
       - ENUM
@@ -26,14 +42,9 @@ camera_settings:
       - ENUM
     - AcquisitionMode:
       - Continuous
-      - ENUM
-    - WhiteBalanceAutoProfile:
-      - "Outdoor"
-      - ENUM
-    - LightingMode:
-      - "Backlight"
-      - ENUM
-      
+      - ENUM     
+
+
   transport_layer:
     - StreamBufferCountMode:
       - Manual
