@@ -40,10 +40,11 @@ camera_settings:
       - ENUM
 
     - StreamBufferCountManual:
-      - 1
+      - 4
       - INT
 
     - StreamBufferHandlingMode:
-      - NewestOnly
+            #      - NewestOnly
+      - OldestFirst
       - ENUM
 #  Stream:

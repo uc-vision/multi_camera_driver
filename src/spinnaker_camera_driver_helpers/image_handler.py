@@ -1,4 +1,5 @@
 import rospy
+import PySpin
 
 from queue import Queue
 from threading import Thread
@@ -40,9 +41,14 @@ class CameraHandler(object):
       item = self.queue.get()
       while item is not None:
         image, camera_info = item
-        image_info = spinnaker_image(image, camera_info) 
-        if image is not None:
-          self.publisher.publish(image_info.image_data, image_info.timestamp, image_info.seq)
+
+        try:
+          image_info = spinnaker_image(image, camera_info) 
+          if image_info is not None:
+            self.publisher.publish(image_info.image_data, image_info.timestamp, image_info.seq)
+        except PySpin.SpinnakerException as e:
+          rospy.logerr(e)
+
 
         item = self.queue.get()
 
