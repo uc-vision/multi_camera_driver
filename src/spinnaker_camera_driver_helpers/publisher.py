@@ -86,10 +86,11 @@ class CameraPublisher():
 
 
   def publish(self, image_data, timestamp, seq):
-    return self.publisher.publish(
-      data = CameraOutputs(self, image_data), 
-      header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
-    )
+      return self.publisher.publish(
+        data = CameraOutputs(self, image_data), 
+        header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
+      )
+
 
 
   def stop(self):

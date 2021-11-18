@@ -1,3 +1,5 @@
+from .common import EncoderError
+
 
 def image_backend(name):
   if name == 'torch_nvjpeg':
@@ -8,3 +10,6 @@ def image_backend(name):
     return turbo_jpeg.Processor
   else:
     raise RuntimeError(f"Unknown image backend {name} options are: turbo_jpeg | torch_nvjpeg")  
+
+
+  

@@ -31,8 +31,8 @@ def get_writable(nodemap, node_name, ptr):
   if not PySpin.IsAvailable(node):
     raise NodeException(suggest_node(nodemap, node_name))
 
-  if not PySpin.IsWritable(node):
-    raise NodeException('Node not writable {}. '.format(node_name))
+  # if not PySpin.IsWritable(node):
+  #   raise NodeException('Node not writable {}. '.format(node_name))
   return node
 
 

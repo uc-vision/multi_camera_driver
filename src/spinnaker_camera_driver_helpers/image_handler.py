@@ -1,3 +1,4 @@
+from .image_processor import EncoderError
 import rospy
 import PySpin
 
@@ -47,6 +48,8 @@ class CameraHandler(object):
           if image_info is not None:
             self.publisher.publish(image_info.image_data, image_info.timestamp, image_info.seq)
         except PySpin.SpinnakerException as e:
+          rospy.logerr(e)
+        except EncoderError as e:
           rospy.logerr(e)
 
 

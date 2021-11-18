@@ -85,6 +85,8 @@ class CameraArrayNode(object):
                 setter(camera, value, self.camera_info[k])      
         except PySpin.SpinnakerException as e:
             rospy.loginfo(f"set_property: {key} {value} {e} ")
+        except spinnaker_helpers.NodeException as e:
+            rospy.loginfo(f"set_property: {key} {value} {e} ")            
 
     
     def set_config_properties(self, config):
@@ -269,7 +271,7 @@ def main():
     system = PySpin.System.GetInstance()
     
     master_id = config.get("master", None)
-    HandlerType = ImageHandler #if master_id is None else SyncHandler
+    HandlerType = ImageHandler if master_id is None else SyncHandler
     publisher = HandlerType(camera_names, image_settings, calibration=calib.cameras)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()

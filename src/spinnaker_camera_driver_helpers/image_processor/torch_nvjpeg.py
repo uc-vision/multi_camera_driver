@@ -1,6 +1,8 @@
-from nvjpeg_torch import Jpeg
+from nvjpeg_torch import Jpeg, JpegException
 import torch
 from debayer import Debayer3x3
+
+from .common import EncoderError
 
 import torch.nn.functional as F
 from ..publisher import ImageSettings
@@ -44,10 +46,13 @@ class ImageOutputs(object):
       return image
 
     def encode(self, image):
-      channels_last = image.permute(0, 2, 3, 1).squeeze(0).contiguous()
+      try:
+        channels_last = image.permute(0, 2, 3, 1).squeeze(0).contiguous()
 
-      return self.parent.encoder.encode(
-          channels_last, quality=self.settings.quality).numpy().tobytes()
+        return self.parent.encoder.encode(
+            channels_last, quality=self.settings.quality).numpy().tobytes()
+      except JpegException as e:
+        raise EncoderError(str(e))
 
     @cached_property 
     def compressed(self):

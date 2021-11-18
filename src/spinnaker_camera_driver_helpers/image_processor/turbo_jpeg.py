@@ -5,6 +5,9 @@ from cached_property import cached_property
 import cv2
 from turbojpeg import TurboJPEG
 
+from .common import EncoderError
+
+
 class Processor(object):
   def __init__(self, settings : ImageSettings):
     self.encoder = TurboJPEG()
