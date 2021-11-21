@@ -28,10 +28,6 @@ camera_settings:
       - True
       - BOOL   
       
-    - PixelFormat:
-      - BayerRG8
-      - ENUM
-
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM

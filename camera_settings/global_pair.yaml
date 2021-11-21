@@ -25,18 +25,12 @@ camera_settings:
       - "Backlight"
       - ENUM
     - AutoExposureExposureTimeUpperLimit:
-      - 2000
+      - 4000
       - FLOAT
     - AutoExposureControlPriority:
       - ExposureTime
       - ENUM
 
-    - AutoExposureControlLoopDamping:
-      - 0.25
-      - FLOAT
-    - PixelFormat:
-      - BayerRG8
-      - ENUM
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
       - ENUM

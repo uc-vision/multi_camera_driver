@@ -28,23 +28,29 @@ class ImageOutputs(object):
       return self.parent.settings
 
     @cached_property
-    def image_color(self):
-      return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_BG2BGR)
+    def color(self):
+
+      if self.settings.encoding == "bayer_bggr8":
+        return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_RG2BGR)
+      elif self.settings.encoding == "bayer_rggb8":
+        return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_BG2BGR)
+      else:
+        raise RuntimeException(f"bayer encoding not implemented {self.settings.encoding}")
 
     def encode(self, image):
       return self.parent.encoder.encode(image, quality=self.settings.quality)
 
     @cached_property 
     def compressed(self):
-      return self.encode(self.image_color)
+      return self.encode(self.color)
 
     @cached_property 
     def preview(self):
-      img_h, img_w, _ = self.image_color.shape
+      img_h, img_w, _ = self.color.shape
 
       w = self.settings.preview_size
       h = int(img_h * (w / img_w)) 
 
-      preview_rgb = cv2.resize(self.image_color, dsize=(w, h))
+      preview_rgb = cv2.resize(self.color, dsize=(w, h))
       return self.encode(preview_rgb)
 
