@@ -1,0 +1,390 @@
+{
+  "cameras": {
+    "left": {
+      "model": "standard",
+      "image_size": [
+        4096,
+        3000
+      ],
+      "K": [
+        [
+          2468.721273521755,
+          0.0,
+          2061.3994900084763
+        ],
+        [
+          0.0,
+          2466.5087836427583,
+          1488.680049793109
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "dist": [
+        [
+          -0.10207918331109328,
+          0.08197085390715396,
+          0.00043728834466128256,
+          0.00018583443784561717,
+          -0.003199936144058684
+        ]
+      ]
+    },
+    "right": {
+      "model": "standard",
+      "image_size": [
+        4096,
+        3000
+      ],
+      "K": [
+        [
+          2451.825492773034,
+          0.0,
+          2058.764869199433
+        ],
+        [
+          0.0,
+          2450.2235262048425,
+          1495.0378650835905
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "dist": [
+        [
+          -0.11457157061375342,
+          0.1137555500833864,
+          0.0013683296549217227,
+          -6.923045910218001e-06,
+          -0.02595786021307232
+        ]
+      ]
+    }
+  },
+  "camera_poses": {
+    "left": {
+      "R": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "T": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "right_to_left": {
+      "R": [
+        [
+          0.9999988122512077,
+          0.0005710801547548275,
+          0.0014315598593968967
+        ],
+        [
+          -0.0005557120671542481,
+          0.9999424628313982,
+          -0.01071271257789216
+        ],
+        [
+          -0.0014375953090527299,
+          0.01071190431879201,
+          0.9999415925070788
+        ]
+      ],
+      "T": [
+        -0.10010787508932184,
+        -0.0003456626151319023,
+        -4.014563355061082e-05
+      ]
+    }
+  },
+  "image_sets": {
+    "rgb": [
+      {
+        "left": "left/00000.jpg",
+        "right": "right/00000.jpg"
+      },
+      {
+        "left": "left/00001.jpg",
+        "right": "right/00001.jpg"
+      },
+      {
+        "left": "left/00002.jpg",
+        "right": "right/00002.jpg"
+      },
+      {
+        "left": "left/00003.jpg",
+        "right": "right/00003.jpg"
+      },
+      {
+        "left": "left/00004.jpg",
+        "right": "right/00004.jpg"
+      },
+      {
+        "left": "left/00005.jpg",
+        "right": "right/00005.jpg"
+      },
+      {
+        "left": "left/00006.jpg",
+        "right": "right/00006.jpg"
+      },
+      {
+        "left": "left/00007.jpg",
+        "right": "right/00007.jpg"
+      },
+      {
+        "left": "left/00008.jpg",
+        "right": "right/00008.jpg"
+      },
+      {
+        "left": "left/00009.jpg",
+        "right": "right/00009.jpg"
+      },
+      {
+        "left": "left/00010.jpg",
+        "right": "right/00010.jpg"
+      },
+      {
+        "left": "left/00011.jpg",
+        "right": "right/00011.jpg"
+      },
+      {
+        "left": "left/00012.jpg",
+        "right": "right/00012.jpg"
+      },
+      {
+        "left": "left/00013.jpg",
+        "right": "right/00013.jpg"
+      },
+      {
+        "left": "left/00014.jpg",
+        "right": "right/00014.jpg"
+      },
+      {
+        "left": "left/00015.jpg",
+        "right": "right/00015.jpg"
+      },
+      {
+        "left": "left/00016.jpg",
+        "right": "right/00016.jpg"
+      },
+      {
+        "left": "left/00017.jpg",
+        "right": "right/00017.jpg"
+      },
+      {
+        "left": "left/00018.jpg",
+        "right": "right/00018.jpg"
+      },
+      {
+        "left": "left/00019.jpg",
+        "right": "right/00019.jpg"
+      },
+      {
+        "left": "left/00020.jpg",
+        "right": "right/00020.jpg"
+      },
+      {
+        "left": "left/00021.jpg",
+        "right": "right/00021.jpg"
+      },
+      {
+        "left": "left/00022.jpg",
+        "right": "right/00022.jpg"
+      },
+      {
+        "left": "left/00023.jpg",
+        "right": "right/00023.jpg"
+      },
+      {
+        "left": "left/00024.jpg",
+        "right": "right/00024.jpg"
+      },
+      {
+        "left": "left/00025.jpg",
+        "right": "right/00025.jpg"
+      },
+      {
+        "left": "left/00026.jpg",
+        "right": "right/00026.jpg"
+      },
+      {
+        "left": "left/00027.jpg",
+        "right": "right/00027.jpg"
+      },
+      {
+        "left": "left/00028.jpg",
+        "right": "right/00028.jpg"
+      },
+      {
+        "left": "left/00029.jpg",
+        "right": "right/00029.jpg"
+      },
+      {
+        "left": "left/00030.jpg",
+        "right": "right/00030.jpg"
+      },
+      {
+        "left": "left/00031.jpg",
+        "right": "right/00031.jpg"
+      },
+      {
+        "left": "left/00032.jpg",
+        "right": "right/00032.jpg"
+      },
+      {
+        "left": "left/00033.jpg",
+        "right": "right/00033.jpg"
+      },
+      {
+        "left": "left/00034.jpg",
+        "right": "right/00034.jpg"
+      },
+      {
+        "left": "left/00035.jpg",
+        "right": "right/00035.jpg"
+      },
+      {
+        "left": "left/00036.jpg",
+        "right": "right/00036.jpg"
+      },
+      {
+        "left": "left/00037.jpg",
+        "right": "right/00037.jpg"
+      },
+      {
+        "left": "left/00038.jpg",
+        "right": "right/00038.jpg"
+      },
+      {
+        "left": "left/00039.jpg",
+        "right": "right/00039.jpg"
+      },
+      {
+        "left": "left/00040.jpg",
+        "right": "right/00040.jpg"
+      },
+      {
+        "left": "left/00041.jpg",
+        "right": "right/00041.jpg"
+      },
+      {
+        "left": "left/00042.jpg",
+        "right": "right/00042.jpg"
+      },
+      {
+        "left": "left/00043.jpg",
+        "right": "right/00043.jpg"
+      },
+      {
+        "left": "left/00044.jpg",
+        "right": "right/00044.jpg"
+      },
+      {
+        "left": "left/00045.jpg",
+        "right": "right/00045.jpg"
+      },
+      {
+        "left": "left/00046.jpg",
+        "right": "right/00046.jpg"
+      },
+      {
+        "left": "left/00047.jpg",
+        "right": "right/00047.jpg"
+      },
+      {
+        "left": "left/00048.jpg",
+        "right": "right/00048.jpg"
+      },
+      {
+        "left": "left/00049.jpg",
+        "right": "right/00049.jpg"
+      },
+      {
+        "left": "left/00050.jpg",
+        "right": "right/00050.jpg"
+      },
+      {
+        "left": "left/00051.jpg",
+        "right": "right/00051.jpg"
+      },
+      {
+        "left": "left/00052.jpg",
+        "right": "right/00052.jpg"
+      },
+      {
+        "left": "left/00053.jpg",
+        "right": "right/00053.jpg"
+      },
+      {
+        "left": "left/00054.jpg",
+        "right": "right/00054.jpg"
+      },
+      {
+        "left": "left/00055.jpg",
+        "right": "right/00055.jpg"
+      },
+      {
+        "left": "left/00056.jpg",
+        "right": "right/00056.jpg"
+      },
+      {
+        "left": "left/00057.jpg",
+        "right": "right/00057.jpg"
+      },
+      {
+        "left": "left/00058.jpg",
+        "right": "right/00058.jpg"
+      },
+      {
+        "left": "left/00059.jpg",
+        "right": "right/00059.jpg"
+      }
+    ]
+  },
+  "tracking_rig": [
+    [
+      -0.02041120781499742,
+      0.022246148258973017,
+      0.9995441418382541,
+      0.0794527082379785
+    ],
+    [
+      0.9997866350828423,
+      0.0036268772035923116,
+      0.020335438807097574,
+      -0.05035953511568285
+    ],
+    [
+      -0.0031728386754034305,
+      0.9997459450527367,
+      -0.022315430655714622,
+      -0.05619733236421716
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ]
+}

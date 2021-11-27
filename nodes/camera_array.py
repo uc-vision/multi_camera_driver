@@ -278,6 +278,7 @@ def main():
     publish_extrinsics(broadcaster, calib, camera_names)
 
     def on_recalibrated(msg):
+      rospy.loginfo("Recieved recalibration, importing")
       try:
         calib = import_calibrations(msg.data, camera_names, tracking_frame)
 
@@ -296,7 +297,6 @@ def main():
       camera_settings = config["camera_settings"],
       master_id = master_id,
     )
-
 
     try:
         camera_node.capture()

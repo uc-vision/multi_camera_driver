@@ -6,7 +6,9 @@ from queue import Queue
 from threading import Thread
 
 from .publisher import CameraPublisher, ImageSettings
-from .image_handler import spinnaker_image, ImageSettings
+from .image_handler import spinnaker_image, EncoderError
+
+import PySpin
 
 def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
@@ -91,13 +93,16 @@ class SyncHandler(object):
 
 
 
+
+
   def process_image(self, image, camera_name, camera_info):
+    try:
       image_info = spinnaker_image(image, camera_info)._extend(camera_name=camera_name)
       if image is None:
         return
-
       self.add_frame(image_info)
       
+
       found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_names))
       if found is not None:
         timestamp, group, self.frame_queue = found
@@ -105,6 +110,10 @@ class SyncHandler(object):
 
         for k, frame in group.items():
           self.publishers[k].publish(frame.image_data, timestamp, frame.seq)
+    except PySpin.SpinnakerException as e:
+      rospy.logerr(e)
+    except EncoderError as e:
+      rospy.logerr(e)
 
 
   def set_option(self, key, value):
