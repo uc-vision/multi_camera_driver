@@ -1,0 +1,44 @@
+camera_aliases:
+  22083915: cam3
+  22083908: cam4
+  22083907: cam6
+  22083921: cam5
+  22083916: cam2
+  22083922: cam1
+
+master: 22083922
+
+timeout: 1.0
+max_framerate: 4.0 
+
+reset_cycle: False
+
+
+camera_settings:
+  device:
+    - UserSetSelector:
+      - Default
+      - ENUM
+    - SensorShutterMode:
+      - Global
+      - ENUM
+    - PixelFormat:
+      - BayerRG8
+      - ENUM
+    - TriggerMode:
+      - "Off"  # needs quotes otherwise is evaluated to false
+      - ENUM
+    - AcquisitionMode:
+      - Continuous
+      - ENUM
+  transport_layer:
+    - StreamBufferCountMode:
+      - Manual
+      - ENUM
+    - StreamBufferCountManual:
+      - 1
+      - INT
+    - StreamBufferHandlingMode:
+      - NewestOnly
+      - ENUM
+#  Stream:
