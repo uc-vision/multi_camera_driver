@@ -254,22 +254,34 @@ def load_defaults(camera):
     set_enum(nodemap, "UserSetSelector", "Default")
     execute(nodemap, "UserSetLoad")
 
+
+
 def reset_all():
     rospy.loginfo("Reset all:")
     system = PySpin.System.GetInstance()
-    camera_list = system.GetCameras()
     camera = None
 
+    camera_list = system.GetCameras()
     rospy.loginfo("Detected {} cameras".format(len(camera_list)))
-    for i, camera in enumerate(camera_list):
-        nodemap_tldevice = camera.GetTLDeviceNodeMap()
-        serial = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
-        rospy.loginfo("Reset {}".format(serial.GetValue()))
-        reset_camera(camera)
+    cameras = {get_camera_serial(camera):camera for camera in camera_list}
+
+    for k, camera in cameras.items():
+        rospy.loginfo("Init {}".format(k))
+        camera.Init()
+
+
+    for k, camera in cameras.items():
+        rospy.loginfo("Reset {}".format(k))
+
+        nodemap = camera.GetNodeMap()
+        execute(nodemap, "DeviceReset")  
+        # camera.DeInit()
 
     rospy.loginfo("Done")
 
     del camera
+    del cameras
+
     camera_list.Clear()
 
     gc.collect()

@@ -245,9 +245,9 @@ def main():
     calib = load_calibrations(calibration_file, camera_names, 
       tracking_frame)
 
-    if rospy.get_param("~reset_cycle", False):
+    if rospy.get_param("~reset_cycle", True):
         spinnaker_helpers.reset_all()
-        rospy.sleep(2)
+        rospy.sleep(1)
 
     default_backend = "turbo_jpeg"
     try:
@@ -264,7 +264,7 @@ def main():
         preview_size = rospy.get_param("~preview_width", 400),
         encoding = config.get("encoding", "bayer_rggb8"),
         device = rospy.get_param("~device", 'cuda:0'),
-        quality = 90,
+        quality = 95,
         image_backend = rospy.get_param("~backend", default_backend)
     )
  
