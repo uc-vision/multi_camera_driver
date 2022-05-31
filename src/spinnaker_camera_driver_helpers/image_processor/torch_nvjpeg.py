@@ -1,6 +1,6 @@
 from nvjpeg_torch import Jpeg, JpegException
 import torch
-from debayer import Debayer5x5
+from debayer import Debayer3x3
 
 from .common import EncoderError
 
@@ -15,7 +15,7 @@ class Processor(object):
     self.settings = settings
 
     self.encoder = Jpeg()
-    self.debayer = Debayer5x5().to(dtype=torch.float16, device=self.settings.device)
+    self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
 
   def __call__(self, image_raw):
     return ImageOutputs(self, image_raw)
