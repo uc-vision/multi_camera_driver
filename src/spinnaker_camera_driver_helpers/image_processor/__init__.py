@@ -8,6 +8,7 @@ def image_backend(name):
   elif name == 'turbo_jpeg':
     from . import turbo_jpeg
     return turbo_jpeg.Processor
+
   else:
     raise RuntimeError(f"Unknown image backend {name} options are: turbo_jpeg | torch_nvjpeg")  
 

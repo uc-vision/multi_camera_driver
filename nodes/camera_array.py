@@ -218,7 +218,6 @@ class CameraArrayNode(object):
         for k, camera in self.camera_dict.items() }
        
 
-
     def cleanup(self):
         rospy.loginfo("Stopping cameras")
         
@@ -249,6 +248,7 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(1)
 
+    use_sync = rospy.get_param("~sync_handler", False)
     default_backend = "turbo_jpeg"
     try:
       import nvjpeg_torch
@@ -256,9 +256,9 @@ def main():
 
       if torch.cuda.is_available():
         default_backend = "torch_nvjpeg"
+        use_sync = True
     except ModuleNotFoundError:
       pass
-
 
     image_settings = ImageSettings(
         preview_size = rospy.get_param("~preview_width", 400),
@@ -271,7 +271,10 @@ def main():
     system = PySpin.System.GetInstance()
     
     master_id = config.get("master", None)
-    HandlerType = ImageHandler if master_id is None else SyncHandler
+    if master_id is None:
+      use_sync = False
+
+    HandlerType = ImageHandler if not use_sync else SyncHandler
     publisher = HandlerType(camera_names, image_settings, calibration=calib.cameras)
     
     broadcaster = tf2_ros.StaticTransformBroadcaster()

@@ -255,40 +255,40 @@ def load_defaults(camera):
     execute(nodemap, "UserSetLoad")
 
 
+def _reset_all(system):
+  camera_list = system.GetCameras()
+  rospy.loginfo("Detected {} cameras".format(len(camera_list)))
+  cameras = {get_camera_serial(camera):camera for camera in camera_list}
+
+  for k, camera in cameras.items():
+      rospy.loginfo("Init {}".format(k))
+      camera.Init()
+      load_defaults(camera)
+
+  for k, camera in cameras.items():
+      rospy.loginfo("Reset {}".format(k))
+      nodemap = camera.GetNodeMap()
+      execute(nodemap, "DeviceReset")  
+
+  del camera
+  del cameras
+  camera_list.Clear()
+      
 
 def reset_all():
-    rospy.loginfo("Reset all:")
-    system = PySpin.System.GetInstance()
-    camera = None
+  rospy.loginfo("Reset all:")
+  system = PySpin.System.GetInstance()
+  _reset_all(system)
+  
+  gc.collect()
+  rospy.sleep(1.0)
 
-    camera_list = system.GetCameras()
-    rospy.loginfo("Detected {} cameras".format(len(camera_list)))
-    cameras = {get_camera_serial(camera):camera for camera in camera_list}
-
-    for k, camera in cameras.items():
-        rospy.loginfo("Init {}".format(k))
-        camera.Init()
+  rospy.loginfo("Release system:")
+  system.ReleaseInstance()
+  rospy.sleep(1.0)
 
 
-    for k, camera in cameras.items():
-        rospy.loginfo("Reset {}".format(k))
-
-        nodemap = camera.GetNodeMap()
-        execute(nodemap, "DeviceReset")  
-        # camera.DeInit()
-
-    rospy.loginfo("Done")
-
-    del camera
-    del cameras
-
-    camera_list.Clear()
-
-    gc.collect()
-
-    rospy.loginfo("Release system:")
-    system.ReleaseInstance()
-    rospy.loginfo("Done")
+  rospy.loginfo("Done")
 
 
 def load_defaults(camera):

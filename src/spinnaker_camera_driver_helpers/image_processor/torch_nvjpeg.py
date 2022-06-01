@@ -1,6 +1,6 @@
 from nvjpeg_torch import Jpeg, JpegException
 import torch
-from debayer import Debayer3x3
+from debayer import Debayer3x3, Layout
 
 from .common import EncoderError
 
@@ -15,16 +15,28 @@ class Processor(object):
     self.settings = settings
 
     self.encoder = Jpeg()
-    self.debayer = Debayer3x3().to(dtype=torch.float16, device=self.settings.device)
+    layouts = dict(
+      bayer_rggb8 = Layout.RGGB, 
+      bayer_grbg8 = Layout.GRBG,
+      bayer_gbrg8 = Layout.GBRG,
+      bayer_bggr8 = Layout.BGGR
+    )
+
+    assert settings.encoding in layouts
+
+    self.dtype = torch.float16
+    self.debayer = Debayer3x3(layouts[settings.encoding]
+      ).to(dtype=self.dtype, device=self.settings.device)
 
   def __call__(self, image_raw):
-    return ImageOutputs(self, image_raw)
+    return ImageOutputs(self, image_raw, self.dtype)
 
 
 class ImageOutputs(object):
-    def __init__(self, parent, image_raw):
+    def __init__(self, parent, image_raw, dtype):
         self.parent = parent
-        self.raw = image_raw
+        self.raw = torch.from_numpy(image_raw).cuda()
+        self.dtype = dtype
 
 
     @property 
@@ -34,9 +46,9 @@ class ImageOutputs(object):
     @cached_property
     def cuda_rgb(self):
       with torch.inference_mode():
-        bayer = torch.from_numpy(self.raw).cuda()
+        bayer = self.raw
         batched = bayer.view(1, 1, *bayer.shape)
-        rgb = self.parent.debayer(batched.to(dtype=torch.float16))
+        rgb = self.parent.debayer(batched.to(dtype=self.dtype))
         return rgb.to(dtype=torch.uint8).flip(1)
 
 
