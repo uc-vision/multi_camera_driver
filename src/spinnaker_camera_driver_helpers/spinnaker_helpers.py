@@ -280,8 +280,8 @@ def reset_all():
   system = PySpin.System.GetInstance()
   _reset_all(system)
   
-  gc.collect()
   rospy.sleep(1.0)
+  gc.collect(generation=0)
 
   rospy.loginfo("Release system:")
   system.ReleaseInstance()

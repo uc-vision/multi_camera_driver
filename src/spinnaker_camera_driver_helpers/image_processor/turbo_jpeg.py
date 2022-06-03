@@ -7,21 +7,33 @@ from turbojpeg import TurboJPEG
 
 from .common import EncoderError
 
+def cv_conversion(settings):
+  if settings.encoding == "bayer_bggr8":
+    return cv2.COLOR_BAYER_RG2BGR
+  elif settings.encoding == "bayer_rggb8":
+    return cv2.COLOR_BAYER_BG2BGR
+  else:
+    raise RuntimeException(f"bayer encoding not implemented {settings.encoding}")
+
+
 
 class Processor(object):
   def __init__(self, settings : ImageSettings):
     self.encoder = TurboJPEG()
     self.settings = settings
 
+    self.conversion = cv_conversion(settings)
+
 
   def __call__(self, raw):
-    return ImageOutputs(self, raw)
+    return ImageOutputs(self, raw, self.conversion)
 
 
 class ImageOutputs(object):
-    def __init__(self, parent, raw):
+    def __init__(self, parent, raw, conversion):
         self.parent = parent
         self.raw = raw
+        self.conversion = conversion
 
     @property 
     def settings(self) -> ImageSettings:
@@ -29,13 +41,7 @@ class ImageOutputs(object):
 
     @cached_property
     def color(self):
-
-      if self.settings.encoding == "bayer_bggr8":
-        return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_RG2BGR)
-      elif self.settings.encoding == "bayer_rggb8":
-        return cv2.cvtColor(self.raw, cv2.COLOR_BAYER_BG2BGR)
-      else:
-        raise RuntimeException(f"bayer encoding not implemented {self.settings.encoding}")
+        return cv2.cvtColor(self.raw, self.conversion)
 
     def encode(self, image):
       return self.parent.encoder.encode(image, quality=self.settings.quality)

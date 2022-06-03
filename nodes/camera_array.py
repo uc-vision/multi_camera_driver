@@ -232,6 +232,10 @@ class CameraArrayNode(object):
 def main():
     rospy.init_node('camera_array_node', anonymous=False)
 
+    if rospy.get_param("~reset_cycle", True):
+        spinnaker_helpers.reset_all()
+        rospy.sleep(1)
+
     rospy.loginfo("Starting")
     config_file = rospy.get_param("~config_file")
 
@@ -244,9 +248,7 @@ def main():
     calib = load_calibrations(calibration_file, camera_names, 
       tracking_frame)
 
-    if rospy.get_param("~reset_cycle", True):
-        spinnaker_helpers.reset_all()
-        rospy.sleep(1)
+ 
 
     use_sync = rospy.get_param("~sync_handler", True)
     default_backend = "turbo_jpeg"

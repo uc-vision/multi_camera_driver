@@ -64,7 +64,6 @@ class CameraPublisher():
 
     topics = {
         "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.raw, encoding=settings.encoding)),
-        "image_color"      : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.color, encoding="bgr8")),
         "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.image.compressed, format = "jpeg")), 
         "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.image.preview, format = "jpeg")),
         "camera_info" : (CameraInfo, lambda data: data.camera_info)

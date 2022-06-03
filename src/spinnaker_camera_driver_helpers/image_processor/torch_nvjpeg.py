@@ -56,14 +56,10 @@ class ImageOutputs(object):
         batched = bayer.view(1, 1, *bayer.shape).to(memory_format=torch.channels_last)
 
         rgb = self.parent.debayer(batched.to(dtype=self.dtype))
-        return rgb.to(dtype=torch.uint8).flip(1)
+        return rgb.to(dtype=torch.uint8)
 
 
-    @cached_property
-    def color(self):
-      with torch.inference_mode():
-        image = self.cuda_rgb.permute(0, 2, 3, 1).squeeze(0).cpu().numpy()
-        return image
+
 
     def encode(self, image):
       with torch.inference_mode():
@@ -71,7 +67,9 @@ class ImageOutputs(object):
           channels_last = image.squeeze(0)
 
           return self.parent.encoder.encode(
-              channels_last, quality=self.settings.quality).numpy().tobytes()
+              channels_last, 
+              quality=self.settings.quality,
+              input_format = Jpeg.RGB).numpy().tobytes()
         except JpegException as e:
           raise EncoderError(str(e))
 
