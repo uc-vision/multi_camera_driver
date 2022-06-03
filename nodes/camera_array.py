@@ -248,7 +248,7 @@ def main():
         spinnaker_helpers.reset_all()
         rospy.sleep(1)
 
-    use_sync = rospy.get_param("~sync_handler", False)
+    use_sync = rospy.get_param("~sync_handler", True)
     default_backend = "turbo_jpeg"
     try:
       import nvjpeg_torch

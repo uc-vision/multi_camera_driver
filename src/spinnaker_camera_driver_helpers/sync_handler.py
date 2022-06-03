@@ -9,6 +9,7 @@ from .publisher import CameraPublisher, ImageSettings
 from .image_handler import spinnaker_image, EncoderError
 
 import PySpin
+import torch
 
 def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
@@ -77,9 +78,9 @@ class SyncHandler(object):
       self.process_image(image, camera_name, camera_info)
       item = self.queue.get()
 
+
     for publisher in self.publishers.values():
       publisher.stop()        
-
 
 
   def add_frame(self, image_info):
@@ -100,6 +101,7 @@ class SyncHandler(object):
       image_info = spinnaker_image(image, camera_info)._extend(camera_name=camera_name)
       if image is None:
         return
+
       self.add_frame(image_info)
       
 

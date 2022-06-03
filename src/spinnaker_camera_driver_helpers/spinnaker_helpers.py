@@ -285,7 +285,7 @@ def reset_all():
 
   rospy.loginfo("Release system:")
   system.ReleaseInstance()
-  rospy.sleep(1.0)
+  rospy.sleep(2.0)
 
 
   rospy.loginfo("Done")

@@ -1,5 +1,7 @@
 
 
+from queue import Queue
+from threading import Thread
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
@@ -55,6 +57,8 @@ class CameraPublisher():
 
     self.calibration = calibration
 
+    self.queue = Queue(1)
+    self.worker = Thread(target = self.publish_worker)
     
     bridge = CvBridge()
 
@@ -67,6 +71,7 @@ class CameraPublisher():
     }
 
     self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)
+
 
   def register(self):
     return []     # Here's where the lazy subscriber subscribes to it's inputs (none for this)
@@ -86,18 +91,24 @@ class CameraPublisher():
 
 
   def publish(self, image_data, timestamp, seq):
-      return self.publisher.publish(
-        data = CameraOutputs(self, image_data), 
-        header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
-      )
+      data = CameraOutputs(self, image_data)
+      header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
+      return self.queue.put( (data, header) )
 
 
+  def publish_worker(self):
+      item = self.queue.get()
+      while item is not None:
+        data, header = item
+        self.publisher.publish(data=data, header=header)
+        item = self.queue.get()
 
   def stop(self):
-    pass
+    self.queue.put(None)
+    self.worker.join()
 
   def start(self):
-    pass
+    self.worker.start()
 
 
 
