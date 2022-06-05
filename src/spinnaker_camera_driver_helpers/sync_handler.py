@@ -1,5 +1,6 @@
 
 from os import sync
+from typing import Any, Dict, Tuple
 import rospy
 
 from queue import Queue
@@ -43,12 +44,12 @@ def take_group(frame_queue, sync_threshold, min_size):
 
 
 class SyncHandler(object):
-  def __init__(self, camera_names, settings=ImageSettings(), 
+  def __init__(self, camera_names, settings : Dict[str, ImageSettings], 
     timeout_msec=1000, sync_threshold_msec=10, calibration={}):
 
     self.camera_names = camera_names
     self.publishers = {
-      k:  CameraPublisher(k, settings, calibration.get(k, None)) 
+      k:  CameraPublisher(k, settings[k], calibration.get(k, None)) 
         for k in camera_names
     }
 
@@ -118,9 +119,14 @@ class SyncHandler(object):
       rospy.logerr(e)
 
 
-  def set_option(self, key, value):
+  def set_camera_options(self, k, options :  Dict[str, Any] ):
+    assert k in self.publishers
+    self.publishers[k].set_options(options)
+
+
+  def set_options(self, options : Dict[str, Any]):
     for publisher in self.publishers.values():
-      publisher.set_option(key, value)
+      publisher.set_options(options)
 
   def stop(self):
 

@@ -1,3 +1,4 @@
+from typing import Dict
 from .image_processor import EncoderError
 import rospy
 import PySpin
@@ -85,12 +86,12 @@ class CameraHandler(object):
 
 
 class ImageHandler(object):
-  def __init__(self, camera_names, settings=ImageSettings(), calibration={}):
+  def __init__(self, camera_names, settings : Dict[str, ImageSettings], calibration={}):
 
     self.camera_names = camera_names
     self.handlers = {
       k:  CameraHandler(
-        CameraPublisher(k, settings, calibration.get(k, None))) 
+        CameraPublisher(k, settings[k], calibration.get(k, None))) 
           for k in camera_names
     }
 

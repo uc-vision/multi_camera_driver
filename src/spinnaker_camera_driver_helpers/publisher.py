@@ -2,47 +2,31 @@
 
 from queue import Queue
 from threading import Thread
+from typing import Any, Dict, Tuple
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sensor_msgs.msg import CameraInfo
 from camera_geometry_ros.conversions import camera_info_msg
-from cached_property import cached_property
 
 from .image_processor import image_backend
-
+from structs.struct import struct
 
 @dataclass
 class ImageSettings:
-  preview_size : int = 400
+  image_size : Tuple[int, int] = field(default_factory=lambda: (0, 0))
   encoding : str = 'bayer_bggr8' 
   device : str = 'cuda:0'
   queue_size : int = 4
+
+  preview_size : int = 400
   quality : int = 90
   image_backend : str = 'turbo_jpeg'
-
-
-class CameraOutputs():
-  def __init__(self, parent, image_raw):
-    self.parent = parent
-    self.image = self.parent.image_processor(image_raw)
-    self.image_raw = image_raw
-
-
-  @cached_property
-  def camera_info(self):
-    if self.parent.calibration is not None:
-      calibration = self.parent.calibration.resize_image(
-              (self.image_raw.shape[1], self.image_raw.shape[0]))
-      return camera_info_msg(calibration)
-    else:
-      return CameraInfo()
-
 
 
 
@@ -52,13 +36,13 @@ class CameraPublisher():
     self.camera_name = camera_name
     self.settings = settings
 
-    processor = image_backend(settings.image_backend)
-    self.image_processor = processor(settings)
+    self.backend = image_backend(settings.image_backend)
+    self.image_processor = None
 
     self.calibration = calibration
 
     self.queue = Queue(1)
-    self.worker = Thread(target = self.publish_worker)
+    self.worker = None
     
     bridge = CvBridge()
 
@@ -79,18 +63,38 @@ class CameraPublisher():
   def update_calibration(self, camera):
     self.calibration = camera
 
-  def set_option(self, option, value):
-    if option == "preview_size":
-      self.settings.preview_size = value
-    elif option == "quality":
-      assert value > 0 and value <= 100
-      self.settings.quality = value
-    else:
-      assert False, f"unknown option {option}"
+  @property
+  def camera_info(self):
+    width, height = self.settings.image_size
 
+    if self.calibration is not None:
+      calibration = self.calibration.resize_image(width, height)
+      return camera_info_msg(calibration)
+    else:
+      return CameraInfo(width = width, height = height)
+
+  def set_options(self, values : Dict[str, Any]):
+    for option, value in values.items():
+      if option == "image_size":
+
+        assert self.worker is None, "image size cannot be changed while running" 
+        self.settings.image_size = value
+        
+      elif option == "preview_size":
+        self.settings.preview_size = value
+      elif option == "quality":
+        assert value > 0 and value <= 100
+        self.settings.quality = value
+      else:
+        assert False, f"unknown option {option}"
+    
 
   def publish(self, image_data, timestamp, seq):
-      data = CameraOutputs(self, image_data)
+      data = struct(
+        image = self.image_processor(image_data),
+        camera_info = self.camera_info
+      )
+
       header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
       return self.queue.put( (data, header) )
 
@@ -106,7 +110,15 @@ class CameraPublisher():
     self.queue.put(None)
     self.worker.join()
 
+    self.worker = None
+
   def start(self):
+    assert self.worker is None
+
+    # Lazily create in case of image size changes
+    self.image_processor = self.backend(self.settings)
+
+    self.worker = Thread(target = self.publish_worker)
     self.worker.start()
 
 

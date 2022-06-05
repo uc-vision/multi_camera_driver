@@ -2,7 +2,7 @@ from . import spinnaker_helpers
 import PySpin
 
 def set_exposure(camera : PySpin.Camera, exposure_time, info):
-    """Set the cameras exposure time the the given value. If 0 set to auto"""
+    """Set the cameras exposure time to the given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     if exposure_time > 0:
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Off")
@@ -12,7 +12,7 @@ def set_exposure(camera : PySpin.Camera, exposure_time, info):
 
 
 def set_gain(camera : PySpin.Camera, gain, info):
-    """Set the cameras exposure time the the given value. If 0 set to auto"""
+    """Set the cameras gain to given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     if gain > 0:
         spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
@@ -40,7 +40,7 @@ def set_grey_value(camera : PySpin.Camera, value, info):
 
 
 def set_black_level(camera : PySpin.Camera, value, info):
-    """Set the target grey value. If 0 set to auto"""
+    """Set the target black level. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     return spinnaker_helpers.try_set_float(node_map, "BlackLevel", value)
 
@@ -72,6 +72,7 @@ def set_binning(camera : PySpin.Camera, value : int, info):
 
     spinnaker_helpers.try_set_int(node_map, "Width", w)
     spinnaker_helpers.try_set_int(node_map, "Height", h)
+
 
 
 

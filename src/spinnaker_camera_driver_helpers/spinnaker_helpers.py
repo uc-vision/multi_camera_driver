@@ -403,3 +403,12 @@ def validate_init(camera):
 
 def validate_streaming(camera):
     return validate_init(camera) and camera.IsStreaming()
+
+
+def get_image_size(camera : PySpin.Camera):
+    node_map = camera.GetNodeMap()
+
+    w = get_int(node_map, "Width")
+    h = get_int(node_map, "Height")
+
+    return (w, h)
