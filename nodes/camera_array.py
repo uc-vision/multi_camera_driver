@@ -59,27 +59,15 @@ def create_publisher(camera_set:CameraSet, config, calib):
   return handler_type(camera_set.camera_ids, image_settings, calibration=calib.cameras)
 
 
-def main():
-  rospy.init_node('camera_array_node', anonymous=False)
-
-  if rospy.get_param("~reset_cycle", False):
-    spinnaker_helpers.reset_all()
-    rospy.sleep(1)
-
-  rospy.loginfo("Starting")
-
+def run_node():
   config_file = rospy.get_param("~config_file")
   config = load_config(config_file)
-
-
-  system = PySpin.System.GetInstance()
 
   camera_set = CameraSet(
       camera_serials=config["camera_aliases"],
       camera_settings=config["camera_settings"],
       master_id=config.get("master", None),
   )
-
 
   calibration_file = rospy.get_param("~calibration_file", None)
   tracking_frame = rospy.get_param("tracking_frame", None)
@@ -118,10 +106,25 @@ def main():
 
   image_publisher.stop()
   camera_node.stop()
-
   camera_node.cleanup()
+
   del camera_node
-  gc.collect()
+  del camera_set
+  del image_publisher
+
+def main():
+  rospy.init_node('camera_array_node', anonymous=False)
+
+  if rospy.get_param("~reset_cycle", True):
+    spinnaker_helpers.reset_all()
+    rospy.sleep(1)
+
+  rospy.loginfo("Starting")
+
+  system = PySpin.System.GetInstance()
+
+  run_node()
+  gc.collect(0)
 
   system.ReleaseInstance()
 

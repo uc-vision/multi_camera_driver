@@ -70,18 +70,12 @@ class SyncHandler(object):
 
 
   def worker(self):
-    for publisher in self.publishers.values():
-      publisher.start()       
-
     item = self.queue.get()
     while item is not None:
       image, camera_name, camera_info = item
       self.process_image(image, camera_name, camera_info)
       item = self.queue.get()
-
-
-    for publisher in self.publishers.values():
-      publisher.stop()        
+  
 
 
   def add_frame(self, image_info):
@@ -104,8 +98,6 @@ class SyncHandler(object):
         return
 
       self.add_frame(image_info)
-      
-
       found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_names))
       if found is not None:
         timestamp, group, self.frame_queue = found
@@ -129,16 +121,20 @@ class SyncHandler(object):
       publisher.set_options(options)
 
   def stop(self):
-
     if self.thread is not None:
       self.queue.put(None)
       rospy.loginfo(f"Waiting for publisher thread {self.thread}")
 
       self.thread.join()
       rospy.loginfo(f"Done {self.thread}")
+      for publisher in self.publishers.values():
+        publisher.stop()  
+
     self.thread = None
 
   def start(self):
- 
+      for publisher in self.publishers.values():
+        publisher.start()   
+
       self.thread = Thread(target=self.worker)        
       self.thread.start()

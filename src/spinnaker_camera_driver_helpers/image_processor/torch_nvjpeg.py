@@ -41,10 +41,10 @@ def compile(model, input):
 def debayer_kornia(settings, dtype=torch.float16):
 
   layouts = dict(
-    bayer_rggb8 = CFA.RG, 
-    bayer_grbg8 = CFA.GR,
-    bayer_gbrg8 = CFA.GB,
-    bayer_bggr8 = CFA.BG
+    bayer_rggb8 = CFA.BG, 
+    bayer_grbg8 = CFA.GB,
+    bayer_gbrg8 = CFA.GR,
+    bayer_bggr8 = CFA.RG
   )
   w, h = settings.image_size
 
