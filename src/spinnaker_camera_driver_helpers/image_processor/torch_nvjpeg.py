@@ -1,5 +1,7 @@
+from functools import partial
 from nvjpeg_torch import Jpeg, JpegException
 import torch
+from pathlib import Path
 
 from .common import EncoderError
 
@@ -7,6 +9,13 @@ import torch.nn.functional as F
 from ..publisher import ImageSettings
 
 from cached_property import cached_property
+from torch import nn
+
+import tensorrt as trt
+from torch2trt import torch2trt, TRTModule
+from kornia.color import CFA, RawToRgb
+
+import rospy
 
 
 def debayer_module(settings, dtype=torch.float16):
@@ -25,14 +34,63 @@ def debayer_module(settings, dtype=torch.float16):
 
     return debayer
 
+def compile(model, input):
+  return torch2trt(model, input, 
+        fp16_mode=True,   log_level=trt.Logger.INFO)
+        
+def debayer_kornia(settings, dtype=torch.float16):
+
+  layouts = dict(
+    bayer_rggb8 = CFA.RG, 
+    bayer_grbg8 = CFA.GR,
+    bayer_gbrg8 = CFA.GB,
+    bayer_bggr8 = CFA.BG
+  )
+  w, h = settings.image_size
+
+  m = RawToRgb(cfa=layouts[settings.encoding])
+  return compile(m, [torch.zeros(1, 1, h, w, 
+      dtype=dtype, device=settings.device)])
+
+
+def cache_model(cache_file, create_model):
+  model = None
+
+  if Path(cache_file).is_file():
+    rospy.loginfo(f"Attempting to load cache file {cache_file}")
+    try:
+      m = TRTModule()
+      m.load_state_dict(torch.load(cache_file))
+      model = m
+      
+    except (IOError, KeyError):
+      pass
+
+  if model is None:
+    rospy.loginfo(f"Cache failed (or does not exist) creating model")
+    model = create_model()
+
+    rospy.loginfo(f"Saving to {cache_file}")
+    torch.save(model.state_dict(), cache_file)
+
+  return model
+
+
+def cache_file(name, settings):
+  w, h = settings.image_size
+  return Path(settings.cache_path) / Path(f"{name}_{w}x{h}.pth")
+
+
 class Processor(object):
   def __init__(self, settings : ImageSettings):
     self.settings = settings
-
-    self.encoder = Jpeg()
+    self.jpeg = Jpeg()
 
     self.dtype = torch.float16
-    self.debayer = debayer_module(settings, dtype=self.dtype)
+
+    create_debayer = partial(debayer_kornia, settings, dtype=self.dtype)
+    self.debayer = cache_model(cache_file("debayer", settings), create_debayer)
+
 
   def __call__(self, raw):
     return ImageOutputs(self, raw, self.dtype, self.settings.device)
@@ -56,19 +114,16 @@ class ImageOutputs(object):
     @cached_property
     def cuda_rgb(self):
       with torch.inference_mode():
-        batched = self.cuda_raw.view(1, 1, *self.cuda_raw.shape
-          ).to(memory_format=torch.channels_last)
-
+        batched = self.cuda_raw.view(1, 1, *self.cuda_raw.shape)
         rgb = self.parent.debayer(batched.to(dtype=self.dtype))
         return rgb.to(dtype=torch.uint8)
 
     def encode(self, image):
       with torch.inference_mode():
         try:
-          channels_last = image.squeeze(0)
 
-          return self.parent.encoder.encode(
-              channels_last, 
+          return self.parent.jpeg.encode(
+              image.squeeze(0), 
               quality=self.settings.quality,
               input_format = Jpeg.RGB).numpy().tobytes()
         except JpegException as e:

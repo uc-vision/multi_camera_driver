@@ -19,6 +19,7 @@ from structs.struct import struct
 
 @dataclass
 class ImageSettings:
+  cache_path : str 
   image_size : Tuple[int, int] = field(default_factory=lambda: (0, 0))
   encoding : str = 'bayer_bggr8' 
   device : str = 'cuda:0'
@@ -27,6 +28,7 @@ class ImageSettings:
   preview_size : int = 400
   quality : int = 90
   image_backend : str = 'turbo_jpeg'
+  
 
 
 

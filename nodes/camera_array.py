@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 from dataclasses import replace
+from pathlib import Path
 import PySpin
 
 import rospy
+import rospkg
+
 from spinnaker_camera_driver_helpers.camera_node import CameraArrayNode
 import tf2_ros
 from std_msgs.msg import String
@@ -24,6 +27,8 @@ import gc
 
 
 def create_publisher(camera_set:CameraSet, config, calib):
+
+
   default_backend = "turbo_jpeg"
   try:
     import nvjpeg_torch
@@ -34,13 +39,17 @@ def create_publisher(camera_set:CameraSet, config, calib):
   except ModuleNotFoundError:
     pass
 
+  rospack = rospkg.RosPack()
+  base_path = Path(rospack.get_path('spinnaker_camera_driver_ros'))
+
 
   base_settings = ImageSettings(
       encoding=config.get("encoding", "bayer_rggb8"),
       device=rospy.get_param("~device", 'cuda:0'),
       quality=95,
       preview_size=rospy.get_param("~preview_width", 400),
-      image_backend=rospy.get_param("~backend", default_backend)
+      image_backend=rospy.get_param("~backend", default_backend),
+      cache_path = rospy.get_param("~cache_path", base_path / "cache")
   )
 
   image_settings = {k: replace(base_settings, image_size=info.image_size) 
