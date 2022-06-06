@@ -8,7 +8,7 @@ from dynamic_reconfigure.server import Server
 
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 from .camera_setters import delayed_setters, property_setters
-
+import gc
 
 
 class CameraArrayNode(object):
@@ -35,6 +35,20 @@ class CameraArrayNode(object):
         self.publisher.set_options(dict(quality = v))
       else:
         self.set_camera_property(k, v)
+
+    if not self.started:
+      self.check_image_sizes()
+      
+
+  def check_image_sizes(self):
+    image_sizes = self.camera_set.get_image_sizes()
+    for k, image_size in image_sizes.items():
+      info = self.camera_set.camera_info[k]
+      if info.image_size != image_size:
+        rospy.loginfo(f"Camera {k} updated image size {image_size}")
+        info.image_size = image_size
+        self.publisher.set_camera_options(k, dict(image_size=image_size))
+
 
   def set_camera_property(self, k, v):
     setter = property_setters.get(k, None) or delayed_setters.get(k, None)
@@ -68,6 +82,8 @@ class CameraArrayNode(object):
   def stop(self):
     if self.camera_set.started:
       self.publisher.stop()
+      gc.collect(0)
+      
       self.camera_set.stop()
 
 

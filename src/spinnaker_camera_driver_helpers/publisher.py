@@ -1,4 +1,5 @@
 
+import rospy
 
 from queue import Queue
 from threading import Thread
@@ -13,6 +14,7 @@ from dataclasses import dataclass, field
 
 from sensor_msgs.msg import CameraInfo
 from camera_geometry_ros.conversions import camera_info_msg
+
 
 from .image_processor import image_backend
 from structs.struct import struct
@@ -109,8 +111,11 @@ class CameraPublisher():
         item = self.queue.get()
 
   def stop(self):
+    rospy.loginfo(f"Waiting for {self.camera_name}: thread {self.worker}")
+    
     self.queue.put(None)
     self.worker.join()
+    print(f"Done {self.camera_name}: thread {self.worker}")
 
     self.worker = None
 

@@ -52,6 +52,7 @@ class CameraSet(object):
       rospy.loginfo(f"set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
         setter(camera, value, self.camera_info[k])
+
     except PySpin.SpinnakerException as e:
       rospy.loginfo(f"set_property: {key} {value} {e} ")
     except spinnaker_helpers.NodeException as e:
@@ -70,11 +71,11 @@ class CameraSet(object):
 
   def stop(self):
     if self.started:
-      rospy.loginfo("End acquisition")
-
-      for camera in self.camera_dict.values():
+      for k, camera in self.camera_dict.items():
+        rospy.loginfo(f"Ending acquisition {k}..")
         camera.EndAcquisition()
 
+      rospy.loginfo("Stop - done.")
       self.started = False
 
 
@@ -85,6 +86,10 @@ class CameraSet(object):
     except PySpin.SpinnakerException as e:
       rospy.logerr("Error triggering: " + str(e))
 
+
+  def get_image_sizes(self):
+    return {k:spinnaker_helpers.get_image_size(camera)
+      for k, camera in self.camera_dict.items()}
 
 
   def init_camera(self, camera: PySpin.Camera, camera_name, camera_settings):

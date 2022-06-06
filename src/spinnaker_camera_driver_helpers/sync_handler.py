@@ -88,9 +88,6 @@ class SyncHandler(object):
         rospy.logwarn(f"{info.camera_name} dropping frame {info.timestamp}")
 
 
-
-
-
   def process_image(self, image, camera_name, camera_info):
     try:
       image_info = spinnaker_image(image, camera_info)._extend(camera_name=camera_name)
@@ -130,6 +127,7 @@ class SyncHandler(object):
       for publisher in self.publishers.values():
         publisher.stop()  
 
+      self.frame_queue = []
     self.thread = None
 
   def start(self):
