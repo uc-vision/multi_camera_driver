@@ -68,7 +68,6 @@ class CameraArrayNode(object):
     return config
 
 
-
   @property
   def started(self):
     return self.camera_set.started
@@ -104,7 +103,8 @@ class CameraArrayNode(object):
 
     while not rospy.is_shutdown():
       self.update_pending()
-      rospy.sleep(0.1)
+      self.publisher.report_recieved()
+      rospy.sleep(0.2)
 
     self.stop()
 

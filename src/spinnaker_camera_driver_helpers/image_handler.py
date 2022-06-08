@@ -15,14 +15,24 @@ def spinnaker_image(image, camera_info):
       image.Release()          
       return None
 
+    image_data = image.GetNDArray()
+    image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
+
     image_info = struct(
-      image_data = image.GetNDArray(),
+      image_data = image_data,
       timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
       seq = image.GetFrameID()
     )
 
     image.Release()    
     return image_info
+
+
+def format_msec(dt):
+  return f"{dt.to_sec() * 1000.0:.2f}ms"
+
+def format_sec(dt):
+  return f"{dt.to_sec():.2f}ms"
 
 
 class CameraHandler(object):
@@ -94,7 +104,23 @@ class ImageHandler(object):
         CameraPublisher(k, settings[k], calibration.get(k, None))) 
           for k in camera_names
     }
+    self.report_rate = rospy.Duration.from_sec(4.0)
+    self.reset_recieved()
+    
+  def reset_recieved(self):
+    self.recieved = {k:0 for k in self.camera_names}
+    self.dropped = 0
+    self.published = 0
+    self.update = rospy.Time.now()
 
+  def report_recieved(self):
+    duration = rospy.Time.now() - self.update
+    if duration > self.report_rate:
+      if self.dropped > 0:
+        rospy.logwarn(f"published {self.published}, dropped {self.dropped}, received {self.recieved} in {format_sec(duration)}")
+      else:
+        rospy.logdebug(f"published {self.published}, {self.recieved} in {format_sec(duration)}")
+      self.reset_recieved()
 
   def publish(self, image, camera_name, camera_info):
     self.handlers[camera_name].publish(image, camera_info)

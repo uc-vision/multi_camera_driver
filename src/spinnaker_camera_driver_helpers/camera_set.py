@@ -5,7 +5,6 @@ from structs.struct import struct
 import rospy
 
 from . import spinnaker_helpers
-from .camera_setters import delayed_setters, property_setters
 
 
 class ImageEventHandler(PySpin.ImageEventHandler):
@@ -49,14 +48,14 @@ class CameraSet(object):
 
   def set_property(self, key, value, setter):
     try:
-      rospy.loginfo(f"set_property {key}: {value}")
+      rospy.logdebug(f"set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
         setter(camera, value, self.camera_info[k])
 
     except PySpin.SpinnakerException as e:
-      rospy.loginfo(f"set_property: {key} {value} {e} ")
+      rospy.logdebug(f"set_property: {key} {value} {e} ")
     except spinnaker_helpers.NodeException as e:
-      rospy.loginfo(f"set_property: {key} {value} {e} ")
+      rospy.logdebug(f"set_property: {key} {value} {e} ")
 
   def start(self):
     assert not self.started

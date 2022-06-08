@@ -1,5 +1,6 @@
 
 from os import sync
+from statistics import mean
 from typing import Any, Dict, Tuple
 import rospy
 
@@ -11,9 +12,13 @@ from .image_handler import spinnaker_image, EncoderError
 
 import PySpin
 import torch
+from natsort import natsorted
 
 def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
+
+def format_sec(dt):
+  return f"{dt.to_sec():.2f}ms"
 
 
 def group_cameras(frame_group):
@@ -45,7 +50,7 @@ def take_group(frame_queue, sync_threshold, min_size):
 
 class SyncHandler(object):
   def __init__(self, camera_names, settings : Dict[str, ImageSettings], 
-    timeout_msec=1000, sync_threshold_msec=10, calibration={}):
+    timeout_msec=1000, sync_threshold_msec=10.0, calibration={}):
 
     self.camera_names = camera_names
     self.publishers = {
@@ -58,8 +63,35 @@ class SyncHandler(object):
 
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)
+
+    self.report_rate = rospy.Duration.from_sec(4.0)
     self.frame_queue = []
 
+    self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_names}
+    self.reset_recieved()
+    
+  def reset_recieved(self):
+    self.recieved = {k:0 for k in self.camera_names}
+    self.dropped = 0
+    self.published = 0
+
+    self.update = rospy.Time.now()
+
+
+  def report_recieved(self):
+    duration = rospy.Time.now() - self.update
+    if duration > self.report_rate:
+      message = f"published {self.published} ({self.published / duration.to_sec() : .2f} fps), {self.recieved} in {format_sec(duration)}"
+
+      if self.dropped > 0:
+        rospy.logwarn(f"dropped {self.dropped}, {message}")
+      else:
+        rospy.logdebug(message)
+
+      rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
+        for k in natsorted(self.camera_names) ])
+
+      self.reset_recieved()
 
   def update_calibration(self, calibration):
     for k, publisher in self.publishers.items():
@@ -77,35 +109,53 @@ class SyncHandler(object):
       item = self.queue.get()
   
 
-
   def add_frame(self, image_info):
       self.frame_queue.append(image_info)
       self.frame_queue.sort(key=lambda r: r.timestamp)
 
       timeout_time = rospy.Time.now() - self.timeout
       while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-        info = self.frame_queue.pop(0)
-        rospy.logwarn(f"{info.camera_name} dropping frame {info.timestamp}")
+        self.frame_queue.pop(0)
+        self.dropped += 1
 
+        # rospy.logwarn(f"{info.camera_name} dropping frame {info.timestamp}")
+
+
+  def update_offsets(self, group):
+    times = {k:frame.timestamp for k, frame in group.items()}
+    mean_time = rospy.Time.from_sec( mean([time.to_sec() for time in times.values()]) )
+        
+    self.camera_offsets = {k: self.camera_offsets[k] + (time - mean_time) 
+      for k, time in times.items()}
+
+
+    
+  def try_publish(self):
+    found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_names))
+    if found is not None:
+      timestamp, group, self.frame_queue = found
+     
+      for k, frame in group.items():
+        self.publishers[k].publish(frame.image_data, timestamp, frame.seq)
+      self.published += 1
+
+      self.update_offsets(group)
 
   def process_image(self, image, camera_name, camera_info):
     try:
-      image_info = spinnaker_image(image, camera_info)._extend(camera_name=camera_name)
+      image_info = spinnaker_image(image, camera_info)
+      image_info = image_info._extend(camera_name=camera_name, timestamp = image_info.timestamp - self.camera_offsets[camera_name])
       if image is None:
         return
 
-      self.add_frame(image_info)
-      found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_names))
-      if found is not None:
-        timestamp, group, self.frame_queue = found
-        rospy.logdebug([(k, format_msec(frame.timestamp - timestamp)) for k, frame in group.items()])
+      self.recieved[camera_name] += 1
 
-        for k, frame in group.items():
-          self.publishers[k].publish(frame.image_data, timestamp, frame.seq)
+      self.add_frame(image_info)
+      self.try_publish()
+        
     except PySpin.SpinnakerException as e:
       rospy.logerr(e)
-    except EncoderError as e:
-      rospy.logerr(e)
+
 
 
   def set_camera_options(self, k, options :  Dict[str, Any] ):

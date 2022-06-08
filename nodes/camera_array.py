@@ -54,6 +54,9 @@ def create_publisher(camera_set:CameraSet, config, calib):
 
   image_settings = {k: replace(base_settings, image_size=info.image_size) 
     for k, info in camera_set.camera_info.items()}
+
+  # for k in list(image_settings.keys())[:2]:
+  #   image_settings[k].image_backend = "turbo_jpeg"
   
   handler_type = ImageHandler if camera_set.master_id is None else SyncHandler
   return handler_type(camera_set.camera_ids, image_settings, calibration=calib.cameras)

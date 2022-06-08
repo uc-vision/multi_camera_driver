@@ -57,7 +57,7 @@ def cache_model(cache_file, create_model):
   model = None
 
   if Path(cache_file).is_file():
-    rospy.loginfo(f"Attempting to load cache file {cache_file}")
+    rospy.logdebug(f"Attempting to load cache file {cache_file}")
     try:
       m = TRTModule()
       m.load_state_dict(torch.load(cache_file))
@@ -67,10 +67,10 @@ def cache_model(cache_file, create_model):
       pass
 
   if model is None:
-    rospy.loginfo(f"Cache failed (or does not exist) creating model")
+    rospy.logdebug(f"Cache failed (or does not exist) creating model")
     model = create_model()
 
-    rospy.loginfo(f"Saving to {cache_file}")
+    rospy.logdebug(f"Saving to {cache_file}")
     torch.save(model.state_dict(), cache_file)
 
   return model
