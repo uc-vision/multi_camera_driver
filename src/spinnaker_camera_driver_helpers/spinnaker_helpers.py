@@ -279,13 +279,14 @@ def reset_all():
   rospy.loginfo("Reset all:")
   system = PySpin.System.GetInstance()
   _reset_all(system)
-  
-  rospy.sleep(1.0)
+  gc.collect(generation=0)
+
+  rospy.sleep(2.0)
   gc.collect(generation=0)
 
   rospy.loginfo("Release system:")
   system.ReleaseInstance()
-  rospy.sleep(2.0)
+  rospy.sleep(1.0)
 
 
   rospy.loginfo("Done")
@@ -393,8 +394,8 @@ def find_cameras(camera_serials):
 
         cameras[alias] = serial_dict[serial]
 
+    camera_list.Clear()
     return cameras
-
 
 
 def validate_init(camera):

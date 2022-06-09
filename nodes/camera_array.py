@@ -127,7 +127,10 @@ def main():
   system = PySpin.System.GetInstance()
 
   run_node()
-  gc.collect(0)
+  
+  gc.collect(generation=0)
+  rospy.sleep(2.0)
+  gc.collect(generation=0)
 
   system.ReleaseInstance()
 

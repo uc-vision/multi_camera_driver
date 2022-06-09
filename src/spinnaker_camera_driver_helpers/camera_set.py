@@ -146,10 +146,13 @@ class CameraSet(object):
   
 
   def cleanup(self):
-    rospy.loginfo("Stopping cameras")
+    rospy.loginfo("Cleanup cameras")
 
     for camera in self.camera_dict.values():
       spinnaker_helpers.load_defaults(camera)
       camera.DeInit()
+
+    del self.camera_dict
+    del camera
 
 
