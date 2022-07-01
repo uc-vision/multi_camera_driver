@@ -260,6 +260,7 @@ def _reset_all(system):
   rospy.loginfo("Detected {} cameras".format(len(camera_list)))
   cameras = {get_camera_serial(camera):camera for camera in camera_list}
 
+
   for k, camera in cameras.items():
       rospy.loginfo("Init {}".format(k))
       camera.Init()
@@ -270,8 +271,6 @@ def _reset_all(system):
       nodemap = camera.GetNodeMap()
       execute(nodemap, "DeviceReset")  
 
-  del camera
-  del cameras
   camera_list.Clear()
       
 
@@ -281,8 +280,10 @@ def reset_all():
   _reset_all(system)
   gc.collect(generation=0)
 
-  rospy.sleep(2.0)
-  gc.collect(generation=0)
+  r = rospy.Rate(10)
+  for i in range(20):
+    gc.collect(generation=0)
+    r.sleep()
 
   rospy.loginfo("Release system:")
   system.ReleaseInstance()
