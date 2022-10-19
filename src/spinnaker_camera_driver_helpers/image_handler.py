@@ -7,7 +7,7 @@ from queue import Queue
 from threading import Thread
 
 from .publisher import CameraPublisher, ImageSettings
-from structs.struct import struct
+from py_structs import struct
 
 def spinnaker_image(image, camera_info):
     if image.IsIncomplete():

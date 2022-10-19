@@ -1,7 +1,7 @@
 from os import path
 import os
 import numpy as np
-from structs.struct import struct
+from py_structs import struct
 import rospy
 import shutil
 import errno

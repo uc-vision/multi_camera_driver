@@ -1,7 +1,7 @@
 from traceback import format_exc
-
+ 
 import PySpin
-from structs.struct import struct
+from py_structs import struct
 import rospy
 
 from . import spinnaker_helpers
