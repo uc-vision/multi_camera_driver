@@ -17,7 +17,7 @@ from camera_geometry_ros.conversions import camera_info_msg
 
 
 from .image_processor import image_backend
-from structs.struct import struct
+from py_structs import struct
 
 @dataclass
 class ImageSettings:
