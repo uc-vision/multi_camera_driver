@@ -144,7 +144,7 @@ class SyncHandler(object):
   def process_image(self, image, camera_name, camera_info):
     try:
       image_info = spinnaker_image(image, camera_info)
-      image_info = image_info._extend(camera_name=camera_name, timestamp = image_info.timestamp - self.camera_offsets[camera_name])
+      image_info = image_info.extend_(camera_name=camera_name, timestamp = image_info.timestamp - self.camera_offsets[camera_name])
       if image is None:
         return
 
