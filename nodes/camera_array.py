@@ -19,7 +19,7 @@ from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
 
 from spinnaker_camera_driver_helpers.publisher import ImageSettings
-from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics, write_calibration
+from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics, write_calibration, exceptions_to_rosout
 
 
 from traceback import format_exc
@@ -116,6 +116,7 @@ def run_node():
   del image_publisher
 
 def main():
+  exceptions_to_rosout()
   rospy.init_node('camera_array_node', anonymous=False)
 
   if rospy.get_param("~reset_cycle", True):

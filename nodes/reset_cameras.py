@@ -11,9 +11,10 @@ LICENSE file.
 
 import rospy
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-
+from spinnaker_camera_driver_helpers.config import exceptions_to_rosout
 
 def main():
+    exceptions_to_rosout()
     rospy.init_node('camera_array_node', anonymous=False)
     spinnaker_helpers.reset_all()
 

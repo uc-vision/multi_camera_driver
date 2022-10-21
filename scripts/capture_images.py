@@ -1,6 +1,6 @@
 import rospy
 from maara_msgs.msg import RailStatus
-
+from spinnaker_camera_driver_helpers.config import exceptions_to_rosout
 
 class ScannerNode(object):
     def __init__(self):
@@ -16,6 +16,7 @@ class ScannerNode(object):
 
 
 if __name__ == "__main__":
+    exceptions_to_rosout()
     rospy.init_node("scanner_node")
     node = ScannerNode()
     node.run()

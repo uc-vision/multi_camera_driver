@@ -11,6 +11,9 @@ import camera_geometry_ros.conversions as conversions
 from camera_geometry.calib import import_rig
 from camera_geometry import json
 
+import traceback
+import sys
+import time
 
 def load_config(config_file):
     if config_file is not None:
@@ -110,3 +113,14 @@ def write_calibration(calibration_filename, calibration):
   rospy.loginfo(f"Writing calibration to {filename}")
   with open(calibration_filename, "wt") as file:
     file.write(calibration)
+
+def exceptions_to_rosout():
+  """Calls logfatal before raising base exception"""
+  def rosout_except(err_type, value, tb):
+    traceback_formatted = '\n'.join(traceback.extract_tb(tb).format())
+    rospy.logfatal(
+        f'\n{traceback_formatted} {value.__class__.__name__}: {value}'
+    )
+    time.sleep(1) # Gives time to send message
+    sys.__excepthook__(err_type, value, tb)
+  sys.excepthook = rosout_except
