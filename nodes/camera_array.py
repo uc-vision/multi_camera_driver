@@ -49,7 +49,10 @@ def create_publisher(camera_set:CameraSet, config, calib):
       quality=95,
       preview_size=rospy.get_param("~preview_width", 400),
       image_backend=rospy.get_param("~backend", default_backend),
-      cache_path = rospy.get_param("~cache_path", base_path / "cache")
+      cache_path = rospy.get_param("~cache_path", base_path / "cache"),
+
+      resize_width=rospy.get_param("~resize_width", None),
+      sharpen=rospy.get_param("~sharpen", False)
   )
 
   image_settings = {k: replace(base_settings, image_size=info.image_size) 

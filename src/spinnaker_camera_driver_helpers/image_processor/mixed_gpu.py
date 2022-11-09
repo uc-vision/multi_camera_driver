@@ -44,7 +44,7 @@ class ImageOutputs(object):
           channels_last = torch.from_numpy(image).cuda()
 
           return self.parent.encoder.encode(
-              channels_last, quality=self.settings.quality).numpy().tobytes()
+              channels_last, quality=self.settings.jpeg_quality).numpy().tobytes()
         except JpegException as e:
           raise EncoderError(str(e))
 

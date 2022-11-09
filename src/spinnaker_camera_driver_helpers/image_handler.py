@@ -1,4 +1,5 @@
-from typing import Dict
+from abc import ABCMeta, abstractmethod
+from typing import Any, Dict
 from .image_processor import EncoderError
 import rospy
 import PySpin
@@ -9,11 +10,23 @@ from threading import Thread
 from .publisher import CameraPublisher, ImageSettings
 from py_structs import struct
 
+from camera_geometry import Camera
+
+
+class IncompleteImageError(Exception):
+  def __init__(self, status):
+    self.status = status
+    
+  def __str__(self):
+    return f"Incomplete image: {self.status}"
+
+
 def spinnaker_image(image, camera_info):
     if image.IsIncomplete():
-      rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
+      status = image.GetImageStatus()
       image.Release()          
-      return None
+      raise IncompleteImageError(status)
+      
 
     image_data = image.GetNDArray()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
@@ -95,7 +108,38 @@ class CameraHandler(object):
 
 
 
-class ImageHandler(object):
+class BaseHandler(metaclass=ABCMeta):
+
+  @abstractmethod
+  def reset_recieved(self):
+    pass
+
+  @abstractmethod
+  def report_recieved(self):
+    pass
+
+  @abstractmethod
+  def publish(self, image:PySpin.Image, camera_name:str, camera_info):
+    pass
+
+  @abstractmethod
+  def update_calibration(self, calibration:Dict[str, Camera]):
+    pass
+
+  @abstractmethod
+  def set_option(self, key:str, value:Any):
+    pass
+
+  @abstractmethod
+  def start(self):
+    pass
+
+  @abstractmethod
+  def stop(self):
+    pass
+
+
+class ImageHandler(BaseHandler):
   def __init__(self, camera_names, settings : Dict[str, ImageSettings], calibration={}):
 
     self.camera_names = camera_names

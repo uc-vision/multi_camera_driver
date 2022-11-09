@@ -7,8 +7,10 @@ import rospy
 from queue import Queue
 from threading import Thread
 
-from .publisher import CameraPublisher, ImageSettings
-from .image_handler import spinnaker_image, EncoderError
+from .publisher import CameraPublisher, ImageSettings, InvalidOption
+from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, EncoderError
+
+from camera_geometry import Camera
 
 import PySpin
 import torch
@@ -48,7 +50,7 @@ def take_group(frame_queue, sync_threshold, min_size):
         return frame_queue[start].timestamp, cameras, frame_queue[:start] + frame_queue[end:]
 
 
-class SyncHandler(object):
+class SyncHandler(BaseHandler):
   def __init__(self, camera_names, settings : Dict[str, ImageSettings], 
     timeout_msec=1000, sync_threshold_msec=10.0, calibration={}):
 
@@ -93,7 +95,7 @@ class SyncHandler(object):
 
       self.reset_recieved()
 
-  def update_calibration(self, calibration):
+  def update_calibration(self, calibration:Dict[str, Camera]):
     for k, publisher in self.publishers.items():
       publisher.update_calibration(calibration.get(k, None))
 
@@ -118,8 +120,6 @@ class SyncHandler(object):
         self.frame_queue.pop(0)
         self.dropped += 1
 
-        # rospy.logwarn(f"{info.camera_name} dropping frame {info.timestamp}")
-
 
   def update_offsets(self, group):
     times = {k:frame.timestamp for k, frame in group.items()}
@@ -127,7 +127,6 @@ class SyncHandler(object):
         
     self.camera_offsets = {k: self.camera_offsets[k] + (time - mean_time) 
       for k, time in times.items()}
-
 
     
   def try_publish(self):
@@ -144,28 +143,30 @@ class SyncHandler(object):
   def process_image(self, image, camera_name, camera_info):
     try:
       image_info = spinnaker_image(image, camera_info)
-      image_info = image_info.extend_(camera_name=camera_name, timestamp = image_info.timestamp - self.camera_offsets[camera_name])
-      if image is None:
-        return
+      image_info = image_info.extend_(camera_name=camera_name, 
+        timestamp = image_info.timestamp - self.camera_offsets[camera_name])
 
       self.recieved[camera_name] += 1
 
       self.add_frame(image_info)
       self.try_publish()
         
-    except PySpin.SpinnakerException as e:
-      rospy.logerr(e)
-
+    except (PySpin.SpinnakerException, IncompleteImageError) as e:
+      rospy.logwarn(f"{camera_name}: {e}")
 
 
   def set_camera_options(self, k, options :  Dict[str, Any] ):
     assert k in self.publishers
-    self.publishers[k].set_options(options)
+
+    try:
+      self.publishers[k].set_options(options)
+    except InvalidOption as e:
+      rospy.logwarn(f"{k}: {e}")
 
 
-  def set_options(self, options : Dict[str, Any]):
+  def set_option(self, key:str, option:Any):
     for publisher in self.publishers.values():
-      publisher.set_options(options)
+      publisher.set_option(str, option)
 
   def stop(self):
     if self.thread is not None:

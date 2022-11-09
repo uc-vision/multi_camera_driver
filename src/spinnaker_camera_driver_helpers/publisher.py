@@ -3,7 +3,7 @@ import rospy
 
 from queue import Queue
 from threading import Thread
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
@@ -30,8 +30,12 @@ class ImageSettings:
   preview_size : int = 400
   quality : int = 90
   image_backend : str = 'turbo_jpeg'
-  
 
+  resize_width: Optional[int] = None
+  sharpen: float = 0.0
+  
+class InvalidOption(Exception):
+  pass
 
 
 class CameraPublisher():
@@ -77,20 +81,22 @@ class CameraPublisher():
     else:
       return CameraInfo(width = width, height = height)
 
-  def set_options(self, values : Dict[str, Any]):
-    for option, value in values.items():
-      if option == "image_size":
+  def set_option(self, key:str, value:Any):
+    if key == "image_size":
 
-        assert self.worker is None, "image size cannot be changed while running" 
-        self.settings.image_size = value
-        
-      elif option == "preview_size":
-        self.settings.preview_size = value
-      elif option == "quality":
-        assert value > 0 and value <= 100
-        self.settings.quality = value
+      if not (self.worker is None):
+        raise InvalidOption("image size cannot be changed while running")
+      self.settings.image_size = value
+      
+    elif key == "preview_size":
+      self.settings.preview_size = value
+    elif key == "quality":
+      if (1 < value <= 100):
+        self.settings.jpeg_quality = value
       else:
-        assert False, f"unknown option {option}"
+        raise InvalidOption(f"Invalid quality value {value}, should be 0 < quality <= 100")
+    else:
+      raise InvalidOption(f"unknown option {key}")
     
 
   def publish(self, image_data, timestamp, seq):

@@ -97,6 +97,7 @@ property_setters = dict(
     ev_comp = set_ev_comp,
     gamma = set_gamma,
     max_framerate = set_framerate
+
 )
 
 delayed_setters = dict(    
