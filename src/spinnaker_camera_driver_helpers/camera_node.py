@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 
 
-import rospy
-from .camera_set import CameraSet
+import gc
+from dataclasses import fields
 
+import rospy
 from dynamic_reconfigure.server import Server
 
 from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
+
+
+from .camera_set import CameraSet
 from .camera_setters import delayed_setters, property_setters
-import gc
+from .publisher import ImageSettings
 
 
 class CameraArrayNode(object):
@@ -31,8 +35,8 @@ class CameraArrayNode(object):
       if k == "groups":
         continue
 
-      if k == "jpeg_quality":
-        self.publisher.set_options(dict(quality = v))
+      if k in fields(ImageSettings):
+        self.publisher.set_option(k, v)
       else:
         self.set_camera_property(k, v)
 

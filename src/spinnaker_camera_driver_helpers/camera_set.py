@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from traceback import format_exc
+from typing import Tuple
  
 import PySpin
 from py_structs import struct
@@ -17,6 +19,21 @@ class ImageEventHandler(PySpin.ImageEventHandler):
       self.on_image(image)
     except:
       rospy.logerr(f"ImageEventHandler exception: {format_exc()}")
+
+
+@dataclass
+class CameraInfo:
+  name : str
+  connection_speed:str
+  time_offset:float
+  serial:str
+
+  is_master:bool
+  is_free_running:bool
+
+  image_size:Tuple[int, int]
+
+
 
 
 class CameraSet(object):
@@ -99,7 +116,8 @@ class CameraSet(object):
 
       is_master = camera_name == self.master_id
 
-      info = struct(
+      info = CameraInfo(
+          name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
           serial=spinnaker_helpers.get_camera_serial(camera),
           time_offset_sec=spinnaker_helpers.camera_time_offset(camera),
