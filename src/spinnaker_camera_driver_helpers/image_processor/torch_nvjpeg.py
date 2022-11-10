@@ -124,7 +124,7 @@ class ImageOutputs(object):
 
           return self.parent.jpeg.encode(
               image.squeeze(0), 
-              quality=self.settings.quality,
+              quality=self.settings.jpeg_quality,
               input_format = Jpeg.RGB).numpy().tobytes()
         except JpegException as e:
           raise EncoderError(str(e))

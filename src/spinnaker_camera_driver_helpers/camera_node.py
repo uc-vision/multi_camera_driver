@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-
 import gc
-from dataclasses import fields
+import rospy
+
+from spinnaker_camera_driver_helpers.publisher import CameraPublisher
+from .camera_set import CameraSet
 
 import rospy
 from dynamic_reconfigure.server import Server
@@ -12,11 +14,12 @@ from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 
 from .camera_set import CameraSet
 from .camera_setters import delayed_setters, property_setters
-from .publisher import ImageSettings
 
 
 class CameraArrayNode(object):
-  def __init__(self, publisher, camera_set : CameraSet):
+  image_settings = ["jpeg_quality", "resize_width", "sharpness", "preview_width"]
+  
+  def __init__(self, publisher:CameraPublisher, camera_set : CameraSet):
 
     self.camera_set = camera_set
 
@@ -29,13 +32,13 @@ class CameraArrayNode(object):
     self.event_handlers = self.camera_set.register_publisher(publisher)
     self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
-
+  
   def set_config_properties(self, config):
     for k, v in config.items():
       if k == "groups":
         continue
 
-      if k in fields(ImageSettings):
+      if k in self.image_settings:
         self.publisher.set_option(k, v)
       else:
         self.set_camera_property(k, v)

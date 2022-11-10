@@ -44,7 +44,7 @@ class ImageOutputs(object):
         return cv2.cvtColor(self.raw, self.conversion)
 
     def encode(self, image):
-      return self.parent.encoder.encode(image, quality=self.settings.quality)
+      return self.parent.encoder.encode(image, quality=self.settings.jpeg_quality)
 
     @cached_property 
     def compressed(self):
