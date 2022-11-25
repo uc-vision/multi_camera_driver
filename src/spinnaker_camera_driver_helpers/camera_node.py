@@ -55,10 +55,7 @@ class CameraArrayNode(object):
   def set_property_now(self, k, v):
       assert not (k in self.delayed_setters and self.started),\
         f"Cannot set {k} while cameras are started"
-
       rospy.loginfo(f"Setting {k}={v}")
-
-
 
       if k in camera_setters.property_setters:
         setter = camera_setters.property_setters[k]
@@ -71,8 +68,10 @@ class CameraArrayNode(object):
     
     if k in ImageSettings.settings():
       settings = replace(settings, **{k:v})
-      return self.update_settings(settings)
-    
+      if self.update_settings(settings):
+        return True
+      
+    self.settings = settings
     return False
 
 

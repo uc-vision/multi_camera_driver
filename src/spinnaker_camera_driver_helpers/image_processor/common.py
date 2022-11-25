@@ -22,7 +22,7 @@ camera_encodings = dict(
 )
 
 
-def cv_conversion(encoding):
+def cv_bayer_bgr(encoding):
 
   if encoding == ImageEncoding.Bayer_RGGB8:
     return cv2.COLOR_BAYER_BG2BGR
@@ -32,5 +32,19 @@ def cv_conversion(encoding):
     return cv2.COLOR_BAYER_GB2BGR
   elif encoding == ImageEncoding.Bayer_GBRG8:
     return cv2.COLOR_BAYER_GR2BGR  
+  else:
+    raise ValueError(f"Encoding not implemented {encoding}")
+
+
+def cv_bayer_bgra(encoding):
+
+  if encoding == ImageEncoding.Bayer_RGGB8:
+    return cv2.COLOR_BAYER_BG2BGRA
+  elif encoding == ImageEncoding.Bayer_BGGR8:
+    return cv2.COLOR_BAYER_RG2BGRA
+  elif encoding == ImageEncoding.Bayer_GRBG8:
+    return cv2.COLOR_BAYER_GB2BGRA
+  elif encoding == ImageEncoding.Bayer_GBRG8:
+    return cv2.COLOR_BAYER_GR2BGRA
   else:
     raise ValueError(f"Encoding not implemented {encoding}")

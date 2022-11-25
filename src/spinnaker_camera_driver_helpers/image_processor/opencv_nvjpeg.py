@@ -9,7 +9,7 @@ from nvjpeg_torch import Jpeg, JpegException
 
 from spinnaker_camera_driver_helpers.image_settings import PublisherSettings
 
-from .common import EncoderError, cv_conversion
+from .common import EncoderError, cv_bayer_bgr
 import cv2
 
 type_map = {
@@ -58,6 +58,8 @@ class ImageOutputs(object):
         self.raw = raw
         self.device = device
 
+        self.lap_filter = cv2.cuda.createLaplacianFilter(cv2.CV_8UC4, cv2.CV_8UC4, 3, 1)
+
    
 
     @cached_property
@@ -72,24 +74,34 @@ class ImageOutputs(object):
       return self.parent.settings
     
     @cached_property
-    def cuda_rgb(self):
+    def cuda_bgra(self):
+
       bgr = cv2.cuda.cvtColor(self.cuda_raw, 
-        cv_conversion(self.settings.camera.encoding))
+        cv_bayer_bgr(self.settings.camera.encoding))
+      bgra = cv2.cuda.cvtColor(bgr, cv2.COLOR_BGR2BGRA)
 
+        
       if self.settings.image.resize_width:
-        w, h = bgr.size()
+        w, h = bgra.size()
         scale_factor = self.settings.image.resize_width / w
-        bgr = cv2.cuda.resize(bgr, (self.settings.image.resize_width, int(h * scale_factor)))
+        bgra = cv2.cuda.resize(bgra, (self.settings.image.resize_width, int(h * scale_factor)))
 
-      return bgr
+      if self.settings.image.is_sharpening:
+        factor = self.settings.image.sharpen
+
+        lap = self.lap_filter.apply(bgra)
+        bgra = cv2.cuda.addWeighted(bgra, 1.0, lap, -factor, 0.0)
+
+      return bgra
 
 
-    def encode(self, image):
+    def encode(self, bgra):
       with torch.inference_mode():
         try:
-          image = torch.asarray(CudaArrayInterface(image), device=self.device).contiguous()
+          bgr = cv2.cuda.cvtColor(bgra, cv2.COLOR_BGRA2BGR)
+          torch_bgr = torch.asarray(CudaArrayInterface(bgr), device=self.device).contiguous()
           return self.parent.jpeg.encode(
-              image, 
+              torch_bgr, 
               quality=self.settings.image.jpeg_quality, 
               input_format = Jpeg.BGRI).numpy().tobytes()
 
@@ -98,15 +110,15 @@ class ImageOutputs(object):
 
     @cached_property 
     def compressed(self):
-      return self.encode(self.cuda_rgb)
+      return self.encode(self.cuda_bgra)
 
 
     @cached_property 
     def preview(self):
-      img_w, img_h = self.cuda_rgb.size()
+      img_w, img_h = self.cuda_bgra.size()
 
       w = self.settings.image.preview_size
       h = int(img_h * (w / img_w)) 
 
-      preview_rgb = cv2.resize(self.cuda_rgb, dsize=(w, h))
+      preview_rgb = cv2.resize(self.cuda_bgra, dsize=(w, h))
       return self.encode(preview_rgb)
