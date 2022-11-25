@@ -1,5 +1,5 @@
 
-from os import sync
+from dataclasses import replace
 from statistics import mean
 from typing import Any, Dict, Tuple
 import rospy
@@ -7,13 +7,18 @@ import rospy
 from queue import Queue
 from threading import Thread
 
-from .publisher import CameraPublisher, ImageSettings, InvalidOption
+from spinnaker_camera_driver_helpers.camera_set import CameraSettings, CameraSet
+from spinnaker_camera_driver_ros.msg import CameraStatus, CameraArrayStatus
+
+
+from .image_settings import ImageSettings, PublisherSettings
+
+from .publisher import CameraPublisher
 from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, EncoderError
 
 from camera_geometry import Camera
 
 import PySpin
-import torch
 from natsort import natsorted
 
 def format_msec(dt):
@@ -51,16 +56,19 @@ def take_group(frame_queue, sync_threshold, min_size):
 
 
 class SyncHandler(BaseHandler):
-  def __init__(self, camera_names, settings : Dict[str, ImageSettings], 
-    timeout_msec=1000, sync_threshold_msec=10.0, calibration={}):
+  def __init__(self, settings:ImageSettings, camera_set:CameraSet,
+    timeout_msec=1000, sync_threshold_msec=10.0):
 
-    self.camera_names = camera_names
+    self.camera_set = camera_set
+
     self.publishers = {
-      k:  CameraPublisher(k, settings[k], calibration.get(k, None)) 
-        for k in camera_names
+      k:  CameraPublisher(k, PublisherSettings(settings, camera_set.camera_settings[k])) 
+        for k in self.camera_set.camera_ids
     }
 
-    self.queue = Queue(len(camera_names))
+    self.image_settings = settings
+
+    self.queue = Queue(len(camera_set.camera_ids))
     self.thread = None
 
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
@@ -69,11 +77,13 @@ class SyncHandler(BaseHandler):
     self.report_rate = rospy.Duration.from_sec(4.0)
     self.frame_queue = []
 
-    self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_names}
+    self.camera_offsets = {k: rospy.Duration(0.0) for k in camera_set.camera_ids}
     self.reset_recieved()
     
+
+    
   def reset_recieved(self):
-    self.recieved = {k:0 for k in self.camera_names}
+    self.recieved = {k:0 for k in self.camera_set.camera_ids}
     self.dropped = 0
     self.published = 0
 
@@ -91,23 +101,21 @@ class SyncHandler(BaseHandler):
         rospy.logdebug(message)
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
-        for k in natsorted(self.camera_names) ])
+        for k in natsorted(self.camera_set.camera_ids) ])
 
       self.reset_recieved()
 
-  def update_calibration(self, calibration:Dict[str, Camera]):
-    for k, publisher in self.publishers.items():
-      publisher.update_calibration(calibration.get(k, None))
 
-  def publish(self, image, camera_name, camera_info):
-      self.queue.put( (image, camera_name, camera_info) )
+
+  def publish(self, image, camera_name):
+      self.queue.put( (image, camera_name) )
 
 
   def worker(self):
     item = self.queue.get()
     while item is not None:
-      image, camera_name, camera_info = item
-      self.process_image(image, camera_name, camera_info)
+      image, camera_name = item
+      self.process_image(image, camera_name)
       item = self.queue.get()
   
 
@@ -130,7 +138,7 @@ class SyncHandler(BaseHandler):
 
     
   def try_publish(self):
-    found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_names))
+    found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_set.camera_ids))
     if found is not None:
       timestamp, group, self.frame_queue = found
      
@@ -140,9 +148,9 @@ class SyncHandler(BaseHandler):
 
       self.update_offsets(group)
 
-  def process_image(self, image, camera_name, camera_info):
+  def process_image(self, image, camera_name):
     try:
-      image_info = spinnaker_image(image, camera_info)
+      image_info = spinnaker_image(image, self.camera_set.camera_settings[camera_name])
       image_info = image_info.extend_(camera_name=camera_name, 
         timestamp = image_info.timestamp - self.camera_offsets[camera_name])
 
@@ -154,19 +162,21 @@ class SyncHandler(BaseHandler):
     except (PySpin.SpinnakerException, IncompleteImageError) as e:
       rospy.logwarn(f"{camera_name}: {e}")
 
+      
+  def update_camera(self, k:str, camera:CameraSettings):
+    settings = replace(self.publishers[k].settings, camera=camera)
+    self.publishers[k].update_settings(settings)
+    
 
-  def set_camera_options(self, k, options :  Dict[str, Any] ):
-    assert k in self.publishers
-
-    try:
-      self.publishers[k].set_options(options)
-    except InvalidOption as e:
-      rospy.logwarn(f"{k}: {e}")
-
-
-  def set_option(self, key:str, option:Any):
+  def update_settings(self, settings:ImageSettings):    
     for publisher in self.publishers.values():
-      publisher.set_option(str, option)
+      settings = replace(publisher.settings, image=settings)
+      if publisher.update_settings(settings):
+        return True
+
+    self.settings = settings
+    return False
+
 
   def stop(self):
     if self.thread is not None:

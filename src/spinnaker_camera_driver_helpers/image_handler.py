@@ -1,5 +1,8 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Any, Dict
+
+from spinnaker_camera_driver_helpers.camera_set import CameraSet, CameraSettings
+from spinnaker_camera_driver_helpers.image_settings import ImageSettings, PublisherSettings
 from .image_processor import EncoderError
 import rospy
 import PySpin
@@ -7,10 +10,8 @@ import PySpin
 from queue import Queue
 from threading import Thread
 
-from .publisher import CameraPublisher, ImageSettings
+from .publisher import CameraPublisher
 from py_structs import struct
-
-from camera_geometry import Camera
 
 
 class IncompleteImageError(Exception):
@@ -76,17 +77,11 @@ class CameraHandler(object):
         except EncoderError as e:
           rospy.logerr(e)
 
-
         item = self.queue.get()
-
       self.publisher.stop()
 
-
-    def set_option(self, key, value):
-        self.publisher.set_option(key, value)
-
-    def update_calibration(self, camera):
-      return self.publisher.update_calibration(camera)
+    def update_settings(self, settings:PublisherSettings):
+        return self.publisher.update_settings(settings)
 
     def stop(self):
         if self.thread is not None:
@@ -123,12 +118,13 @@ class BaseHandler(metaclass=ABCMeta):
     pass
 
   @abstractmethod
-  def update_calibration(self, calibration:Dict[str, Camera]):
+  def update_camera(self, k:str, info:CameraSettings):
     pass
 
   @abstractmethod
-  def set_option(self, key:str, value:Any):
+  def update_settings(self, settings:ImageSettings) -> bool:
     pass
+
 
   @abstractmethod
   def start(self):
@@ -140,13 +136,13 @@ class BaseHandler(metaclass=ABCMeta):
 
 
 class ImageHandler(BaseHandler):
-  def __init__(self, camera_names, settings : Dict[str, ImageSettings], calibration={}):
+  def __init__(self, cameras:CameraSet, settings:ImageSettings):
 
-    self.camera_names = camera_names
+    self.camera_names = cameras.camera_ids
     self.handlers = {
       k:  CameraHandler(
-        CameraPublisher(k, settings[k], calibration.get(k, None))) 
-          for k in camera_names
+        CameraPublisher(k, PublisherSettings(settings, cameras.camera_settings[k])))
+          for k in cameras.camera_ids
     }
     self.report_rate = rospy.Duration.from_sec(4.0)
     self.reset_recieved()
@@ -169,13 +165,13 @@ class ImageHandler(BaseHandler):
   def publish(self, image, camera_name, camera_info):
     self.handlers[camera_name].publish(image, camera_info)
 
-  def update_calibration(self, calibration):
-    for k, handler in self.handlers.items():
-      handler.update_calibration(calibration.get(k, None))
+  def update_camera(self, k:str, info:CameraSettings):
+    self.handlers[k].update_camera(info)
 
-  def set_option(self, key, value):
+  def update_settings(self, settings:ImageSettings):
     for handler in self.handlers.values():
-      handler.set_option(key, value)
+      if handler.update_settings(settings):
+        return True
 
   def start(self):
     for handler in self.handlers.values():
