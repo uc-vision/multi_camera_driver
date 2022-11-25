@@ -57,7 +57,6 @@ class ImageOutputs(object):
         self.parent = parent
         self.raw = raw
         self.device = device
-
         self.lap_filter = cv2.cuda.createLaplacianFilter(cv2.CV_8UC4, cv2.CV_8UC4, 3, 1)
 
    
@@ -84,7 +83,7 @@ class ImageOutputs(object):
       if self.settings.image.resize_width:
         w, h = bgra.size()
         scale_factor = self.settings.image.resize_width / w
-        bgra = cv2.cuda.resize(bgra, (self.settings.image.resize_width, int(h * scale_factor)))
+        bgra = cv2.cuda.resize(bgra, (self.settings.image.resize_width, int(h * scale_factor)), interpolation=cv2.INTER_AREA)
 
       if self.settings.image.is_sharpening:
         factor = self.settings.image.sharpen
