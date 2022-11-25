@@ -168,9 +168,9 @@ class SyncHandler(BaseHandler):
     self.publishers[k].update_settings(settings)
     
 
-  def update_settings(self, settings:ImageSettings):    
+  def update_settings(self, image_settings:ImageSettings):  
     for publisher in self.publishers.values():
-      settings = replace(publisher.settings, image=settings)
+      settings = replace(publisher.settings, image=image_settings)
       if publisher.update_settings(settings):
         return True
 

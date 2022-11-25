@@ -86,8 +86,10 @@ def run_node():
   broadcaster = tf2_ros.StaticTransformBroadcaster()
   publish_extrinsics(broadcaster, calib, camera_set.camera_ids)
 
+  image_settings = base_settings(config)
+  rospy.loginfo(f"Using image processing backend: {image_settings.image_backend}")
   
-  image_publisher = create_publisher(camera_set, base_settings(config))
+  image_publisher = create_publisher(camera_set, image_settings)
 
   def on_recalibrated(msg):
     rospy.loginfo("Recieved recalibration, importing")

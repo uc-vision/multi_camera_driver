@@ -27,17 +27,17 @@ def compile(model, input):
 class Sharpen(nn.Module):
   def __init__(self, kernel_size=3):
     super().__init__()
-    kernel = kornia.filters.get_laplacian_kernel2d(kernel_size).view(1, 1, kernel_size, kernel_size)
+    kernel = kornia.filters.get_laplacian_kernel2d(kernel_size
+      ).view(1, 1, kernel_size, kernel_size).expand(3, 1, kernel_size, kernel_size)
     
     self.register_buffer("kernel", kernel)
 
 
   def forward(self, input:torch.Tensor, factor:float):
-    kernel = self.kernel.expand(input.shape[1], 1, self.kernel.shape[2], self.kernel.shape[3])
 
     p = self.kernel.shape[2] // 2
     padded = F.pad(input, [p, p, p, p], mode="replicate")
-    laplacian = torch.nn.functional.conv2d(padded, kernel, bias=None, stride=1, padding=0, groups=input.shape[1])  
+    laplacian = torch.nn.functional.conv2d(padded, self.kernel, bias=None, stride=1, padding=0, groups=input.shape[1])  
 
     return torch.clamp(input - laplacian * factor, min=0, max=255.0)
 
@@ -64,7 +64,7 @@ class Debayer(nn.Module):
     self.settings = settings
     w, h = settings.camera.image_size
 
-    if settings.image.resize_width > 0:
+    if settings.image.resize_width > 0 and settings.image.resize_width != w:
       self.scale_factor = settings.image.resize_width / w
 
     self.debayer = RawToRgb(cfa=layouts[settings.camera.encoding])
@@ -122,7 +122,6 @@ def cache_file(name:str, settings:PublisherSettings):
   rw = settings.image.resize_width
 
   sharp = "_sharp" if settings.image.is_sharpening else ""
-
   return Path(settings.image.cache_path) / Path(f"{name}_{w}x{h}_{rw}{sharp}.pth")
 
 
@@ -133,6 +132,8 @@ class Processor(object):
 
     self.dtype = torch.float16
     self.create_processor(settings)
+
+    
 
   
   def create_processor(self, settings:PublisherSettings):

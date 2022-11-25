@@ -28,10 +28,9 @@ class CameraArrayNode(object):
     self.config = {}
     self.pending_config = {}
     self.publisher = publisher
+    self.event_handlers = None
 
-    self.camera_set = camera_set
-    
-    self.event_handlers = self.camera_set.register_publisher(publisher)
+    self.camera_set = camera_set  
     self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
   def update_settings(self, settings:ImageSettings):
@@ -52,7 +51,7 @@ class CameraArrayNode(object):
         info = replace(info, image_size = image_size)
         self.publisher.update_camera(camera_name, info)
 
-  def set_property_now(self, k, v):
+  def set_camera_property(self, k, v):
       assert not (k in self.delayed_setters and self.started),\
         f"Cannot set {k} while cameras are started"
       rospy.loginfo(f"Setting {k}={v}")
@@ -68,7 +67,7 @@ class CameraArrayNode(object):
     
     if k in ImageSettings.settings():
       settings = replace(settings, **{k:v})
-      if self.update_settings(settings):
+      if self.update_settings(settings) and self.started:
         return True
       
     self.settings = settings
@@ -87,7 +86,7 @@ class CameraArrayNode(object):
       if self.started and delayed:
         self.pending_config[k] = v
       else:
-        self.set_property_now(k, v)
+        self.set_camera_property(k, v)
 
 
     if not self.started:
@@ -101,13 +100,17 @@ class CameraArrayNode(object):
 
   def start(self):
     assert not self.started
+    self.event_handlers = self.camera_set.register_publisher(self.publisher)
+
     self.publisher.start()
     self.camera_set.start()
 
 
   def stop(self):
     if self.camera_set.started:
+      self.camera_set.unregister_handlers(self.event_handlers)
       self.publisher.stop()
+
       gc.collect(0)
       self.camera_set.stop()
 
@@ -121,12 +124,13 @@ class CameraArrayNode(object):
 
       self.stop()
       for k, v in self.pending_config.items():
-        self.set_property_now(k, v)
-      self.update_settings(self.settings)
+        self.set_camera_property(k, v)
+        self.update_setting(k, v)
+
 
       self.start()
     else:
-      self.set_property_now(self.pending_config)
+      self.set_camera_property(self.pending_config)
 
     self.pending_config = {}
 
@@ -142,5 +146,5 @@ class CameraArrayNode(object):
 
 
   def cleanup(self):
-    self.camera_set.unregister_handlers(self.event_handlers)
+    self.stop()
     self.camera_set.cleanup()

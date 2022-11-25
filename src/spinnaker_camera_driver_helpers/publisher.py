@@ -113,6 +113,7 @@ class CameraPublisher():
     self.worker.join()
     print(f"Done {self.camera_name}: thread {self.worker}")
 
+    self.image_processor = None
     self.worker = None
 
   def start(self):

@@ -8,6 +8,7 @@ from cached_property import cached_property
 from nvjpeg_torch import Jpeg, JpegException
 
 from spinnaker_camera_driver_helpers.image_settings import PublisherSettings
+from typeguard import typechecked
 
 from .common import EncoderError, cv_bayer_bgr
 import cv2
@@ -38,6 +39,7 @@ class CudaArrayInterface:
 
 
 class Processor(object):
+  @typechecked
   def __init__(self, settings : PublisherSettings):
     self.settings = settings
     self.jpeg = Jpeg()
