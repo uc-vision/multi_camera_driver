@@ -24,7 +24,6 @@ from std_msgs.msg import String
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-from spinnaker_camera_driver_helpers.image_handler import ImageHandler
 from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
 
@@ -65,8 +64,7 @@ def base_settings(config):
 
 
 def create_publisher(camera_set:CameraSet, settings:ImageSettings):
-  handler_type = ImageHandler if camera_set.master_id is None else SyncHandler
-  return handler_type(settings, camera_set)
+  return SyncHandler(settings, camera_set)
 
 
 def run_node():

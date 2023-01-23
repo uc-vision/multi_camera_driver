@@ -3,7 +3,7 @@
 from dataclasses import fields, replace
 import gc
 import rospy
-from .image_handler import ImageHandler
+from .sync_handler import SyncHandler
 from .image_settings import ImageSettings, InvalidOption
 
 from .camera_set import CameraSet
@@ -20,7 +20,7 @@ from . import camera_setters
 class CameraArrayNode(object):
   delayed_setters = ["binning"]
   
-  def __init__(self, publisher:ImageHandler, camera_set:CameraSet):
+  def __init__(self, publisher:SyncHandler, camera_set:CameraSet):
 
     self.camera_set = camera_set
     self.settings = publisher.image_settings

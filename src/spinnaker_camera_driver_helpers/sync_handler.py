@@ -21,6 +21,8 @@ from camera_geometry import Camera
 import PySpin
 from natsort import natsorted
 
+from .diagnostics import CameraDiagnosticUpdater
+
 def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
 
@@ -60,6 +62,7 @@ class SyncHandler(BaseHandler):
     timeout_msec=1000, sync_threshold_msec=10.0):
 
     self.camera_set = camera_set
+    self.camera_diagnostics = CameraDiagnosticUpdater(camera_set.camera_ids)
 
     self.publishers = {
       k:  CameraPublisher(k, PublisherSettings(settings, camera_set.camera_settings[k])) 
@@ -80,11 +83,9 @@ class SyncHandler(BaseHandler):
     self.camera_offsets = {k: rospy.Duration(0.0) for k in camera_set.camera_ids}
     self.reset_recieved()
     
-
-    
   def reset_recieved(self):
     self.recieved = {k:0 for k in self.camera_set.camera_ids}
-    self.dropped = 0
+    self.dropped = {k:0 for k in self.camera_set.camera_ids}
     self.published = 0
 
     self.update = rospy.Time.now()
@@ -102,7 +103,8 @@ class SyncHandler(BaseHandler):
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
         for k in natsorted(self.camera_set.camera_ids) ])
-
+      
+      self.camera_diagnostics.update(self.recieved, self.dropped)
       self.reset_recieved()
 
 
@@ -119,14 +121,15 @@ class SyncHandler(BaseHandler):
       item = self.queue.get()
   
 
-  def add_frame(self, image_info):
-      self.frame_queue.append(image_info)
-      self.frame_queue.sort(key=lambda r: r.timestamp)
+  def add_frame(self, image_info, camera_name):
+    self.recieved[camera_name] += 1
+    self.frame_queue.append(image_info)
+    self.frame_queue.sort(key=lambda r: r.timestamp)
 
-      timeout_time = rospy.Time.now() - self.timeout
-      while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-        self.frame_queue.pop(0)
-        self.dropped += 1
+    timeout_time = rospy.Time.now() - self.timeout
+    while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
+      self.frame_queue.pop(0)
+      self.dropped[camera_name] += 1
 
 
   def update_offsets(self, group):
@@ -154,9 +157,7 @@ class SyncHandler(BaseHandler):
       image_info = image_info.extend_(camera_name=camera_name, 
         timestamp = image_info.timestamp - self.camera_offsets[camera_name])
 
-      self.recieved[camera_name] += 1
-
-      self.add_frame(image_info)
+      self.add_frame(image_info, camera_name)
       self.try_publish()
         
     except (PySpin.SpinnakerException, IncompleteImageError) as e:

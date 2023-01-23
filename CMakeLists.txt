@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   cv_bridge
   message_generation
+  diagnostic_updater
 )
 
 catkin_python_setup()
