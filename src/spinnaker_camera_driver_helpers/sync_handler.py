@@ -103,7 +103,7 @@ class SyncHandler(BaseHandler):
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
         for k in natsorted(self.camera_set.camera_ids) ])
-  
+      self.diagnostics.reset()
       self.reset_recieved()
 
 

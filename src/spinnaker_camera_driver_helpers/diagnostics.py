@@ -20,7 +20,7 @@ class CameraState(object):
     self.camera_serial = str(camera_serial)
     self.time_before_stale = time_before_stale
 
-    self.updated_time = rospy.Time(0)
+    self.updated_time = rospy.Time()
     self._recieved = 0
     self._dropped = 0
 
@@ -30,7 +30,7 @@ class CameraState(object):
   def recieved(self):
     return self._recieved
   
-  @property.setter
+  @recieved.setter
   def recieved(self, new_value):
     self._recieved = new_value
     self.updated_time = rospy.Time.now()
@@ -39,7 +39,7 @@ class CameraState(object):
   def dropped(self):
     return self._dropped
   
-  @property.setter
+  @dropped.setter
   def dropped(self, new_value):
     self._dropped = new_value
     self.updated_time = rospy.Time.now()
@@ -68,21 +68,15 @@ class CameraDiagnosticUpdater:
     camera_serials is a dict composed of camera_serial->camera_name
     """
     self.updater = diagnostic_updater.Updater()
-    self.updater.setHardwareID("none")
     self.camera_states = {
-            v: CameraState(self.updater, v, k)
-            for k, v in camera_serials.items()
+      v: CameraState(self.updater, v, k)
+      for k, v in sorted(camera_serials.items(), key=lambda x: x[1])
     }
 
-    # Update stats every second
-    def update_diagnostics(event):
-      self.updater.update()
-      self.reset()
-    rospy.Timer(rospy.Duration(1), update_diagnostics)
-  
   def reset(self):
-    for k, v in self.camera_states:
-      v.reset()
+    self.updater.update()
+    for k, v in self.camera_states.items():
+        v.reset()
 
   def add_recieved(self, camera_name, count):
     self.camera_states[camera_name].recieved += count
