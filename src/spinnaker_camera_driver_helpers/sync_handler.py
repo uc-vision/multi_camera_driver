@@ -62,7 +62,7 @@ class SyncHandler(BaseHandler):
     timeout_msec=1000, sync_threshold_msec=10.0):
 
     self.camera_set = camera_set
-    self.camera_diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
+    self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
 
     self.publishers = {
       k:  CameraPublisher(k, PublisherSettings(settings, camera_set.camera_settings[k])) 
@@ -84,8 +84,8 @@ class SyncHandler(BaseHandler):
     self.reset_recieved()
     
   def reset_recieved(self):
-    self.recieved = {k:0 for k in self.camera_set.camera_ids}
-    self.dropped = {k:0 for k in self.camera_set.camera_ids}
+    self.recieved = 0 
+    self.dropped = 0
     self.published = 0
 
     self.update = rospy.Time.now()
@@ -96,17 +96,15 @@ class SyncHandler(BaseHandler):
     if duration > self.report_rate:
       message = f"published {self.published} ({self.published / duration.to_sec() : .2f} fps), {self.recieved} in {format_sec(duration)}"
 
-      #if self.dropped > 0:
-      #  rospy.logwarn(f"dropped {self.dropped}, {message}")
-      #else:
-      #  rospy.logdebug(message)
+      if self.dropped > 0:
+       rospy.logwarn(f"dropped {self.dropped}, {message}")
+      else:
+       rospy.logdebug(message)
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
         for k in natsorted(self.camera_set.camera_ids) ])
-      
-      self.camera_diagnostics.update(self.recieved, self.dropped)
+  
       self.reset_recieved()
-
 
 
   def publish(self, image, camera_name):
@@ -122,14 +120,16 @@ class SyncHandler(BaseHandler):
   
 
   def add_frame(self, image_info, camera_name):
-    self.recieved[camera_name] += 1
+    self.recieved += 1
+    self.diagnostics.add_recieved(camera_name, 1)
     self.frame_queue.append(image_info)
     self.frame_queue.sort(key=lambda r: r.timestamp)
 
     timeout_time = rospy.Time.now() - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
       self.frame_queue.pop(0)
-      self.dropped[camera_name] += 1
+      self.dropped += 1
+      self.diagnostics.add_dropped(camera_name, 1)
 
 
   def update_offsets(self, group):

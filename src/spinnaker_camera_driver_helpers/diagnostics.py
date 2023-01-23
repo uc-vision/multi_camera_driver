@@ -21,15 +21,32 @@ class CameraState(object):
     self.time_before_stale = time_before_stale
 
     self.updated_time = rospy.Time(0)
-    self.recieved = 0
-    self.dropped = 0
+    self._recieved = 0
+    self._dropped = 0
 
     updater.add(camera_name, self.produce_diagnostics)
+
+  @property
+  def recieved(self):
+    return self._recieved
   
-  def update(self, recieved, dropped):
-    self.recieved = recieved
-    self.dropped = dropped
+  @property.setter
+  def recieved(self, new_value):
+    self._recieved = new_value
     self.updated_time = rospy.Time.now()
+  
+  @property
+  def dropped(self):
+    return self._dropped
+  
+  @property.setter
+  def dropped(self, new_value):
+    self._dropped = new_value
+    self.updated_time = rospy.Time.now()
+  
+  def reset(self):
+    self._recieved = 0
+    self._dropped = 0
 
   def produce_diagnostics(self, stat):
     """ Check current state and report statistics """
@@ -60,13 +77,15 @@ class CameraDiagnosticUpdater:
     # Update stats every second
     def update_diagnostics(event):
       self.updater.update()
+      self.reset()
     rospy.Timer(rospy.Duration(1), update_diagnostics)
+  
+  def reset(self):
+    for k, v in self.camera_states:
+      v.reset()
 
-  def update(self, recieved: Dict[str, int], dropped: Dict[str, int]):
-    """ Updates diagnostics of each cam 
-    
-    Given two dicts cam_id->recieved_frames, cam_id->dropped_frames
-    """
-    for cam_id, recieved_frames in recieved.items():
-      dropped_frames = dropped[cam_id]
-      self.camera_states[cam_id].update(recieved_frames, dropped_frames)
+  def add_recieved(self, camera_name, count):
+    self.camera_states[camera_name].recieved += count
+
+  def add_dropped(self, camera_name, count):
+    self.camera_states[camera_name].dropped += count
