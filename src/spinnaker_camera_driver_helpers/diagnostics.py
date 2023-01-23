@@ -3,7 +3,7 @@
 import rospy
 import diagnostic_updater
 import diagnostic_msgs
-from typing import List, Dict
+from typing import List, Dict, Union
 
 OK = diagnostic_msgs.msg.DiagnosticStatus.OK
 WARN = diagnostic_msgs.msg.DiagnosticStatus.WARN
@@ -14,8 +14,10 @@ class CameraState(object):
   def __init__(self, 
             updater: diagnostic_updater.Updater, 
             camera_name: str, 
-            time_before_stale: int = 1):
+            camera_serial: Union[str, int],
+            time_before_stale: int = 3):
     self.camera_name = camera_name
+    self.camera_serial = str(camera_serial)
     self.time_before_stale = time_before_stale
 
     self.updated_time = rospy.Time(0)
@@ -31,6 +33,7 @@ class CameraState(object):
 
   def produce_diagnostics(self, stat):
     """ Check current state and report statistics """
+    stat.hardware_id = self.camera_serial
     last_update = (rospy.Time.now() - self.updated_time).to_sec()
     if last_update > self.time_before_stale:
       stat.summary(STALE, f'Haven\'t recieved update in {last_update} seconds')
@@ -42,12 +45,16 @@ class CameraState(object):
     return stat
 
 class CameraDiagnosticUpdater:
-  def __init__(self, camera_ids: List[str]):
+  def __init__(self, camera_serials: Dict[str, str]):
+    """ Creates diagnostics tasks for each camera
+
+    camera_serials is a dict composed of camera_serial->camera_name
+    """
     self.updater = diagnostic_updater.Updater()
     self.updater.setHardwareID("none")
     self.camera_states = {
-      k: CameraState(self.updater, k)
-      for k in camera_ids
+            v: CameraState(self.updater, v, k)
+            for k, v in camera_serials.items()
     }
 
     # Update stats every second

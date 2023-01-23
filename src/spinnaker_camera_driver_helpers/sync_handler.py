@@ -62,7 +62,7 @@ class SyncHandler(BaseHandler):
     timeout_msec=1000, sync_threshold_msec=10.0):
 
     self.camera_set = camera_set
-    self.camera_diagnostics = CameraDiagnosticUpdater(camera_set.camera_ids)
+    self.camera_diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
 
     self.publishers = {
       k:  CameraPublisher(k, PublisherSettings(settings, camera_set.camera_settings[k])) 
@@ -96,10 +96,10 @@ class SyncHandler(BaseHandler):
     if duration > self.report_rate:
       message = f"published {self.published} ({self.published / duration.to_sec() : .2f} fps), {self.recieved} in {format_sec(duration)}"
 
-      if self.dropped > 0:
-        rospy.logwarn(f"dropped {self.dropped}, {message}")
-      else:
-        rospy.logdebug(message)
+      #if self.dropped > 0:
+      #  rospy.logwarn(f"dropped {self.dropped}, {message}")
+      #else:
+      #  rospy.logdebug(message)
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
         for k in natsorted(self.camera_set.camera_ids) ])

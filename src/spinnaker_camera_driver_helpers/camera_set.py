@@ -51,6 +51,7 @@ class CameraSet(object):
 
     assert (master_id is None) or master_id in camera_serials
     self.master_id = camera_serials.get(master_id, None)
+    self.camera_serials = camera_serials
     self.camera_dict = spinnaker_helpers.find_cameras(
         camera_serials)  # camera_name -> camera
 
