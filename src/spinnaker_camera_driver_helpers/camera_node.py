@@ -56,6 +56,9 @@ class CameraArrayNode(object):
         f"Cannot set {k} while cameras are started"
       rospy.loginfo(f"Setting {k}={v}")
 
+      if k == 'max_framerate':
+        self.publisher.diagnostics.update_framerate(v)
+
       if k in camera_setters.property_setters:
         setter = camera_setters.property_setters[k]
         self.camera_set.set_property(k, v, setter)

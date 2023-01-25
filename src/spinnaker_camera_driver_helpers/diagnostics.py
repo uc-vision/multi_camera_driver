@@ -15,10 +15,15 @@ class CameraState(object):
             updater: diagnostic_updater.Updater, 
             camera_name: str, 
             camera_serial: Union[str, int],
-            time_before_stale: int = 3):
+            ideal_framerate: int = 4,
+            tolerance: int = 3,
+            time_before_stale: int = 2):
     self.camera_name = camera_name
     self.camera_serial = str(camera_serial)
     self.time_before_stale = time_before_stale
+
+    self.ideal_framerate = ideal_framerate
+    self.tolerance = tolerance
 
     self.updated_time = rospy.Time()
     self._recieved = 0
@@ -52,11 +57,18 @@ class CameraState(object):
     """ Check current state and report statistics """
     stat.hardware_id = self.camera_serial
     last_update = (rospy.Time.now() - self.updated_time).to_sec()
+
     if last_update > self.time_before_stale:
-      stat.summary(STALE, f'Haven\'t recieved update in {last_update} seconds')
+      stat.summary(ERROR, f'Haven\'t recieved update in {last_update} seconds')
       return stat
+    
+    lower_bound = (self.ideal_framerate * last_update) - self.tolerance
+    upper_bound = (self.ideal_framerate * last_update) + self.tolerance
+    if lower_bound < self.recieved < upper_bound:
+      stat.summary(WARN, 'Recieved inadequate amount of frames')
+
     if self.dropped > 0:
-      stat.summary(ERROR, f'{self.camera_name} has dropped {self.dropped} frames')
+      stat.summary(WARN, f'Dropped {self.dropped} frames')
     else:
       stat.summary(OK, f'Recieved {self.recieved} frames')
     return stat
@@ -76,7 +88,11 @@ class CameraDiagnosticUpdater:
   def reset(self):
     self.updater.update()
     for k, v in self.camera_states.items():
-        v.reset()
+      v.reset()
+    
+  def update_framerate(self, new_framerate):
+    for k, v in self.camera_states.items():
+      k
 
   def add_recieved(self, camera_name, count):
     self.camera_states[camera_name].recieved += count
