@@ -1,14 +1,7 @@
 camera_aliases:
   21264079 : left
-  21264078 : right    
 
 master: 21264079
-
-
-stereo_pairs:
-  stereo1:
-    - left
-    - right
 
 camera_settings:
   device:
@@ -37,7 +30,10 @@ camera_settings:
     - AcquisitionMode:
       - Continuous
       - ENUM     
-
+      
+    - PixelFormat:
+      - BayerRG16
+      - ENUM
 
   transport_layer:
     - StreamBufferCountMode:

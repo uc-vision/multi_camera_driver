@@ -72,7 +72,7 @@ class CameraPublisher():
     width, height = self.settings.image_size
 
     if self.calibration is not None:
-      calibration = self.calibration.resize_image(width, height)
+      calibration = self.calibration.resize_image ((width, height) )
       return camera_info_msg(calibration)
     else:
       return CameraInfo(width = width, height = height)

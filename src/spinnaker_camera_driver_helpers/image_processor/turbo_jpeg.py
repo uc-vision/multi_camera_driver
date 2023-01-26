@@ -13,7 +13,7 @@ def cv_conversion(settings):
   elif settings.encoding == "bayer_rggb8":
     return cv2.COLOR_BAYER_BG2BGR
   else:
-    raise RuntimeException(f"bayer encoding not implemented {settings.encoding}")
+    raise RuntimeError(f"bayer encoding not implemented {settings.encoding}")
 
 
 

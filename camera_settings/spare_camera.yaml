@@ -1,0 +1,55 @@
+camera_aliases:
+  21264079 : left
+  #  21264078 : right    
+
+master: 21264079
+
+
+stereo_pairs:
+  stereo1:
+    - left
+    - right
+
+camera_settings:
+  device:
+    - UserSetSelector:
+      - Default
+      - ENUM
+    - SensorShutterMode:
+      - Global
+      - ENUM
+    - BalanceWhiteAutoProfile:
+      - "Outdoor"
+      - ENUM
+    - AutoExposureLightingMode:
+      - "Backlight"
+      - ENUM
+    - AutoExposureExposureTimeUpperLimit:
+      - 4000
+      - FLOAT
+    - AutoExposureControlPriority:
+      - ExposureTime
+      - ENUM
+
+    - TriggerMode:
+      - "Off"  # needs quotes otherwise is evaluated to false
+      - ENUM
+    - AcquisitionMode:
+      - Continuous
+      - ENUM     
+
+
+  transport_layer:
+    - StreamBufferCountMode:
+      - Manual
+      - ENUM
+
+    - StreamBufferCountManual:
+      - 4
+      - INT
+
+    - StreamBufferHandlingMode:
+            #      - NewestOnly
+      - OldestFirst
+      - ENUM
+#  Stream:
