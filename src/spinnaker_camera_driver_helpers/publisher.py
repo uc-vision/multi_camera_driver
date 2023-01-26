@@ -1,49 +1,36 @@
+from __future__ import annotations
 
 import rospy
 
 from queue import Queue
 from threading import Thread
-from typing import Any, Dict, Tuple
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 
-from sensor_msgs.msg import CameraInfo, CompressedImage, Image
+from sensor_msgs.msg import CompressedImage, Image
 from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
-from dataclasses import dataclass, field
+import sensor_msgs.msg
 
-from sensor_msgs.msg import CameraInfo
 from camera_geometry_ros.conversions import camera_info_msg
+import numpy as np
 
+from .image_settings import PublisherSettings
 
 from .image_processor import image_backend
 from py_structs import struct
 
-@dataclass
-class ImageSettings:
-  cache_path : str 
-  image_size : Tuple[int, int] = field(default_factory=lambda: (0, 0))
-  encoding : str = 'bayer_bggr8' 
-  device : str = 'cuda:0'
-  queue_size : int = 4
-
-  preview_size : int = 400
-  quality : int = 90
-  image_backend : str = 'turbo_jpeg'
-  
-
-
 
 class CameraPublisher():
-  def __init__(self, camera_name, settings, calibration=None):
+
+  def __init__(self, camera_name:str, settings:PublisherSettings):
     
     self.camera_name = camera_name
     self.settings = settings
 
-    self.backend = image_backend(settings.image_backend)
+    self.backend = image_backend(settings.image.image_backend)
     self.image_processor = None
 
-    self.calibration = calibration
 
     self.queue = Queue(1)
     self.worker = None
@@ -51,47 +38,51 @@ class CameraPublisher():
     bridge = CvBridge()
 
     topics = {
-        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.raw, encoding=settings.encoding)),
+        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.raw, encoding=settings.camera.encoding.value)),
         "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.image.compressed, format = "jpeg")), 
         "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.image.preview, format = "jpeg")),
-        "camera_info" : (CameraInfo, lambda data: data.camera_info)
+        "camera_info" : (sensor_msgs.msg.CameraInfo, lambda data: data.camera_info)
     }
 
     self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)
 
 
   def register(self):
-    return []     # Here's where the lazy subscriber subscribes to it's inputs (none for this)
-
-
-  def update_calibration(self, camera):
-    self.calibration = camera
+    return []     # Here's where the lazy subscriber subscribes to it's inputs (we have no other ROS based inputs)
 
   @property
+  def calibration(self):
+    return self.settings.camera.calibration
+
+  
+  @property
   def camera_info(self):
-    width, height = self.settings.image_size
+    size = self.settings.camera.image_size
+    width, height = size
 
-    if self.calibration is not None:
-      calibration = self.calibration.resize_image ((width, height) )
+    if self.calibration is not None:  
+      calibration = self.calibration.resize_image( size )
+      
+      if self.settings.image.resize_width > 0:
+        scale_factor = self.settings.image.resize_width / width
+        calibration = calibration.scale_image(scale_factor)
+
       return camera_info_msg(calibration)
+
     else:
-      return CameraInfo(width = width, height = height)
+      return sensor_msgs.msg.CameraInfo(width = width, height = height)
 
-  def set_options(self, values : Dict[str, Any]):
-    for option, value in values.items():
-      if option == "image_size":
-
-        assert self.worker is None, "image size cannot be changed while running" 
-        self.settings.image_size = value
-        
-      elif option == "preview_size":
-        self.settings.preview_size = value
-      elif option == "quality":
-        assert value > 0 and value <= 100
-        self.settings.quality = value
-      else:
-        assert False, f"unknown option {option}"
+  def update_settings(self, settings:PublisherSettings):
+    if (settings.camera.image_size != self.settings.camera.image_size):
+      return True
     
+    if self.image_processor is not None:
+      if self.image_processor.update_settings(settings):
+        return True
+
+    self.settings = settings
+    return False
+
 
   def publish(self, image_data, timestamp, seq):
       data = struct(
@@ -107,6 +98,12 @@ class CameraPublisher():
       item = self.queue.get()
       while item is not None:
         data, header = item
+
+        # If the image size has changed ignore old images in the queue
+        h, w = data.image.raw.shape[:2]
+        if self.settings.camera.image_size != (w, h):
+          continue
+
         self.publisher.publish(data=data, header=header)
         item = self.queue.get()
 
@@ -117,6 +114,7 @@ class CameraPublisher():
     self.worker.join()
     print(f"Done {self.camera_name}: thread {self.worker}")
 
+    self.image_processor = None
     self.worker = None
 
   def start(self):

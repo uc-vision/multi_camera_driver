@@ -1,4 +1,5 @@
 
+from typing import Dict, List
 import PySpin
 import statistics
 import rospy
@@ -327,7 +328,8 @@ def trigger_master(camera : PySpin.Camera, free_running : bool):
     set_enum(nodemap, "TriggerMode", "On")
 
 
-def set_setting(nodemap, setting):
+
+def set_setting(nodemap, setting:Dict):
   try:
 
     setting_name = next(iter(setting)) # setting.keys()[0]
@@ -351,7 +353,7 @@ def set_setting(nodemap, setting):
     rospy.logerr("Exception setting {}: {}".format(setting_name, str(e)))
 
 
-def set_settings(nodemap, settings):
+def set_settings(nodemap, settings:List[Dict]):
   for setting in settings:
       set_setting(nodemap, setting)
 
@@ -365,6 +367,10 @@ def set_camera_settings(camera, settings):
 
     s_node_map = camera.GetTLStreamNodeMap()
     set_settings(s_node_map, settings["transport_layer"])
+
+def get_camera_encoding(camera):
+    nodemap = camera.GetNodeMap()
+    return get_enum(nodemap, "PixelFormat")
 
 def get_current_speed(camera):
     d_node_map = camera.GetTLDeviceNodeMap()

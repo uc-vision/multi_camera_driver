@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   cv_bridge
   message_generation
+  diagnostic_updater
 )
 
 catkin_python_setup()
@@ -17,11 +18,25 @@ generate_dynamic_reconfigure_options(
 )
 
 
-add_service_files(
-  FILES
-  Capture.srv
-)
+file(GLOB msg_files "msg/*.msg")
+foreach (file ${msg_files})
+    get_filename_component(file_short ${file} NAME)
+    list(APPEND msg_base_files ${file_short})
+endforeach ()
 
+add_message_files(DIRECTORY msg FILES ${msg_base_files})
+message(STATUS "+++ Messages: ${msg_base_files}")
+
+## In order to add services, adding .srv files in srv/ is enough
+## Don't need to modify following code.
+file(GLOB srv_files "srv/*.srv")
+foreach (file ${srv_files})
+    get_filename_component(file_short ${file} NAME)
+    list(APPEND srv_base_files ${file_short})
+endforeach ()
+
+add_service_files(DIRECTORY srv FILES ${srv_base_files})
+message(STATUS "+++ Services: ${srv_base_files}")
 
 generate_messages(
   DEPENDENCIES

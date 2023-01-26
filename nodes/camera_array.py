@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""ROS node for publishing images from sets of Spinnaker SDK based cameras.
+
+Copyright (c) 2019. UC Vision Group, Canterbury University. This file is subject to the 3-clause BSD
+license, as found in the LICENSE file in the top-level directory of this
+distribution and at https://github.com/sds53/spinnaker_camera_driver_ros/LICENSE.
+No part of spinnaker_camera_driver_helpers, including this file, may be copied, modified,
+propagated, or distributed except according to the terms contained in the
+LICENSE file.
+"""
+
 from dataclasses import replace
 from pathlib import Path
 import PySpin
@@ -14,21 +24,19 @@ from std_msgs.msg import String
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-from spinnaker_camera_driver_helpers.image_handler import ImageHandler
 from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
 
-from spinnaker_camera_driver_helpers.publisher import ImageSettings
-from spinnaker_camera_driver_helpers.config import import_calibrations, load_calibrations, load_config, publish_extrinsics, write_calibration, exceptions_to_rosout
+from spinnaker_camera_driver_helpers.image_settings import ImageSettings
+from spinnaker_camera_driver_helpers.config import (import_calibrations, 
+  load_calibrations, load_config, publish_extrinsics, write_calibration, exceptions_to_rosout)
 
 
 from traceback import format_exc
 import gc
 
 
-def create_publisher(camera_set:CameraSet, config, calib):
-
-
+def base_settings(config):
   default_backend = "turbo_jpeg"
   try:
     import nvjpeg_torch
@@ -36,30 +44,27 @@ def create_publisher(camera_set:CameraSet, config, calib):
 
     if torch.cuda.is_available():
       default_backend = "torch_nvjpeg"
-  except ModuleNotFoundError:
+  except ModuleNotFoundError as e:
+    rospy.logwarn(f"Could not import nvjpeg_torch: {e}")
     pass
 
   rospack = rospkg.RosPack()
   base_path = Path(rospack.get_path('spinnaker_camera_driver_ros'))
 
 
-  base_settings = ImageSettings(
-      encoding=config.get("encoding", "bayer_rggb8"),
+  return ImageSettings(
       device=rospy.get_param("~device", 'cuda:0'),
-      quality=95,
-      preview_size=rospy.get_param("~preview_width", 400),
+      jpeg_quality=95,
+      preview_size=rospy.get_param("~preview_width", 200),
       image_backend=rospy.get_param("~backend", default_backend),
-      cache_path = rospy.get_param("~cache_path", base_path / "cache")
+      cache_path = rospy.get_param("~cache_path", base_path / "cache"),
+      resize_width=rospy.get_param("~resize_width", 0),
+      sharpen=rospy.get_param("~sharpen", 0.0)
   )
 
-  image_settings = {k: replace(base_settings, image_size=info.image_size) 
-    for k, info in camera_set.camera_info.items()}
 
-  # for k in list(image_settings.keys())[:2]:
-  #   image_settings[k].image_backend = "turbo_jpeg"
-  
-  handler_type = ImageHandler if camera_set.master_id is None else SyncHandler
-  return handler_type(camera_set.camera_ids, image_settings, calibration=calib.cameras)
+def create_publisher(camera_set:CameraSet, settings:ImageSettings):
+  return SyncHandler(settings, camera_set)
 
 
 def run_node():
@@ -79,8 +84,10 @@ def run_node():
   broadcaster = tf2_ros.StaticTransformBroadcaster()
   publish_extrinsics(broadcaster, calib, camera_set.camera_ids)
 
+  image_settings = base_settings(config)
+  rospy.loginfo(f"Using image processing backend: {image_settings.image_backend}")
   
-  image_publisher = create_publisher(camera_set, config, calib)
+  image_publisher = create_publisher(camera_set, image_settings)
 
   def on_recalibrated(msg):
     rospy.loginfo("Recieved recalibration, importing")

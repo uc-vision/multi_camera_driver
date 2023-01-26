@@ -1,4 +1,8 @@
-from typing import Dict
+from abc import ABCMeta, abstractmethod, abstractproperty
+from typing import Any, Dict
+
+from spinnaker_camera_driver_helpers.camera_set import CameraSet, CameraSettings
+from spinnaker_camera_driver_helpers.image_settings import ImageSettings, PublisherSettings
 from .image_processor import EncoderError
 import rospy
 import PySpin
@@ -6,14 +10,24 @@ import PySpin
 from queue import Queue
 from threading import Thread
 
-from .publisher import CameraPublisher, ImageSettings
+from .publisher import CameraPublisher
 from py_structs import struct
+
+
+class IncompleteImageError(Exception):
+  def __init__(self, status):
+    self.status = status
+    
+  def __str__(self):
+    return f"Incomplete image: {self.status}"
+
 
 def spinnaker_image(image, camera_info):
     if image.IsIncomplete():
-      rospy.logerr('Image incomplete, status: %d' % image.GetImageStatus())
+      status = image.GetImageStatus()
       image.Release()          
-      return None
+      raise IncompleteImageError(status)
+      
 
     image_data = image.GetNDArray()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
@@ -63,17 +77,11 @@ class CameraHandler(object):
         except EncoderError as e:
           rospy.logerr(e)
 
-
         item = self.queue.get()
-
       self.publisher.stop()
 
-
-    def set_option(self, key, value):
-        self.publisher.set_option(key, value)
-
-    def update_calibration(self, camera):
-      return self.publisher.update_calibration(camera)
+    def update_settings(self, settings:PublisherSettings):
+        return self.publisher.update_settings(settings)
 
     def stop(self):
         if self.thread is not None:
@@ -95,50 +103,33 @@ class CameraHandler(object):
 
 
 
-class ImageHandler(object):
-  def __init__(self, camera_names, settings : Dict[str, ImageSettings], calibration={}):
+class BaseHandler(metaclass=ABCMeta):
 
-    self.camera_names = camera_names
-    self.handlers = {
-      k:  CameraHandler(
-        CameraPublisher(k, settings[k], calibration.get(k, None))) 
-          for k in camera_names
-    }
-    self.report_rate = rospy.Duration.from_sec(4.0)
-    self.reset_recieved()
-    
+  @abstractmethod
   def reset_recieved(self):
-    self.recieved = {k:0 for k in self.camera_names}
-    self.dropped = 0
-    self.published = 0
-    self.update = rospy.Time.now()
+    pass
 
+  @abstractmethod
   def report_recieved(self):
-    duration = rospy.Time.now() - self.update
-    if duration > self.report_rate:
-      if self.dropped > 0:
-        rospy.logwarn(f"published {self.published}, dropped {self.dropped}, received {self.recieved} in {format_sec(duration)}")
-      else:
-        rospy.logdebug(f"published {self.published}, {self.recieved} in {format_sec(duration)}")
-      self.reset_recieved()
+    pass
 
-  def publish(self, image, camera_name, camera_info):
-    self.handlers[camera_name].publish(image, camera_info)
+  @abstractmethod
+  def publish(self, image:PySpin.Image, camera_name:str, camera_info):
+    pass
 
-  def update_calibration(self, calibration):
-    for k, handler in self.handlers.items():
-      handler.update_calibration(calibration.get(k, None))
+  @abstractmethod
+  def update_camera(self, k:str, info:CameraSettings):
+    pass
 
-  def set_option(self, key, value):
-    for handler in self.handlers.values():
-      handler.set_option(key, value)
+  @abstractmethod
+  def update_settings(self, settings:ImageSettings) -> bool:
+    pass
 
+
+  @abstractmethod
   def start(self):
-    for handler in self.handlers.values():
-      handler.start()  
+    pass
 
-
+  @abstractmethod
   def stop(self):
-    for handler in self.handlers.values():
-      handler.stop()  
-
+    pass

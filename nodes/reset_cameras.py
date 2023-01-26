@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""ROS node for spinnaker cameras.
 
-Copyright (c) 2019. Sam Schofield. This file is subject to the 3-clause BSD
+"""ROS node to reset all Spinnaker based cameras found on a system.
+
+Copyright (c) 2019. UC Vision, Canterbury University. This file is subject to the 3-clause BSD
 license, as found in the LICENSE file in the top-level directory of this
 distribution and at https://github.com/sds53/spinnaker_camera_driver_ros/LICENSE.
 No part of spinnaker_camera_driver_helpers, including this file, may be copied, modified,

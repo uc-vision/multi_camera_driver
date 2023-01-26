@@ -5,38 +5,35 @@ from cached_property import cached_property
 import cv2
 from turbojpeg import TurboJPEG
 
-from .common import EncoderError
-
-def cv_conversion(settings):
-  if settings.encoding == "bayer_bggr8":
-    return cv2.COLOR_BAYER_RG2BGR
-  elif settings.encoding == "bayer_rggb8":
-    return cv2.COLOR_BAYER_BG2BGR
-  else:
-    raise RuntimeError(f"bayer encoding not implemented {settings.encoding}")
+from spinnaker_camera_driver_helpers.image_settings import PublisherSettings
+from .common import  cv_conversion
 
 
 
 class Processor(object):
-  def __init__(self, settings : ImageSettings):
+  def __init__(self, settings : PublisherSettings):
     self.encoder = TurboJPEG()
     self.settings = settings
 
-    self.conversion = cv_conversion(settings)
-
+    self.conversion = cv_conversion(settings.camera.encoding)
 
   def __call__(self, raw):
     return ImageOutputs(self, raw, self.conversion)
 
+  def update_settings(self, settings):
+    self.settings = settings
+    return False
+
 
 class ImageOutputs(object):
     def __init__(self, parent, raw, conversion):
-        self.parent = parent
-        self.raw = raw
-        self.conversion = conversion
+      self.parent = parent
+      self.raw = raw
+      self.conversion = conversion
+
 
     @property 
-    def settings(self) -> ImageSettings:
+    def settings(self) -> PublisherSettings:
       return self.parent.settings
 
     @cached_property
@@ -44,7 +41,7 @@ class ImageOutputs(object):
         return cv2.cvtColor(self.raw, self.conversion)
 
     def encode(self, image):
-      return self.parent.encoder.encode(image, quality=self.settings.quality)
+      return self.parent.encoder.encode(image, quality=self.settings.jpeg_quality)
 
     @cached_property 
     def compressed(self):

@@ -1,5 +1,8 @@
-from . import spinnaker_helpers
 import PySpin
+import rospy
+
+from . import spinnaker_helpers
+
 
 def set_exposure(camera : PySpin.Camera, exposure_time, info):
     """Set the cameras exposure time to the given value. If 0 set to auto"""
@@ -96,9 +99,7 @@ property_setters = dict(
     black_level = set_black_level,
     ev_comp = set_ev_comp,
     gamma = set_gamma,
-    max_framerate = set_framerate
-)
-
-delayed_setters = dict(    
+    max_framerate = set_framerate,
     binning = set_binning
 )
+
