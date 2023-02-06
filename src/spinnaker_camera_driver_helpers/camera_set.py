@@ -35,7 +35,7 @@ class CameraSettings:
   is_free_running:bool
 
   image_size:Tuple[int, int]
-  encoding : Tuple[ImageEncoding, int]
+  encoding : ImageEncoding
 
   calibration: Optional[Camera] = None
 

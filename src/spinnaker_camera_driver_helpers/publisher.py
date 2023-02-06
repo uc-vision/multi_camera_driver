@@ -95,6 +95,9 @@ class CameraPublisher():
 
 
   def publish_worker(self):
+      # Lazily create in case of image size changes
+      self.image_processor = self.backend(self.settings)
+
       item = self.queue.get()
       while item is not None:
         data, header = item
@@ -120,8 +123,6 @@ class CameraPublisher():
   def start(self):
     assert self.worker is None
 
-    # Lazily create in case of image size changes
-    self.image_processor = self.backend(self.settings)
 
     self.worker = Thread(target = self.publish_worker)
     self.worker.start()

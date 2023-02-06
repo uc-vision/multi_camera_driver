@@ -10,7 +10,6 @@ stereo_pairs:
     - left
     - right
 
-encoding: "bayer_bggr8"
 
 camera_settings:
   device:

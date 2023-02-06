@@ -11,6 +11,9 @@ def image_backend(name):
   elif name == 'opencv_nvjpeg':
     from . import opencv_nvjpeg
     return opencv_nvjpeg.Processor
+  elif name == 'hdr_jxl':
+    from . import hdr_jxl
+    return hdr_jxl.Processor
   else:
     raise RuntimeError(f"Unknown image backend {name} options are: turbo_jpeg | torch_nvjpeg | opencv_nvjpeg")  
 
