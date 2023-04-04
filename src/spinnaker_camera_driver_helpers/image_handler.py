@@ -1,7 +1,10 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Any, Dict
+from abc import ABCMeta, abstractmethod
+import datetime
+from typing import Any, Dict, Tuple
+import numpy as np
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet, CameraSettings
+from spinnaker_camera_driver_helpers.image_processor.common import ImageEncoding, from_pyspin
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings, PublisherSettings
 from .image_processor import EncoderError
 import rospy
@@ -10,8 +13,7 @@ import PySpin
 from queue import Queue
 from threading import Thread
 
-from .publisher import CameraPublisher
-from py_structs import struct
+from dataclasses import dataclass
 
 
 class IncompleteImageError(Exception):
@@ -22,20 +24,42 @@ class IncompleteImageError(Exception):
     return f"Incomplete image: {self.status}"
 
 
-def spinnaker_image(image, camera_info):
+@dataclass
+class CameraImage:
+  camera_name: str
+  image_data: np.ndarray
+  timestamp: rospy.Time
+  seq: int
+  image_size: Tuple[int, int]
+  encoding: ImageEncoding
+
+  def __repr__(self):
+    date = datetime.datetime.fromtimestamp(self.timestamp.to_sec())
+    pretty_time = date.strftime("%H:%M:%S.%f")
+    w, h = self.image_size
+
+    return f"CameraImage({self.camera_name}, {w}x{h}, {self.image_data.shape[0]}:{str(self.image_data.dtype)}, {self.encoding.value}, {pretty_time}, {self.seq})"
+
+  
+
+def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration) -> CameraImage:
     if image.IsIncomplete():
       status = image.GetImageStatus()
       image.Release()          
       raise IncompleteImageError(status)
-      
-
-    image_data = image.GetNDArray()
+    
+    image_data = image.GetData()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
 
-    image_info = struct(
+    image_info = CameraImage(
+
+      camera_name = camera_name,
       image_data = image_data,
-      timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9 + camera_info.time_offset_sec),
-      seq = image.GetFrameID()
+      timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9) + time_offset_sec,
+      seq = image.GetFrameID(),
+
+      image_size = (image.GetWidth(), image.GetHeight()),
+      encoding = from_pyspin(image.GetPixelFormat()),
     )
 
     image.Release()    

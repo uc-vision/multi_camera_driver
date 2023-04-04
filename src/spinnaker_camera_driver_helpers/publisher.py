@@ -7,6 +7,7 @@ from threading import Thread
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 
 from sensor_msgs.msg import CompressedImage, Image
+from spinnaker_camera_driver_helpers.image_handler import CameraImage
 from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
@@ -84,31 +85,31 @@ class CameraPublisher():
     return False
 
 
-  def publish(self, image_data, timestamp, seq):
-      data = struct(
-        image = self.image_processor(image_data),
-        camera_info = self.camera_info
-      )
-
-      header = Header(frame_id=self.camera_name, stamp=timestamp, seq=seq)
-      return self.queue.put( (data, header) )
+  def publish(self, image:CameraImage):
+      return self.queue.put( image )
 
 
   def publish_worker(self):
       # Lazily create in case of image size changes
       self.image_processor = self.backend(self.settings)
 
-      item = self.queue.get()
-      while item is not None:
-        data, header = item
-
+      image:CameraImage = self.queue.get()
+      while image is not None:
         # If the image size has changed ignore old images in the queue
-        h, w = data.image.raw.shape[:2]
-        if self.settings.camera.image_size != (w, h):
+        if self.settings.camera.image_size != image.image_size:
+          rospy.loginfo_once(f"Dropping image: expected {self.settings.camera.image_size} got {image.image_size}")
           continue
 
-        self.publisher.publish(data=data, header=header)
-        item = self.queue.get()
+        if self.settings.camera.encoding != image.encoding:
+          rospy.logwarn_once(f"Dropping image: encoding inconsistent expected{self.settings.camera.encoding}, got {image.encoding}")
+          continue
+        
+
+        header = Header(frame_id=image.camera_name, stamp=image.timestamp, seq=image.seq)
+        outputs = struct(image=self.image_processor(image), camera_info=self.camera_info)
+
+        self.publisher.publish(data=outputs, header=header)
+        image = self.queue.get()
 
   def stop(self):
     rospy.loginfo(f"Waiting for {self.camera_name}: thread {self.worker}")
@@ -122,7 +123,6 @@ class CameraPublisher():
 
   def start(self):
     assert self.worker is None
-
 
     self.worker = Thread(target = self.publish_worker)
     self.worker.start()

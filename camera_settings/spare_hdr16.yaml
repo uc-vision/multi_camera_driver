@@ -33,6 +33,7 @@ camera_settings:
       
     - PixelFormat:
       - BayerRG16
+      # - BayerRG12p
       - ENUM
 
   transport_layer:

@@ -28,7 +28,7 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 class CameraSettings:
   name : str
   connection_speed:str
-  time_offset_sec:float
+  time_offset_sec:rospy.Duration
   serial:str
 
   is_master:bool
@@ -137,7 +137,7 @@ class CameraSet(object):
           name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
           serial=spinnaker_helpers.get_camera_serial(camera),
-          time_offset_sec=spinnaker_helpers.camera_time_offset(camera),
+          time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera)),
           is_master=is_master,
           is_free_running=is_master or self.master is None,
           image_size = spinnaker_helpers.get_image_size(camera),

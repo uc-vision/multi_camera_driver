@@ -12,16 +12,16 @@ from spinnaker_camera_driver_ros.msg import CameraStatus, CameraArrayStatus
 
 
 from .image_settings import ImageSettings, PublisherSettings
-
 from .publisher import CameraPublisher
-from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, EncoderError
+from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, EncoderError, CameraImage
+from .diagnostics import CameraDiagnosticUpdater
 
 from camera_geometry import Camera
 
 import PySpin
 from natsort import natsorted
 
-from .diagnostics import CameraDiagnosticUpdater
+
 
 def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
@@ -146,16 +146,16 @@ class SyncHandler(BaseHandler):
       timestamp, group, self.frame_queue = found
      
       for k, frame in group.items():
-        self.publishers[k].publish(frame.image_data, timestamp, frame.seq)
+        self.publishers[k].publish(replace(frame, timestamp=timestamp))
       self.published += 1
 
       self.update_offsets(group)
 
   def process_image(self, image, camera_name):
     try:
-      image_info = spinnaker_image(image, self.camera_set.camera_settings[camera_name])
-      image_info = image_info.extend_(camera_name=camera_name, 
-        timestamp = image_info.timestamp - self.camera_offsets[camera_name])
+      offset = self.camera_set.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
+      image_info = spinnaker_image(camera_name, image, time_offset_sec=offset)
+
 
       self.add_frame(image_info, camera_name)
       self.try_publish()

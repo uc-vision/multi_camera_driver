@@ -4,6 +4,7 @@
   <arg name="resize_width" default="0"/>
   <arg name="sharpen" default="0"/>
   <arg name="backend" default="opencv_nvjpeg"/>
+  <arg name="reset_cycle" default="false"/>
 
   <node pkg="rosservice" type="rosservice" name="set_move_base_log_level" args="call --wait /move_base/set_logger_level 'ros.move_base' 'debug'" />
 
@@ -15,6 +16,8 @@
     <param name="resize_width" value="$(arg resize_width)"/>
     <param name="sharpen" value="$(arg sharpen)"/>
     <param name="backend" value="$(arg backend)"/>
+    <param name="reset_cycle" value="$(arg reset_cycle)"/>
+
 
   </node>
 

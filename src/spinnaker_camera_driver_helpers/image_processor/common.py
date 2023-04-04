@@ -1,5 +1,6 @@
 from enum import Enum
 import cv2
+import PySpin
 
 class EncoderError(RuntimeError):
   def __init__(self, msg):
@@ -26,6 +27,30 @@ class ImageEncoding(Enum):
   Bayer_RGGB16 = "bayer_rggb16"
   Bayer_GBRG16 = "bayer_gbrg16"
   Bayer_GRBG16 = "bayer_grbg16"
+
+
+pyspin_encoding = {
+  PySpin.PixelFormat_BayerRG8: ImageEncoding.Bayer_RGGB8,
+  PySpin.PixelFormat_BayerRG12p: ImageEncoding.Bayer_RGGB12,
+  PySpin.PixelFormat_BayerRG16: ImageEncoding.Bayer_RGGB16,
+  PySpin.PixelFormat_BayerGR8: ImageEncoding.Bayer_GRBG8,
+  PySpin.PixelFormat_BayerGR12p: ImageEncoding.Bayer_GRBG12,
+  PySpin.PixelFormat_BayerGR16: ImageEncoding.Bayer_GRBG16,
+  PySpin.PixelFormat_BayerGB8: ImageEncoding.Bayer_GBRG8,
+  PySpin.PixelFormat_BayerGB12p: ImageEncoding.Bayer_GBRG12,
+  PySpin.PixelFormat_BayerGB16: ImageEncoding.Bayer_GBRG16,
+  PySpin.PixelFormat_BayerBG8: ImageEncoding.Bayer_BGGR8,
+  PySpin.PixelFormat_BayerBG12p: ImageEncoding.Bayer_BGGR12,
+  PySpin.PixelFormat_BayerBG16: ImageEncoding.Bayer_BGGR16,
+}
+
+
+def from_pyspin(encoding):
+  if encoding in pyspin_encoding:
+    return pyspin_encoding[encoding]
+  else:
+    raise ValueError(f"Encoding not implemented {encoding}")
+
 
 
 def encoding_bits(encoding):
@@ -71,27 +96,27 @@ camera_encodings = dict(
 
 def cv_bayer_bgr(encoding):
 
-  if encoding == ImageEncoding.Bayer_RGGB8:
+  if encoding in [ImageEncoding.Bayer_RGGB8, ImageEncoding.Bayer_RGGB16]:
     return cv2.COLOR_BAYER_BG2BGR
-  elif encoding == ImageEncoding.Bayer_BGGR8:
+  elif encoding in [ImageEncoding.Bayer_BGGR8, ImageEncoding.Bayer_BGGR16]:
     return cv2.COLOR_BAYER_RG2BGR
-  elif encoding == ImageEncoding.Bayer_GRBG8:
+  elif encoding in [ImageEncoding.Bayer_GRBG8, ImageEncoding.Bayer_GRBG16]:
     return cv2.COLOR_BAYER_GB2BGR
-  elif encoding == ImageEncoding.Bayer_GBRG8:
-    return cv2.COLOR_BAYER_GR2BGR  
+  elif encoding in [ImageEncoding.Bayer_GBRG8, ImageEncoding.Bayer_GBRG16]:
+    return cv2.COLOR_BAYER_GR2BGR
   else:
     raise ValueError(f"Encoding not implemented {encoding}")
 
 
 def cv_bayer_bgra(encoding):
 
-  if encoding == ImageEncoding.Bayer_RGGB8:
+  if encoding in [ImageEncoding.Bayer_RGGB8, ImageEncoding.Bayer_RGGB16]:
     return cv2.COLOR_BAYER_BG2BGRA
-  elif encoding == ImageEncoding.Bayer_BGGR8:
+  elif encoding in [ImageEncoding.Bayer_BGGR8, ImageEncoding.Bayer_BGGR16]:
     return cv2.COLOR_BAYER_RG2BGRA
-  elif encoding == ImageEncoding.Bayer_GRBG8:
+  elif encoding in [ImageEncoding.Bayer_GRBG8, ImageEncoding.Bayer_GRBG16]:
     return cv2.COLOR_BAYER_GB2BGRA
-  elif encoding == ImageEncoding.Bayer_GBRG8:
+  elif encoding in [ImageEncoding.Bayer_GBRG8, ImageEncoding.Bayer_GBRG16]:
     return cv2.COLOR_BAYER_GR2BGRA
   else:
     raise ValueError(f"Encoding not implemented {encoding}")
