@@ -16,6 +16,11 @@
     <param name="resize_width" value="$(arg resize_width)"/>
     <param name="sharpen" value="$(arg sharpen)"/>
     <param name="backend" value="$(arg backend)"/>
+
+    <param name="exposure" value="5000"/>
+    <param name="gain" value="1.0"/>
+
+
     <param name="reset_cycle" value="$(arg reset_cycle)"/>
 
 

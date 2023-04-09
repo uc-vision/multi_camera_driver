@@ -43,7 +43,6 @@ camera_settings:
       - INT
 
     - StreamBufferHandlingMode:
-            #      - NewestOnly
       - OldestFirst
       - ENUM
 #  Stream:

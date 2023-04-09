@@ -6,8 +6,8 @@ import PySpin
 import rospy
 from camera_geometry import Camera
 
-from spinnaker_camera_driver_helpers.image_processor.common import \
-    ImageEncoding, camera_encodings
+from spinnaker_camera_driver_helpers.common import \
+    CameraSettings, ImageEncoding, camera_encodings
 
 from . import spinnaker_helpers
 
@@ -22,22 +22,6 @@ class ImageEventHandler(PySpin.ImageEventHandler):
       self.on_image(image)
     except:
       rospy.logerr(f"ImageEventHandler exception: {format_exc()}")
-
-
-@dataclass
-class CameraSettings:
-  name : str
-  connection_speed:str
-  time_offset_sec:rospy.Duration
-  serial:str
-
-  is_master:bool
-  is_free_running:bool
-
-  image_size:Tuple[int, int]
-  encoding : ImageEncoding
-
-  calibration: Optional[Camera] = None
 
 
 

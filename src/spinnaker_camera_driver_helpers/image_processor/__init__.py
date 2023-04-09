@@ -1,12 +1,3 @@
-from .common import EncoderError
+from spinnaker_camera_driver_helpers.common import EncoderError
+from .processor import ImageProcessor, ImageOutputs
 
-
-def image_backend(name):
-  if name == 'torch_nvjpeg':
-    from . import torch_nvjpeg
-    return torch_nvjpeg.Processor
-  else:
-    raise RuntimeError(f"Unknown image backend {name} options are: torch_nvjpeg")  
-
-
-  

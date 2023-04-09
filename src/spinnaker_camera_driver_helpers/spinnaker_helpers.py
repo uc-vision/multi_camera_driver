@@ -397,7 +397,8 @@ def find_cameras(camera_serials):
     cameras = {}
     for serial, alias in camera_serials.items():
         if serial not in serial_dict:
-            rospy.logerr(f"Could not find camera {serial} : {alias}")
+            rospy.logerr(f"Looking for: {camera_serials}, found {list(serial_dict.keys())} cameras")
+            raise ValueError(f"Camera not found '{alias}', {serial}")
 
         cameras[alias] = serial_dict[serial]
 

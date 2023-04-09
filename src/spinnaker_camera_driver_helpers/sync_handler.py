@@ -7,15 +7,17 @@ import rospy
 from queue import Queue
 from threading import Thread
 
-from spinnaker_camera_driver_helpers.camera_set import CameraSettings, CameraSet
-from spinnaker_camera_driver_ros.msg import CameraStatus, CameraArrayStatus
+from spinnaker_camera_driver_helpers.common import CameraSettings
+from spinnaker_camera_driver_helpers.camera_set import CameraSet
+from spinnaker_camera_driver_helpers.image_processor.processor import ImageProcessor
 
 
 from .image_settings import ImageSettings, PublisherSettings
 from .publisher import CameraPublisher
-from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, EncoderError, CameraImage
+from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, CameraImage
 from .diagnostics import CameraDiagnosticUpdater
 
+from beartype import beartype
 from camera_geometry import Camera
 
 import PySpin
@@ -58,19 +60,15 @@ def take_group(frame_queue, sync_threshold, min_size):
 
 
 class SyncHandler(BaseHandler):
-  def __init__(self, settings:ImageSettings, camera_set:CameraSet,
-    timeout_msec=1000, sync_threshold_msec=10.0):
+  @beartype
+  def __init__(self, camera_set:CameraSet,
+    processor:ImageProcessor,
+    timeout_msec=1000, sync_threshold_msec=20.0):
 
     self.camera_set = camera_set
     self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
-
-    self.publishers = {
-      k:  CameraPublisher(k, PublisherSettings(settings, camera_set.camera_settings[k])) 
-        for k in self.camera_set.camera_ids
-    }
-
-    self.image_settings = settings
-
+    self.processor = processor
+  
     self.queue = Queue(len(camera_set.camera_ids))
     self.thread = None
 
@@ -144,9 +142,9 @@ class SyncHandler(BaseHandler):
     found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_set.camera_ids))
     if found is not None:
       timestamp, group, self.frame_queue = found
-     
-      for k, frame in group.items():
-        self.publishers[k].publish(replace(frame, timestamp=timestamp))
+      self.processor({k:replace(group[k], timestamp=timestamp)
+                     for k in self.camera_set.camera_ids})
+
       self.published += 1
 
       self.update_offsets(group)
@@ -170,12 +168,13 @@ class SyncHandler(BaseHandler):
     
 
   def update_settings(self, image_settings:ImageSettings):  
-    for publisher in self.publishers.values():
-      settings = replace(publisher.settings, image=image_settings)
-      if publisher.update_settings(settings):
-        return True
+    # TODO:
+    # for publisher in self.publishers.values():
+    #   settings = replace(publisher.settings, image=image_settings)
+    #   if publisher.update_settings(settings):
+    #     return True
 
-    self.settings = settings
+    self.settings = image_settings
     return False
 
 
@@ -186,15 +185,15 @@ class SyncHandler(BaseHandler):
 
       self.thread.join()
       rospy.loginfo(f"Done {self.thread}")
-      for publisher in self.publishers.values():
-        publisher.stop()  
+      # for publisher in self.publishers.values():
+      #   publisher.stop()  
 
       self.frame_queue = []
     self.thread = None
 
   def start(self):
-      for publisher in self.publishers.values():
-        publisher.start()   
+      # for publisher in self.publishers.values():
+      #   publisher.start()   
 
       self.thread = Thread(target=self.worker)        
       self.thread.start()

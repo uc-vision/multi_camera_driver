@@ -18,35 +18,17 @@ import numpy as np
 
 from .image_settings import PublisherSettings
 
-from .image_processor import image_backend
 from py_structs import struct
 
 
 class CameraPublisher():
 
-  def __init__(self, camera_name:str, settings:PublisherSettings):
-    
+  def __init__(self, camera_name:str):    
     self.camera_name = camera_name
-    self.settings = settings
-
-    self.backend = image_backend(settings.image.image_backend)
-    self.image_processor = None
-
 
     self.queue = Queue(1)
     self.worker = None
     
-    bridge = CvBridge()
-
-    topics = {
-        "image_raw"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.image.raw, encoding=settings.camera.encoding.value)),
-        "compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.image.compressed, format = "jpeg")), 
-        "preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.image.preview, format = "jpeg")),
-        "camera_info" : (sensor_msgs.msg.CameraInfo, lambda data: data.camera_info)
-    }
-
-    self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)
-
 
   def register(self):
     return []     # Here's where the lazy subscriber subscribes to it's inputs (we have no other ROS based inputs)

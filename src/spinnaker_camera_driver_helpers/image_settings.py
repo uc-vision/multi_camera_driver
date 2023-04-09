@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-from .camera_set import CameraSettings
+from .common import CameraSettings
 
 class InvalidOption(Exception):
   pass
@@ -15,10 +15,11 @@ class ImageSettings:
 
   preview_size : int = 200
   jpeg_quality : int = 90
-  image_backend : str = 'turbo_jpeg'
 
   resize_width: float = 0.0
   sharpen: float = 0.0
+
+  ema_alpha : float = 0.2
 
   @property
   def is_sharpening(self):
@@ -27,7 +28,7 @@ class ImageSettings:
   @staticmethod
   def settings():
     """ Settings able to be changed dynamically """
-    return ['preview_size', 'jpeg_quality', 'image_backend', 'resize_width', 'sharpen']
+    return ['preview_size', 'jpeg_quality',  'resize_width', 'sharpen']
     
 
   @property

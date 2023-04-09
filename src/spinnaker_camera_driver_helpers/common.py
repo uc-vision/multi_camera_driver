@@ -1,6 +1,14 @@
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from traceback import format_exc
+from typing import Optional, Tuple
 import cv2
 import PySpin
+import numpy as np
+import rospy
+
+import camera_geometry 
 
 class EncoderError(RuntimeError):
   def __init__(self, msg):
@@ -120,3 +128,46 @@ def cv_bayer_bgra(encoding):
     return cv2.COLOR_BAYER_GR2BGRA
   else:
     raise ValueError(f"Encoding not implemented {encoding}")
+
+
+
+class IncompleteImageError(Exception):
+  def __init__(self, status):
+    self.status = status
+    
+  def __str__(self):
+    return f"Incomplete image: {self.status}"
+
+
+@dataclass
+class CameraImage:
+  camera_name: str
+  image_data: np.ndarray
+  timestamp: rospy.Time
+  seq: int
+  image_size: Tuple[int, int]
+  encoding: ImageEncoding
+
+  def __repr__(self):
+    date = datetime.fromtimestamp(self.timestamp.to_sec())
+    pretty_time = date.strftime("%H:%M:%S.%f")
+    w, h = self.image_size
+
+    return f"CameraImage({self.camera_name}, {w}x{h}, {self.image_data.shape[0]}:{str(self.image_data.dtype)}, {self.encoding.value}, {pretty_time}, seq={self.seq})"
+
+  
+
+@dataclass
+class CameraSettings:
+  name : str
+  connection_speed:str
+  time_offset_sec:rospy.Duration
+  serial:str
+
+  is_master:bool
+  is_free_running:bool
+
+  image_size:Tuple[int, int]
+  encoding : ImageEncoding
+
+  calibration: Optional[camera_geometry.Camera] = None

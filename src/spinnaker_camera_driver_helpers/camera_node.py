@@ -2,6 +2,7 @@
 
 from dataclasses import fields, replace
 import gc
+from beartype import beartype
 import rospy
 from .sync_handler import SyncHandler
 from .image_settings import ImageSettings, InvalidOption
@@ -20,10 +21,11 @@ from . import camera_setters
 class CameraArrayNode(object):
   delayed_setters = ["binning"]
   
-  def __init__(self, publisher:SyncHandler, camera_set:CameraSet):
+  @beartype
+  def __init__(self, publisher:SyncHandler, camera_set:CameraSet, image_settings:ImageSettings):
 
     self.camera_set = camera_set
-    self.settings = publisher.image_settings
+    self.settings = image_settings
 
     self.config = {}
     self.pending_config = {}
