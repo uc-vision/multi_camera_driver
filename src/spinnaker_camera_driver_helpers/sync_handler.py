@@ -1,76 +1,35 @@
 
 from dataclasses import replace
 from statistics import mean
-from typing import Any, Dict, Tuple
 import rospy
 
-from queue import Queue
-from threading import Thread
 
-from spinnaker_camera_driver_helpers.common import CameraSettings
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
-from spinnaker_camera_driver_helpers.image_processor.processor import ImageProcessor
+from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
 
-from .image_settings import ImageSettings, PublisherSettings
-from .publisher import CameraPublisher
-from .image_handler import BaseHandler, IncompleteImageError, spinnaker_image, CameraImage
+from pydispatch import Dispatcher
+
+from .image_handler import BaseHandler, IncompleteImageError, format_msec, spinnaker_image, take_group
 from .diagnostics import CameraDiagnosticUpdater
 
 from beartype import beartype
-from camera_geometry import Camera
 
 import PySpin
 from natsort import natsorted
 
 
+class SyncHandler(BaseHandler, Dispatcher):
+  _events_ = ["on_frame"]
 
-def format_msec(dt):
-  return f"{dt.to_sec() * 1000.0:.2f}ms"
-
-def format_sec(dt):
-  return f"{dt.to_sec():.2f}ms"
-
-
-def group_cameras(frame_group):
-  cameras = {}
-  for frame in frame_group:
-    if frame.camera_name in cameras:
-      dt = frame.timestamp - cameras[frame.camera_name].timestamp
-      rospy.logwarn(f"Duplicate frame {next.camera_name} dt={format_msec(dt)}")
-    else:
-      cameras[frame.camera_name] = frame
-  return cameras
-
-def take_threshold(frame_queue, i, sync_threshold=2.0):
-    j = i + 1
-    while (j < len(frame_queue)):
-      next = frame_queue[j]
-      if next.timestamp - frame_queue[i].timestamp > sync_threshold:
-        break
-      j = j + 1
-    return (i, j)
-
-def take_group(frame_queue, sync_threshold, min_size):
-  for i in range(0, len(frame_queue)):
-      start, end = take_threshold(frame_queue, i, sync_threshold)
-      cameras = group_cameras(frame_queue[start:end])
-      if len(cameras) >= min_size:
-        return frame_queue[start].timestamp, cameras, frame_queue[:start] + frame_queue[end:]
-
-
-class SyncHandler(BaseHandler):
   @beartype
   def __init__(self, camera_set:CameraSet,
-    processor:ImageProcessor,
     timeout_msec=1000, sync_threshold_msec=20.0):
 
     self.camera_set = camera_set
     self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
-    self.processor = processor
   
-    self.queue = Queue(len(camera_set.camera_ids))
-    self.thread = None
+    self.queue = WorkQueue(run=self.process_image, max_size=len(camera_set.camera_ids))
 
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)
@@ -101,21 +60,14 @@ class SyncHandler(BaseHandler):
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
         for k in natsorted(self.camera_set.camera_ids) ])
+      
       self.diagnostics.reset()
       self.reset_recieved()
 
 
   def publish(self, image, camera_name):
-      self.queue.put( (image, camera_name) )
+      self.queue( (image, camera_name) )
 
-
-  def worker(self):
-    item = self.queue.get()
-    while item is not None:
-      image, camera_name = item
-      self.process_image(image, camera_name)
-      item = self.queue.get()
-  
 
   def add_frame(self, image_info, camera_name):
     self.recieved += 1
@@ -142,11 +94,13 @@ class SyncHandler(BaseHandler):
     found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_set.camera_ids))
     if found is not None:
       timestamp, group, self.frame_queue = found
-      self.processor({k:replace(group[k], timestamp=timestamp)
-                     for k in self.camera_set.camera_ids})
+
+      # Set timestamps to be equal
+      images = {k:replace(group[k], timestamp=timestamp)
+                     for k in self.camera_set.camera_ids}
+      self.emit("on_frame", data=images)
 
       self.published += 1
-
       self.update_offsets(group)
 
   def process_image(self, image, camera_name):
@@ -161,39 +115,10 @@ class SyncHandler(BaseHandler):
     except (PySpin.SpinnakerException, IncompleteImageError) as e:
       rospy.logwarn(f"{camera_name}: {e}")
 
-      
-  def update_camera(self, k:str, camera:CameraSettings):
-    settings = replace(self.publishers[k].settings, camera=camera)
-    self.publishers[k].update_settings(settings)
-    
-
-  def update_settings(self, image_settings:ImageSettings):  
-    # TODO:
-    # for publisher in self.publishers.values():
-    #   settings = replace(publisher.settings, image=image_settings)
-    #   if publisher.update_settings(settings):
-    #     return True
-
-    self.settings = image_settings
-    return False
-
 
   def stop(self):
-    if self.thread is not None:
-      self.queue.put(None)
-      rospy.loginfo(f"Waiting for publisher thread {self.thread}")
-
-      self.thread.join()
-      rospy.loginfo(f"Done {self.thread}")
-      # for publisher in self.publishers.values():
-      #   publisher.stop()  
-
-      self.frame_queue = []
-    self.thread = None
+    self.queue.stop()
+    self.frame_queue = []
 
   def start(self):
-      # for publisher in self.publishers.values():
-      #   publisher.start()   
-
-      self.thread = Thread(target=self.worker)        
-      self.thread.start()
+    self.queue.start()

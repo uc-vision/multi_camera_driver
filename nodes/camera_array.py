@@ -39,28 +39,11 @@ import gc
 
 
 def base_settings(config):
-  default_backend = "turbo_jpeg"
-  try:
-    import nvjpeg_torch
-    import torch
-
-    if torch.cuda.is_available():
-      default_backend = "torch_nvjpeg"
-  except ModuleNotFoundError as e:
-    rospy.logwarn(f"Could not import nvjpeg_torch: {e}")
-    pass
-
-  rospack = rospkg.RosPack()
-  base_path = Path(rospack.get_path('spinnaker_camera_driver_ros'))
-
-
   return ImageSettings(
       device=rospy.get_param("~device", 'cuda:0'),
       jpeg_quality=95,
       preview_size=rospy.get_param("~preview_width", 200),
-      cache_path = rospy.get_param("~cache_path", base_path / "cache"),
       resize_width=rospy.get_param("~resize_width", 0),
-      sharpen=rospy.get_param("~sharpen", 0.0)
   )
 
 def init_calibrations(camera_ids):

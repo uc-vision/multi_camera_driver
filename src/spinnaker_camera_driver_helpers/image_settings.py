@@ -8,17 +8,21 @@ class InvalidOption(Exception):
 
 @dataclass
 class ImageSettings:
-  cache_path : str 
-
   device : str = 'cuda:0'
-  queue_size : int = 4
+  resize_width: float = 0.0
 
   preview_size : int = 200
-  jpeg_quality : int = 90
+  jpeg_quality : int = 94
 
-  resize_width: float = 0.0
-  sharpen: float = 0.0
+  # Tonemapping parameters
+  gamma: float = 1.0
+  intensity : float = 1.0
 
+  light_adapt : float = 1.0
+  color_adapt : float = 1.0
+
+  
+  # Moving average to smooth intensity scaling
   ema_alpha : float = 0.2
 
   @property
@@ -28,7 +32,10 @@ class ImageSettings:
   @staticmethod
   def settings():
     """ Settings able to be changed dynamically """
-    return ['preview_size', 'jpeg_quality',  'resize_width', 'sharpen']
+
+    return ['preview_size', 'jpeg_quality',  'resize_width', 
+            'tone_gamma', 'tone_intensity', 'light_adapt', 
+            'color_adapt', 'ema_alpha']
     
 
   @property
@@ -38,10 +45,4 @@ class ImageSettings:
   def __post_init__(self):
     self.preview_size = int(self.preview_size)
     self.jpeg_quality = int(np.clip(self.jpeg_quality, 1, 100))
-    self.sharpen = float(np.clip(self.sharpen, 0., 1.))
 
-
-@dataclass 
-class PublisherSettings:
-  image : ImageSettings
-  camera : CameraSettings

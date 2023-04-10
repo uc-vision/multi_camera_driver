@@ -17,29 +17,25 @@ from spinnaker_camera_driver_ros.cfg import CameraArrayConfig
 from .camera_set import CameraSet
 from . import camera_setters 
 
+from pydispatch import Dispatcher
 
-class CameraArrayNode(object):
+
+class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
+  _events_ = ["on_settings"]
   
   @beartype
-  def __init__(self, publisher:SyncHandler, camera_set:CameraSet, image_settings:ImageSettings):
+  def __init__(self, camera_set:CameraSet):
 
     self.camera_set = camera_set
-    self.settings = image_settings
 
     self.config = {}
     self.pending_config = {}
-    self.publisher = publisher
     self.event_handlers = None
 
-    self.camera_set = camera_set  
-    self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
-
-  def update_settings(self, settings:ImageSettings):
-    try:
-      return self.publisher.update_settings(settings)
-    except InvalidOption as e:
-      rospy.logwarn(e)
+    # self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
+    #       if k == 'max_framerate':
+    #     self.publisher.diagnostics.update_framerate(v)
 
   def check_image_sizes(self):
     assert not self.started, "Cannot update image sizes while cameras are started"
@@ -58,25 +54,11 @@ class CameraArrayNode(object):
         f"Cannot set {k} while cameras are started"
       rospy.loginfo(f"Setting {k}={v}")
 
-      if k == 'max_framerate':
-        self.publisher.diagnostics.update_framerate(v)
-
       if k in camera_setters.property_setters:
         setter = camera_setters.property_setters[k]
         self.camera_set.set_property(k, v, setter)
 
       self.config[k] = v
-
-  def update_setting(self, k, v):
-    settings = self.settings
-    
-    if k in ImageSettings.settings():
-      settings = replace(settings, **{k:v})
-      if self.update_settings(settings) and self.started:
-        return True
-      
-    self.settings = settings
-    return False
 
 
   def reconfigure_callback(self, config, _):
@@ -87,12 +69,10 @@ class CameraArrayNode(object):
       if self.config.get(k, None) == v:
         continue
 
-      delayed = self.update_setting(k, v) or k in self.delayed_setters 
-      if self.started and delayed:
+      if self.started and k in self.delayed_setters:
         self.pending_config[k] = v
       else:
         self.set_camera_property(k, v)
-
 
     if not self.started:
       self.check_image_sizes()
@@ -130,8 +110,6 @@ class CameraArrayNode(object):
       self.stop()
       for k, v in self.pending_config.items():
         self.set_camera_property(k, v)
-        self.update_setting(k, v)
-
 
       self.start()
     else:
