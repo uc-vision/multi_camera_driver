@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from traceback import format_exc
 from typing import Dict, List, Optional, Tuple
 
@@ -7,7 +7,9 @@ import rospy
 from camera_geometry import Camera
 
 from spinnaker_camera_driver_helpers.common import \
-    CameraSettings, ImageEncoding, camera_encodings
+    CameraSettings, camera_encodings
+
+from pydispatch import Dispatcher
 
 from . import spinnaker_helpers
 
@@ -25,7 +27,9 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 
 
 
-class CameraSet(object):
+class CameraSet(Dispatcher):
+  _events_ = ["on_camera_settings"]
+
   def __init__(self, camera_serials:Dict[str, str], 
       camera_settings:List[Dict], 
       master_id:Optional[str]=None,
@@ -46,12 +50,28 @@ class CameraSet(object):
     self.camera_settings = {k: self.init_camera(camera, k, camera_settings, calibration.get(k, None))
                         for k, camera in self.camera_dict.items()}
     
+    self.register_handlers(self._camera_handlers)
 
     rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
 
   @property
   def camera_ids(self):
     return list(self.camera_dict.keys())
+
+
+  def check_image_sizes(self):
+
+    image_sizes = self.get_image_sizes()    
+    modified = any([camera.image_size != image_sizes[k] 
+                    for k, camera in self.camera_settings.items()])
+    
+    if modified:
+      self.camera_settings = {k: replace(self.camera_settings[k], image_size=image_size)
+        for k, image_size in image_sizes.items()}
+
+      self.emit("on_camera_settings", self.camera_settings)
+
+    return modified
 
   @property
   def master(self):
@@ -138,13 +158,12 @@ class CameraSet(object):
     except PySpin.SpinnakerException as e:
       rospy.logerr(f"Could not initialise camera {camera_name}: {str(e)}")
 
-  def register_publisher(self, publisher):
+  def _camera_handlers(self):
     def camera_handler(k):
       def on_image(image): 
-        return publisher.publish(image, camera_name=k)
+        return self.emit("on_image", (k, image))
         
       return ImageEventHandler(on_image)
-
     handler_dict =  {k: camera_handler(k)
           for k in self.camera_dict.keys()}
 
