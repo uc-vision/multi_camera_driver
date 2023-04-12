@@ -44,8 +44,8 @@ class CameraArrayNode(Dispatcher):
 
       if k in self.camera_set.camera_properties():
         self.camera_set.set_property(k, v)
-      elif k in self.image_settings.properties():
-        self.image_settings.set_property(k, v)    
+      elif hasattr(self.image_settings, k):
+        self.image_settings = replace(self.image_settings, **{k: v})    
         self.emit("on_image_settings", self.image_settings)    
       else:
         rospy.logwarn(f"Unknown property {k}")

@@ -5,15 +5,13 @@ from typing import Dict
 import rospy
 
 
-from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers.common import CameraSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
 
 from pydispatch import Dispatcher
 
-from .image_handler import BaseHandler, IncompleteImageError, format_msec, format_sec, spinnaker_image, take_group
-from .diagnostics import CameraDiagnosticUpdater
+from .image_handler import IncompleteImageError, format_msec, format_sec, spinnaker_image, take_group
 
 from beartype import beartype
 
@@ -21,7 +19,7 @@ import PySpin
 from natsort import natsorted
 
 
-class SyncHandler(BaseHandler, Dispatcher):
+class SyncHandler(Dispatcher):
   _events_ = ["on_frame"]
 
   @beartype
@@ -29,7 +27,7 @@ class SyncHandler(BaseHandler, Dispatcher):
     timeout_msec=1000, sync_threshold_msec=20.0):
 
     self.camera_settings = camera_settings
-    self.queue = WorkQueue(run=self.process_image, max_size=len(camera_settings))
+    self.queue = WorkQueue("SyncHandler", run=self.process_image, max_size=len(camera_settings))
 
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)

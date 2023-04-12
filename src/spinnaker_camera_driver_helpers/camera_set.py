@@ -53,7 +53,7 @@ class CameraSet(Dispatcher):
     self.camera_settings = {k: self.init_camera(camera, k, camera_settings)
                         for k, camera in self.camera_dict.items()}
     
-    self.register_handlers(self._camera_handlers)
+    self.register_handlers()
 
     rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
 
@@ -162,8 +162,7 @@ class CameraSet(Dispatcher):
     is_master = camera_name == self.master_id
     max_framerate, is_free_running = spinnaker_helpers.get_framerate_info(camera)
 
-
-    CameraSettings(
+    return CameraSettings(
           name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
           serial=spinnaker_helpers.get_camera_serial(camera),
@@ -201,25 +200,22 @@ class CameraSet(Dispatcher):
     except PySpin.SpinnakerException as e:
       rospy.logerr(f"Could not initialise camera {camera_name}: {str(e)}")
 
-  def _camera_handlers(self):
+  def register_handlers(self):
     def camera_handler(k):
       def on_image(image): 
         return self.emit("on_image", (k, image))
         
       return ImageEventHandler(on_image)
-    handler_dict =  {k: camera_handler(k)
+    self._handler_dict =  {k: camera_handler(k)
           for k in self.camera_dict.keys()}
 
-    self.register_handlers(handler_dict)
-    return handler_dict
-
-  def register_handlers(self, handler_dict):
-    for k, handler in handler_dict.items():
+    for k, handler in self._handler_dict.items():
       camera = self.camera_dict[k]
-      camera.RegisterEventHandler(handler)
+      camera.RegisterEventHandler(handler)    
 
-  def unregister_handlers(self, handler_dict):
-    for k, handler in handler_dict.items():
+
+  def unregister_handlers(self):
+    for k, handler in self._handler_dict.items():
       camera = self.camera_dict[k]
       camera.UnregisterEventHandler(handler)
   

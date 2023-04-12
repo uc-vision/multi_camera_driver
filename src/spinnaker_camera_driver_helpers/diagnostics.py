@@ -1,3 +1,4 @@
+from beartype import beartype
 import rospy
 import diagnostic_updater
 import diagnostic_msgs
@@ -68,6 +69,8 @@ class CameraState(object):
     return stat
 
 class CameraDiagnosticUpdater:
+
+  @beartype
   def __init__(self, camera_settings:Dict[str, CameraSettings], tolerance: float = 2):
     """ Creates diagnostics tasks for each camera
 
@@ -76,10 +79,9 @@ class CameraDiagnosticUpdater:
     self.updater = diagnostic_updater.Updater()
     self.updater.setHardwareID("cameras")  
 
-
     self.camera_states = {
       k: CameraState(self.updater, v.name, v.serial, v.max_framerate, tolerance=tolerance)
-      for k, v in camera_settings.values()
+      for k, v in camera_settings.items()
     }
 
 

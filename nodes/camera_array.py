@@ -87,8 +87,8 @@ def run_node():
   diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings)
   camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
 
-  handler = SyncHandler(camera_set)
-  camera_set.bind(on_image=handler.on_image)
+  handler = SyncHandler(camera_set.camera_settings)
+  camera_set.bind(on_image=handler.publish)
 
   processor = FrameProcessor(camera_set.camera_settings, image_settings)
   handler.bind(on_frame=processor.process)

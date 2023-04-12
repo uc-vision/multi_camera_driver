@@ -1,11 +1,5 @@
-from abc import ABCMeta, abstractmethod
-import datetime
-from typing import  Tuple
-import numpy as np
 
-from spinnaker_camera_driver_helpers.common import  CameraSettings
 from spinnaker_camera_driver_helpers.common import CameraImage, IncompleteImageError, from_pyspin
-from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 import rospy
 import PySpin
 
@@ -68,33 +62,3 @@ def take_group(frame_queue, sync_threshold, min_size):
         return frame_queue[start].timestamp, cameras, frame_queue[:start] + frame_queue[end:]
 
 
-class BaseHandler(metaclass=ABCMeta):
-
-  @abstractmethod
-  def reset_recieved(self):
-    pass
-
-  @abstractmethod
-  def report_recieved(self):
-    pass
-
-  @abstractmethod
-  def publish(self, image:PySpin.Image, camera_name:str, camera_info):
-    pass
-
-  @abstractmethod
-  def update_camera(self, k:str, info:CameraSettings):
-    pass
-
-  @abstractmethod
-  def update_settings(self, settings:ImageSettings) -> bool:
-    pass
-
-
-  @abstractmethod
-  def start(self):
-    pass
-
-  @abstractmethod
-  def stop(self):
-    pass

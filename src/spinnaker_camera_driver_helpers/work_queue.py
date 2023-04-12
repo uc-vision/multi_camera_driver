@@ -11,7 +11,7 @@ from threading import Thread
 class WorkQueue():
 
   def __init__(self, name, run:Callable, max_size=0):    
-    self.queue = Queue(max_size=max_size)
+    self.queue = Queue(max_size)
     self.worker = None
     self.name = name
     self.run = run

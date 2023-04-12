@@ -22,10 +22,12 @@ def load_config(config_file):
     else:
         return None
 
-def import_calibrations(calib_string, tracking_frame):
+def import_calibrations(calib_string, camera_names, tracking_frame):
   calib = json.load_string(calib_string)
   camera_calibrations = import_rig(calib)
 
+  if set(camera_names) != set(camera_calibrations.keys()):
+    rospy.logwarn(f"calibrations {set(camera_calibrations.keys())} don't match cameras {set(camera_names)}")
 
   tracking = None
   if 'tracking_rig' in calib and tracking_frame is not None:
@@ -34,7 +36,7 @@ def import_calibrations(calib_string, tracking_frame):
   return struct(cameras = camera_calibrations, tracking = tracking)
 
 
-def load_calibrations(calibration_file, tracking_frame=None):
+def load_calibrations(calibration_file, camera_names, tracking_frame=None):
     rospy.loginfo(f"Loading calibrations from: {calibration_file}")
 
     camera_calibrations = struct(cameras = struct(), tracking = None)
@@ -42,7 +44,7 @@ def load_calibrations(calibration_file, tracking_frame=None):
       if calibration_file is not None:
           with open(calibration_file, 'rt') as file:
             calib_string = file.read()
-            return import_calibrations(calib_string, tracking_frame=tracking_frame)
+            return import_calibrations(calib_string, camera_names, tracking_frame=tracking_frame)
     except FileNotFoundError:
         rospy.logwarn(f"Calibration file not found: {calibration_file}")
 
