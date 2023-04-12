@@ -79,16 +79,12 @@ def set_binning(camera : PySpin.Camera, value : int, info):
 
 
 
-
 def set_framerate(camera : PySpin.Camera, value : float, info):
   node_map = camera.GetNodeMap()
 
-  if info.is_free_running:
-    spinnaker_helpers.try_set_bool(node_map, "AcquisitionFrameRateEnable", True)
-    spinnaker_helpers.try_set_float(node_map, "AcquisitionFrameRate", value)
+  spinnaker_helpers.try_set_float(node_map, "AcquisitionFrameRate", value)
+  spinnaker_helpers.try_set_bool(node_map, "AcquisitionFrameRateEnable", info.is_free_running)
 
-  else:
-    spinnaker_helpers.try_set_bool(node_map, "AcquisitionFrameRateEnable", False)
 
 
 property_setters = dict(

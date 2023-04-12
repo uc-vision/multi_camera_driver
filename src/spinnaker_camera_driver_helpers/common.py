@@ -160,12 +160,15 @@ class CameraImage:
 @dataclass
 class CameraSettings:
   name : str
+
   connection_speed:str
   time_offset_sec:rospy.Duration
   serial:str
 
   is_master:bool
   is_free_running:bool
+
+  max_framerate : float
 
   image_size:Tuple[int, int]
   encoding : ImageEncoding

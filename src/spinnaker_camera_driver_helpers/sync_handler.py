@@ -1,16 +1,18 @@
 
 from dataclasses import replace
 from statistics import mean
+from typing import Dict
 import rospy
 
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
+from spinnaker_camera_driver_helpers.common import CameraSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
 
 from pydispatch import Dispatcher
 
-from .image_handler import BaseHandler, IncompleteImageError, format_msec, spinnaker_image, take_group
+from .image_handler import BaseHandler, IncompleteImageError, format_msec, format_sec, spinnaker_image, take_group
 from .diagnostics import CameraDiagnosticUpdater
 
 from beartype import beartype
@@ -23,13 +25,11 @@ class SyncHandler(BaseHandler, Dispatcher):
   _events_ = ["on_frame"]
 
   @beartype
-  def __init__(self, camera_set:CameraSet,
+  def __init__(self, camera_settings:Dict[str, CameraSettings],
     timeout_msec=1000, sync_threshold_msec=20.0):
 
-    self.camera_set = camera_set
-    self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_serials)
-  
-    self.queue = WorkQueue(run=self.process_image, max_size=len(camera_set.camera_ids))
+    self.camera_settings = camera_settings
+    self.queue = WorkQueue(run=self.process_image, max_size=len(camera_settings))
 
     self.timeout = rospy.Duration.from_sec(timeout_msec / 1000.0)
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)
@@ -37,8 +37,10 @@ class SyncHandler(BaseHandler, Dispatcher):
     self.report_rate = rospy.Duration.from_sec(4.0)
     self.frame_queue = []
 
-    self.camera_offsets = {k: rospy.Duration(0.0) for k in camera_set.camera_ids}
+    self.camera_ids = natsorted(camera_settings.keys())
+    self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_ids}
     self.reset_recieved()
+
     
   def reset_recieved(self):
     self.recieved = 0 
@@ -59,9 +61,8 @@ class SyncHandler(BaseHandler, Dispatcher):
        rospy.logdebug(message)
 
       rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
-        for k in natsorted(self.camera_set.camera_ids) ])
-      
-      self.diagnostics.reset()
+        for k in self.camera_ids ])
+    
       self.reset_recieved()
 
 
@@ -71,7 +72,6 @@ class SyncHandler(BaseHandler, Dispatcher):
 
   def add_frame(self, image_info, camera_name):
     self.recieved += 1
-    self.diagnostics.add_recieved(camera_name, 1)
     self.frame_queue.append(image_info)
     self.frame_queue.sort(key=lambda r: r.timestamp)
 
@@ -91,13 +91,13 @@ class SyncHandler(BaseHandler, Dispatcher):
 
     
   def try_publish(self):
-    found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_set.camera_ids))
+    found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_ids))
     if found is not None:
       timestamp, group, self.frame_queue = found
 
       # Set timestamps to be equal
       images = {k:replace(group[k], timestamp=timestamp)
-                     for k in self.camera_set.camera_ids}
+                     for k in self.camera_ids}
       self.emit("on_frame", data=images)
 
       self.published += 1
@@ -105,7 +105,7 @@ class SyncHandler(BaseHandler, Dispatcher):
 
   def process_image(self, image, camera_name):
     try:
-      offset = self.camera_set.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
+      offset = self.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
       image_info = spinnaker_image(camera_name, image, time_offset_sec=offset)
 
 

@@ -1,9 +1,10 @@
-
-
 import rospy
 import diagnostic_updater
 import diagnostic_msgs
 from typing import List, Dict, Union
+from spinnaker_camera_driver_helpers.camera_set import CameraSet
+
+from spinnaker_camera_driver_helpers.common import CameraSettings
 
 OK = diagnostic_msgs.msg.DiagnosticStatus.OK
 WARN = diagnostic_msgs.msg.DiagnosticStatus.WARN
@@ -15,9 +16,10 @@ class CameraState(object):
             updater: diagnostic_updater.Updater, 
             camera_name: str, 
             camera_serial: Union[str, int],
-            ideal_framerate: int = 4,
-            tolerance: int = 3,
-            time_before_stale: int = 2):
+            ideal_framerate: int,
+            tolerance: float = 2,
+            time_before_stale: float = 2):
+    
     self.camera_name = camera_name
     self.camera_serial = str(camera_serial)
     self.time_before_stale = time_before_stale
@@ -26,8 +28,8 @@ class CameraState(object):
     self.tolerance = tolerance
 
     self.updated_time = rospy.Time()
+    self.time_since_last_reset = rospy.Time().now()
     self._recieved = 0
-    self._dropped = 0
 
     updater.add(camera_name, self.produce_diagnostics)
 
@@ -38,20 +40,12 @@ class CameraState(object):
   @recieved.setter
   def recieved(self, new_value):
     self._recieved = new_value
-    self.updated_time = rospy.Time.now()
+    self.updated_time = rospy.Time().now()
   
-  @property
-  def dropped(self):
-    return self._dropped
-  
-  @dropped.setter
-  def dropped(self, new_value):
-    self._dropped = new_value
-    self.updated_time = rospy.Time.now()
   
   def reset(self):
     self._recieved = 0
-    self._dropped = 0
+    self.time_since_last_reset = rospy.Time().now()
 
   def produce_diagnostics(self, stat):
     """ Check current state and report statistics """
@@ -62,40 +56,48 @@ class CameraState(object):
       stat.summary(ERROR, f'Haven\'t recieved update in {last_update} seconds')
       return stat
     
-    lower_bound = (self.ideal_framerate * last_update) - self.tolerance
-    upper_bound = (self.ideal_framerate * last_update) + self.tolerance
-    if lower_bound < self.recieved < upper_bound:
-      stat.summary(WARN, 'Recieved inadequate amount of frames')
+    last_reset = (rospy.Time.now() - self.time_since_last_reset).to_sec()
+    lower_bound = (self.ideal_framerate * last_reset) - self.tolerance
+    upper_bound = (self.ideal_framerate * last_reset) + self.tolerance
+    if lower_bound > self.recieved or self.recieved > upper_bound:
+      stat.summary(WARN, f'Recieved inadequate amount of frames: {self.recieved} instead of {self.ideal_framerate * last_reset}')
+      return stat
 
-    if self.dropped > 0:
-      stat.summary(WARN, f'Dropped {self.dropped} frames')
-    else:
-      stat.summary(OK, f'Recieved {self.recieved} frames')
+
+    stat.summary(OK, f'Recieved {self.recieved} frames')
     return stat
 
 class CameraDiagnosticUpdater:
-  def __init__(self, camera_serials: Dict[str, str]):
+  def __init__(self, camera_settings:Dict[str, CameraSettings], tolerance: float = 2):
     """ Creates diagnostics tasks for each camera
 
     camera_serials is a dict composed of camera_serial->camera_name
     """
     self.updater = diagnostic_updater.Updater()
+    self.updater.setHardwareID("cameras")  
+
+
     self.camera_states = {
-      v: CameraState(self.updater, v, k)
-      for k, v in sorted(camera_serials.items(), key=lambda x: x[1])
+      k: CameraState(self.updater, v.name, v.serial, v.max_framerate, tolerance=tolerance)
+      for k, v in camera_settings.values()
     }
+
 
   def reset(self):
     self.updater.update()
-    for k, v in self.camera_states.items():
+    for v in self.camera_states.values():
       v.reset()
+
+  def on_camera_info(self, camera_settings:Dict[str, CameraSettings]):
+    for k, v in camera_settings.items():
+      self.camera_states[k].ideal_framerate = v.max_framerate 
+
+  def on_image(self, image):
+    camera_name, _ = image
+    self.camera_states[camera_name].recieved += 1
     
   def update_framerate(self, new_framerate):
     for k, v in self.camera_states.items():
-      k
+      v.ideal_framerate = new_framerate
 
-  def add_recieved(self, camera_name, count):
-    self.camera_states[camera_name].recieved += count
 
-  def add_dropped(self, camera_name, count):
-    self.camera_states[camera_name].dropped += count

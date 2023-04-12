@@ -22,42 +22,34 @@ from pydispatch import Dispatcher
 
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
-  _events_ = ["on_settings"]
+  _events_ = ["on_image_settings"]
   
   @beartype
-  def __init__(self, camera_set:CameraSet):
+  def __init__(self, camera_set:CameraSet, image_settings:ImageSettings):
 
     self.camera_set = camera_set
 
     self.config = {}
     self.pending_config = {}
     self.event_handlers = None
+    self.image_settings = image_settings
 
-    # self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
-    #       if k == 'max_framerate':
-    #     self.publisher.diagnostics.update_framerate(v)
+    self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
-  def check_image_sizes(self):
-    assert not self.started, "Cannot update image sizes while cameras are started"
 
-    image_sizes = self.camera_set.get_image_sizes()
-    for camera_name, image_size in image_sizes.items():
-      info = self.camera_set.camera_settings[camera_name]
-      if info.image_size != image_size:
-        rospy.loginfo(f"Camera {camera_name} updated image size {image_size}")
-
-        info = replace(info, image_size = image_size)
-        self.publisher.update_camera(camera_name, info)
-
-  def set_camera_property(self, k, v):
+  def set_property(self, k, v):
       assert not (k in self.delayed_setters and self.started),\
         f"Cannot set {k} while cameras are started"
       rospy.loginfo(f"Setting {k}={v}")
 
-      if k in camera_setters.property_setters:
-        setter = camera_setters.property_setters[k]
-        self.camera_set.set_property(k, v, setter)
-
+      if k in self.camera_set.camera_properties():
+        self.camera_set.set_property(k, v)
+      elif k in self.image_settings.properties():
+        self.image_settings.set_property(k, v)    
+        self.emit("on_image_settings", self.image_settings)    
+      else:
+        rospy.logwarn(f"Unknown property {k}")
+      
       self.config[k] = v
 
 
@@ -72,11 +64,9 @@ class CameraArrayNode(Dispatcher):
       if self.started and k in self.delayed_setters:
         self.pending_config[k] = v
       else:
-        self.set_camera_property(k, v)
+        self.set_property(k, v)
 
-    if not self.started:
-      self.check_image_sizes()
-
+    self.camera_set.check_camera_settings()
     return config
 
   @property
@@ -86,15 +76,12 @@ class CameraArrayNode(Dispatcher):
   def start(self):
     assert not self.started
     self.event_handlers = self.camera_set.register_publisher(self.publisher)
-
-    self.publisher.start()
     self.camera_set.start()
 
 
   def stop(self):
     if self.camera_set.started:
       self.camera_set.unregister_handlers(self.event_handlers)
-      self.publisher.stop()
 
       gc.collect(0)
       self.camera_set.stop()

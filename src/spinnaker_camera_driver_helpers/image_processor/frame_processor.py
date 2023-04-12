@@ -44,7 +44,7 @@ class FrameProcessor(Dispatcher):
             for name, camera in cameras.items()]
 
   @beartype
-  def __call__(self, images:Dict[str, CameraImage]) -> List[ImageOutputs]:
+  def process(self, images:Dict[str, CameraImage]) -> List[ImageOutputs]:
     images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
               for image in images.values()]
 

@@ -25,7 +25,8 @@ from std_msgs.msg import String
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers import spinnaker_helpers
-from spinnaker_camera_driver_helpers.image_processor.processor import ImageProcessor
+from spinnaker_camera_driver_helpers.diagnostics import CameraDiagnosticUpdater
+from spinnaker_camera_driver_helpers.image_processor.frame_processor import FrameProcessor
 from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
 
@@ -76,17 +77,24 @@ def run_node():
   camera_set = CameraSet(
       camera_serials=config["camera_aliases"],
       camera_settings=config["camera_settings"],
-      master_id=config.get("master", None),
+      master_id=config.get("master", None)
   )
 
+  calib, recalibrated = init_calibrations(camera_set.camera_ids)
+  camera_set.update_calibration(calib.cameras)
 
   image_settings = base_settings(config)  
+  diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings)
+  camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
 
-  calib, recalibrated = init_calibrations(camera_set.camera_ids)
-  processor = ImageProcessor(camera_set.camera_settings, image_settings)
+  handler = SyncHandler(camera_set)
+  camera_set.bind(on_image=handler.on_image)
 
-  handler = SyncHandler(camera_set, processor)
-  camera_node = CameraArrayNode(handler, camera_set, image_settings)
+  processor = FrameProcessor(camera_set.camera_settings, image_settings)
+  handler.bind(on_frame=processor.process)
+
+
+  camera_node = CameraArrayNode(camera_set, image_settings)
 
   try:
     camera_node.capture()
@@ -97,7 +105,10 @@ def run_node():
 
   recalibrated.unregister()
 
-  # image_publisher.stop()
+  handler.stop()
+
+
+
   camera_node.stop()
   camera_node.cleanup()
 

@@ -1,4 +1,6 @@
 disable_gc
 fuzzywuzzy
 pyturbojpeg
-git+ssh://git@github.com/cheind/pytorch-debayer
+python-dispatch
+nvjpeg-torch
+taichi_image

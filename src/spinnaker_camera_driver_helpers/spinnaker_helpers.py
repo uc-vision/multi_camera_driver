@@ -421,3 +421,12 @@ def get_image_size(camera : PySpin.Camera):
     h = get_int(node_map, "Height")
 
     return (w, h)
+
+
+def get_framerate_info(camera : PySpin.Camera):
+  node_map = camera.GetNodeMap()
+
+  is_free_running = get_bool(node_map, "AcquisitionFrameRateEnable")
+  max_framerate = get_float(node_map, "AcquisitionFrameRate")
+
+  return is_free_running, max_framerate

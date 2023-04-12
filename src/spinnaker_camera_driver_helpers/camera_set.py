@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import PySpin
 import rospy
 from camera_geometry import Camera
+from spinnaker_camera_driver_helpers import camera_setters
 
 from spinnaker_camera_driver_helpers.common import \
     CameraSettings, camera_encodings
@@ -28,7 +29,8 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 
 
 class CameraSet(Dispatcher):
-  _events_ = ["on_camera_settings"]
+  _events_ = ["on_settings", "on_image"]
+  
 
   def __init__(self, camera_serials:Dict[str, str], 
       camera_settings:List[Dict], 
@@ -47,7 +49,8 @@ class CameraSet(Dispatcher):
     rospy.loginfo(
         f"Triggering: {'Disabled' if self.master_id is None else 'Enabled'}")
 
-    self.camera_settings = {k: self.init_camera(camera, k, camera_settings, calibration.get(k, None))
+    self.calibration = calibration
+    self.camera_settings = {k: self.init_camera(camera, k, camera_settings)
                         for k, camera in self.camera_dict.items()}
     
     self.register_handlers(self._camera_handlers)
@@ -59,28 +62,43 @@ class CameraSet(Dispatcher):
     return list(self.camera_dict.keys())
 
 
-  def check_image_sizes(self):
-
-    image_sizes = self.get_image_sizes()    
-    modified = any([camera.image_size != image_sizes[k] 
-                    for k, camera in self.camera_settings.items()])
+  def check_camera_settings(self):
+    camera_settings = {self._camera_update(k, camera, self.camera_settings[k]) 
+                    for k, camera in self.camera_dict.items()}
+    
+    modified = any([camera_settings[k] != info
+                    for k, info in self.camera_settings.items()])
     
     if modified:
-      self.camera_settings = {k: replace(self.camera_settings[k], image_size=image_size)
-        for k, image_size in image_sizes.items()}
-
       self.emit("on_camera_settings", self.camera_settings)
+      self.camera_settings = camera_settings
 
     return modified
+  
+  def update_calibration(self, calibration):
+    self.calibration = calibration
+    camera_settings = {k:replace(camera, calibration=calibration[k]) 
+                       for k, camera in self.camera_settings.items()}
+    self.emit("on_settings", camera_settings)
 
   @property
   def master(self):
     if self.master_id is not None:
       return self.camera_dict[self.master_id]
 
-  def set_property(self, key, value, setter):
+  def camera_properties(self):
+    return list(camera_setters.property_setters.keys())
+  
+
+
+  def set_property(self, key, value):
+    if not key in camera_setters.property_setters:
+        return 
+    
+    setter = camera_setters.property_setters[key]
+
     try:
-      rospy.logdebug(f"set_property {key}: {value}")
+      rospy.logdebug(f"CameraSet: set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
         setter(camera, value, self.camera_settings[k])
 
@@ -118,36 +136,60 @@ class CameraSet(Dispatcher):
       rospy.logerr("Error triggering: " + str(e))
 
 
-  def get_image_sizes(self):
-    return {k:spinnaker_helpers.get_image_size(camera)
-      for k, camera in self.camera_dict.items()}
+  def _camera_update(self, camera, info):
+
+    if not self.started:
+      time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera))
+    else:
+      time_offset_sec = info.time_offset_sec
+    
+    max_framerate, is_free_running = spinnaker_helpers.get_framerate_info(camera)
+
+    return replace(info,
+        image_size = spinnaker_helpers.get_image_size(camera),
+        time_offset_sec = time_offset_sec,
+        is_free_running = is_free_running,
+        max_framerate = max_framerate
+      )
 
 
-  def init_camera(self, camera: PySpin.Camera, camera_name:str, camera_settings:List[Dict], calibration:Optional[Camera]):
-    try:
-      camera.Init()
-      assert spinnaker_helpers.validate_init(camera),\
-          f"Camera {camera_name} did not initialise"
 
-      is_master = camera_name == self.master_id
-      spinnaker_helpers.set_camera_settings(camera, camera_settings)
+  def _camera_info(self, camera_name, camera):
+    encoding = spinnaker_helpers.get_camera_encoding(camera)
+    if encoding not in camera_encodings:
+      raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
 
-      encoding = spinnaker_helpers.get_camera_encoding(camera)
-      if encoding not in camera_encodings:
-        raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
-      
+    is_master = camera_name == self.master_id
+    max_framerate, is_free_running = spinnaker_helpers.get_framerate_info(camera)
 
-      info = CameraSettings(
+
+    CameraSettings(
           name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
           serial=spinnaker_helpers.get_camera_serial(camera),
           time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera)),
           is_master=is_master,
-          is_free_running=is_master or self.master is None,
+          max_framerate = max_framerate,
+          is_free_running=is_free_running,
           image_size = spinnaker_helpers.get_image_size(camera),
           encoding = camera_encodings[encoding],
-          calibration=calibration)
+          calibration=self.calibration.get(camera_name, None),
 
+    )
+
+  def init_camera(self, camera: PySpin.Camera, camera_name:str, camera_settings:List[Dict]):
+    try:
+      camera.Init()
+      assert spinnaker_helpers.validate_init(camera),\
+          f"Camera {camera_name} did not initialise"
+
+      spinnaker_helpers.set_camera_settings(camera, camera_settings)
+
+      encoding = spinnaker_helpers.get_camera_encoding(camera)
+      if encoding not in camera_encodings:
+        raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
+
+      info = self._camera_info(camera_name, camera)
       rospy.loginfo(f"{camera_name}: {info}")
 
       if self.master_id is not None:
@@ -155,6 +197,7 @@ class CameraSet(Dispatcher):
             if info.is_master else spinnaker_helpers.trigger_slave(camera)
 
       return info
+    
     except PySpin.SpinnakerException as e:
       rospy.logerr(f"Could not initialise camera {camera_name}: {str(e)}")
 
