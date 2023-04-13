@@ -19,6 +19,7 @@ import rospy
 import rospkg
 
 from spinnaker_camera_driver_helpers.camera_node import CameraArrayNode
+from spinnaker_camera_driver_helpers.publisher import FramePublisher
 import tf2_ros
 from std_msgs.msg import String
 
@@ -84,15 +85,15 @@ def run_node():
   camera_set.update_calibration(calib.cameras)
 
   image_settings = base_settings(config)  
-  diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings)
-  camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
-
+    
   handler = SyncHandler(camera_set.camera_settings)
   camera_set.bind(on_image=handler.publish)
 
   processor = FrameProcessor(camera_set.camera_settings, image_settings)
   handler.bind(on_frame=processor.process)
 
+  publisher = FramePublisher(camera_set.camera_ids)
+  processor.bind(on_frame=publisher.publish)
 
   camera_node = CameraArrayNode(camera_set, image_settings)
 
@@ -106,10 +107,10 @@ def run_node():
   recalibrated.unregister()
 
   handler.stop()
-
-
-
+  processor.stop()
+  publisher.stop()
   camera_node.stop()
+  
   camera_node.cleanup()
 
   del camera_node

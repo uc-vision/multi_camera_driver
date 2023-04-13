@@ -4,6 +4,8 @@ from dataclasses import fields, replace
 import gc
 from beartype import beartype
 import rospy
+
+from spinnaker_camera_driver_helpers.diagnostics import CameraDiagnosticUpdater
 from .sync_handler import SyncHandler
 from .image_settings import ImageSettings, InvalidOption
 
@@ -22,7 +24,7 @@ from pydispatch import Dispatcher
 
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
-  _events_ = ["on_image_settings"]
+  _events_ = ["on_image_settings", "on_update"]
   
   @beartype
   def __init__(self, camera_set:CameraSet, image_settings:ImageSettings):
@@ -31,8 +33,11 @@ class CameraArrayNode(Dispatcher):
 
     self.config = {}
     self.pending_config = {}
-    self.event_handlers = None
     self.image_settings = image_settings
+
+    self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings)
+    camera_set.bind(on_settings=self.diagnostics.on_camera_info, on_image=self.diagnostics.on_image)
+
 
     self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
@@ -75,13 +80,13 @@ class CameraArrayNode(Dispatcher):
 
   def start(self):
     assert not self.started
-    self.event_handlers = self.camera_set.register_publisher(self.publisher)
+    self.camera_set.register_handlers()
     self.camera_set.start()
 
 
   def stop(self):
     if self.camera_set.started:
-      self.camera_set.unregister_handlers(self.event_handlers)
+      self.camera_set.unregister_handlers()
 
       gc.collect(0)
       self.camera_set.stop()
@@ -96,11 +101,11 @@ class CameraArrayNode(Dispatcher):
 
       self.stop()
       for k, v in self.pending_config.items():
-        self.set_camera_property(k, v)
+        self.set_property(k, v)
 
       self.start()
     else:
-      self.set_camera_property(self.pending_config)
+      self.set_property(self.pending_config)
 
     self.pending_config = {}
 
@@ -109,7 +114,8 @@ class CameraArrayNode(Dispatcher):
 
     while not rospy.is_shutdown():
       self.update_pending()
-      self.publisher.report_recieved()
+      self.diagnostics.reset()
+      
       rospy.sleep(0.2)
 
     self.stop()

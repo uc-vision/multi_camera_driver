@@ -53,8 +53,7 @@ class CameraSet(Dispatcher):
     self.camera_settings = {k: self.init_camera(camera, k, camera_settings)
                         for k, camera in self.camera_dict.items()}
     
-    self.register_handlers()
-
+    self._handler_dict = None
     rospy.loginfo(f"{len(self.camera_dict)} Cameras initialised")
 
   @property
@@ -63,21 +62,21 @@ class CameraSet(Dispatcher):
 
 
   def check_camera_settings(self):
-    camera_settings = {self._camera_update(k, camera, self.camera_settings[k]) 
-                    for k, camera in self.camera_dict.items()}
-    
-    modified = any([camera_settings[k] != info
-                    for k, info in self.camera_settings.items()])
-    
+    modified = False
+    for k, camera in self.camera_dict.items():
+      settings = self._camera_update(camera, self.camera_settings[k])
+      if settings != self.camera_settings[k]:
+        self.camera_settings[k] = settings
+        modified = True
+  
     if modified:
-      self.emit("on_camera_settings", self.camera_settings)
-      self.camera_settings = camera_settings
+      self.emit("on_settings", self.camera_settings)
 
     return modified
   
   def update_calibration(self, calibration):
     self.calibration = calibration
-    camera_settings = {k:replace(camera, calibration=calibration[k]) 
+    camera_settings = {k:replace(camera, calibration=calibration.get(k, None)) 
                        for k, camera in self.camera_settings.items()}
     self.emit("on_settings", camera_settings)
 
@@ -143,7 +142,7 @@ class CameraSet(Dispatcher):
     else:
       time_offset_sec = info.time_offset_sec
     
-    max_framerate, is_free_running = spinnaker_helpers.get_framerate_info(camera)
+    is_free_running, max_framerate = spinnaker_helpers.get_framerate_info(camera)
 
     return replace(info,
         image_size = spinnaker_helpers.get_image_size(camera),
@@ -160,12 +159,12 @@ class CameraSet(Dispatcher):
       raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
 
     is_master = camera_name == self.master_id
-    max_framerate, is_free_running = spinnaker_helpers.get_framerate_info(camera)
+    is_free_running, max_framerate = spinnaker_helpers.get_framerate_info(camera)
 
     return CameraSettings(
           name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
-          serial=spinnaker_helpers.get_camera_serial(camera),
+          serial=str(spinnaker_helpers.get_camera_serial(camera)),
           time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera)),
           is_master=is_master,
           max_framerate = max_framerate,
@@ -201,6 +200,8 @@ class CameraSet(Dispatcher):
       rospy.logerr(f"Could not initialise camera {camera_name}: {str(e)}")
 
   def register_handlers(self):
+    assert self._handler_dict is None, "Handlers already registered"
+
     def camera_handler(k):
       def on_image(image): 
         return self.emit("on_image", (k, image))
@@ -218,6 +219,8 @@ class CameraSet(Dispatcher):
     for k, handler in self._handler_dict.items():
       camera = self.camera_dict[k]
       camera.UnregisterEventHandler(handler)
+
+    self._handler_dict = None
   
 
   def cleanup(self):

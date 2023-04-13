@@ -15,8 +15,8 @@ class ImageSettings:
   jpeg_quality : int = 94
 
   # Tonemapping parameters
-  gamma: float = 1.0
-  intensity : float = 1.0
+  tone_gamma: float = 1.0
+  tone_intensity : float = 1.0
 
   light_adapt : float = 1.0
   color_adapt : float = 1.0

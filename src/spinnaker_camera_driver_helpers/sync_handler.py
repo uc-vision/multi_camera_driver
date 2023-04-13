@@ -1,11 +1,11 @@
 
 from dataclasses import replace
 from statistics import mean
-from typing import Dict
+from typing import Dict, Tuple
 import rospy
 
 
-from spinnaker_camera_driver_helpers.common import CameraSettings
+from spinnaker_camera_driver_helpers.common import CameraImage, CameraSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
 
@@ -39,6 +39,7 @@ class SyncHandler(Dispatcher):
     self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_ids}
     self.reset_recieved()
 
+    self.queue.start()
     
   def reset_recieved(self):
     self.recieved = 0 
@@ -63,21 +64,21 @@ class SyncHandler(Dispatcher):
     
       self.reset_recieved()
 
+  @beartype
+  def publish(self, camera_image_pair:Tuple[str, PySpin.ImagePtr]):
+      self.queue.enqueue( camera_image_pair )
 
-  def publish(self, image, camera_name):
-      self.queue( (image, camera_name) )
 
-
-  def add_frame(self, image_info, camera_name):
+  def add_frame(self, image_info):
     self.recieved += 1
     self.frame_queue.append(image_info)
     self.frame_queue.sort(key=lambda r: r.timestamp)
+
 
     timeout_time = rospy.Time.now() - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
       self.frame_queue.pop(0)
       self.dropped += 1
-      self.diagnostics.add_dropped(camera_name, 1)
 
 
   def update_offsets(self, group):
@@ -96,18 +97,20 @@ class SyncHandler(Dispatcher):
       # Set timestamps to be equal
       images = {k:replace(group[k], timestamp=timestamp)
                      for k in self.camera_ids}
-      self.emit("on_frame", data=images)
+      self.emit("on_frame", images)
 
       self.published += 1
       self.update_offsets(group)
 
-  def process_image(self, image, camera_name):
+  def process_image(self, camera_image_pair:Tuple[str, PySpin.ImagePtr]):
+    camera_name, image = camera_image_pair
+
     try:
       offset = self.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
       image_info = spinnaker_image(camera_name, image, time_offset_sec=offset)
 
 
-      self.add_frame(image_info, camera_name)
+      self.add_frame(image_info)
       self.try_publish()
         
     except (PySpin.SpinnakerException, IncompleteImageError) as e:
@@ -118,5 +121,3 @@ class SyncHandler(Dispatcher):
     self.queue.stop()
     self.frame_queue = []
 
-  def start(self):
-    self.queue.start()

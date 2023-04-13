@@ -1,10 +1,12 @@
 import PySpin
 import rospy
 
+from spinnaker_camera_driver_helpers.common import CameraSettings
+
 from . import spinnaker_helpers
 
 
-def set_exposure(camera : PySpin.Camera, exposure_time, info):
+def set_exposure(camera : PySpin.Camera, exposure_time, info:CameraSettings):
     """Set the cameras exposure time to the given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     if exposure_time > 0:
@@ -14,7 +16,7 @@ def set_exposure(camera : PySpin.Camera, exposure_time, info):
         spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
 
 
-def set_gain(camera : PySpin.Camera, gain, info):
+def set_gain(camera : PySpin.Camera, gain, info:CameraSettings):
     """Set the cameras gain to given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     if gain > 0:
@@ -24,7 +26,7 @@ def set_gain(camera : PySpin.Camera, gain, info):
         spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
 
 
-def set_balance_ratio(camera : PySpin.Camera, balance_ratio, info):
+def set_balance_ratio(camera : PySpin.Camera, balance_ratio, info:CameraSettings):
     node_map = camera.GetNodeMap()
     if balance_ratio >= 0.5:
         spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Off")
@@ -32,7 +34,7 @@ def set_balance_ratio(camera : PySpin.Camera, balance_ratio, info):
     else:
         spinnaker_helpers.set_enum(node_map, "BalanceWhiteAuto", "Continuous")
 
-def set_grey_value(camera : PySpin.Camera, value, info):
+def set_grey_value(camera : PySpin.Camera, value, info:CameraSettings):
     """Set the target grey value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     if value > 0:
@@ -42,7 +44,7 @@ def set_grey_value(camera : PySpin.Camera, value, info):
         spinnaker_helpers.set_enum(node_map, "AutoExposureTargetGreyValueAuto", "Continuous")
 
 
-def set_black_level(camera : PySpin.Camera, value, info):
+def set_black_level(camera : PySpin.Camera, value, info:CameraSettings):
     """Set the target black level. If 0 set to auto"""
     node_map = camera.GetNodeMap()
     return spinnaker_helpers.try_set_float(node_map, "BlackLevel", value)
@@ -54,7 +56,7 @@ def set_ev_comp(camera : PySpin.Camera, value, info):
     return spinnaker_helpers.try_set_float(node_map, "AutoExposureEVCompensation", value)
 
 
-def set_gamma(camera : PySpin.Camera, value, info):
+def set_gamma(camera : PySpin.Camera, value, info:CameraSettings):
     """Set the gamma value. If 0 set to off"""
     node_map = camera.GetNodeMap()
     if value > 0:
@@ -64,7 +66,7 @@ def set_gamma(camera : PySpin.Camera, value, info):
         spinnaker_helpers.set_bool(node_map, "GammaEnable", False)
         
 
-def set_binning(camera : PySpin.Camera, value : int, info):
+def set_binning(camera : PySpin.Camera, value : int, info:CameraSettings):
     """Set the gamma value. If 0 set to off"""
     node_map = camera.GetNodeMap()
     spinnaker_helpers.try_set_int(node_map, "BinningHorizontal", value)
@@ -79,7 +81,7 @@ def set_binning(camera : PySpin.Camera, value : int, info):
 
 
 
-def set_framerate(camera : PySpin.Camera, value : float, info):
+def set_framerate(camera : PySpin.Camera, value : float, info:CameraSettings):
   node_map = camera.GetNodeMap()
 
   spinnaker_helpers.try_set_float(node_map, "AcquisitionFrameRate", value)

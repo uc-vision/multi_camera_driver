@@ -1,4 +1,5 @@
 from __future__ import annotations
+import traceback
 from typing import Callable
 import weakref
 from beartype import beartype
@@ -21,10 +22,17 @@ class WorkQueue():
       return self.queue.put( data )
   
   def run_worker(self):
-      data = self.queue.get()
-      while data is not None:
-        self.run(data)
+      try:
         data = self.queue.get()
+        while data is not None:
+          self.run(data)
+          data = self.queue.get()
+      except Exception as e:
+        trace = traceback.format_exc()
+        rospy.logerr(trace)
+        rospy.logerr(f"Exception in {self.name}: {e}")
+        
+        
 
   def stop(self):
     rospy.loginfo(f"Waiting for {self.name}: thread {self.worker}")
@@ -37,7 +45,7 @@ class WorkQueue():
   def start(self):
     assert self.worker is None
 
-    self.worker = Thread(target = self.publish_worker)
+    self.worker = Thread(target = self.run_worker)
     self.worker.start()
 
       

@@ -1,7 +1,9 @@
 
+from numbers import Number
 from typing import Dict, List
 import PySpin
 import statistics
+from beartype import beartype
 import rospy
 
 from disable_gc import disable_gc
@@ -92,14 +94,16 @@ def set_value(nodemap, node_name, value, ptr):
     return value
 
 
-def set_bool(nodemap, node_name, value):
+@beartype
+def set_bool(nodemap, node_name:str, value:bool):
   return set_value(nodemap, node_name, value, PySpin.CBooleanPtr)
 
-
-def set_float(nodemap, node_name, value):
+@beartype
+def set_float(nodemap, node_name:str, value:Number):
   return set_value(nodemap, node_name, value, PySpin.CFloatPtr)
 
-def set_int(nodemap, node_name, value):
+@beartype
+def set_int(nodemap, node_name:str, value:int):
   return set_value(nodemap, node_name, value, PySpin.CIntegerPtr)
 
 def try_set_float(nodemap, node_name, value):

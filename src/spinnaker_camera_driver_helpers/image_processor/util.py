@@ -39,7 +39,7 @@ def encoding(name, camera:CameraSettings):
   pattern = bayer_pattern(enc)
   bits = encoding_bits(enc)
 
-  if encoding_bits(enc) not in [12, 16]:
+  if encoding_bits(enc) not in [12]:
     raise ValueError(f"Camera {name}: unsupported bits {encoding_bits(enc)} in {enc}")
   
   return pattern, bits

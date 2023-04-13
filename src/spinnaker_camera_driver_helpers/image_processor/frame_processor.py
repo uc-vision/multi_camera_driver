@@ -9,11 +9,14 @@ from beartype import beartype
 from nvjpeg_torch import Jpeg
 
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
-from spinnaker_camera_driver_helpers.common import CameraSettings
+from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
 from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, ema
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
+from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 from .camera_processor import CameraProcessor
+
+from py_structs.torch import shape_info
 
 
 class FrameProcessor(Dispatcher):
@@ -28,6 +31,9 @@ class FrameProcessor(Dispatcher):
     self.processors = TiQueue.run_sync(self.init_processors, cameras)
     self.min_max = np.array([0, 1])
     self.intensity = 1.0
+
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, max_size=1)
+    self.queue.start()
 
   def update_camera(self, k, camera):
     self.processors[k].update_camera(camera)
@@ -44,25 +50,49 @@ class FrameProcessor(Dispatcher):
             for name, camera in cameras.items()]
 
   @beartype
-  def process(self, images:Dict[str, CameraImage]) -> List[ImageOutputs]:
+  def process(self, images:Dict[str, CameraImage]):
+    return self.queue.enqueue(images)
+
+  def encode(self, image:torch.Tensor):
+    print("encode", image.shape, image.dtype, image.device)
+    try:
+      return self.jpeg.encode(image,
+                              quality=self.settings.jpeg_quality,
+                              input_format=Jpeg.RGBI).numpy().tobytes()
+
+    except Jpeg.Exception as e:
+      raise EncoderError(str(e))
+
+
+  @beartype
+  def process_worker(self, camera_images:Dict[str, CameraImage]):
     images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
-              for image in images.values()]
+              for image in camera_images.values()]
 
-    return TiQueue.sync(self.upload_images, images)
+    images = TiQueue.run_sync(self.process_images, images)
+
+    for image, preview, k in zip(*images, camera_images.keys()):
+      print(k, shape_info(image), shape_info(preview))
+
+
+    outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
+                    for image, preview, k in zip(*images, camera_images.keys())]
+
+
+    self.emit("on_frame", outputs)
   
-
-  def upload_images(self, images:Dict[str, CameraImage]) -> List[ImageOutputs]:
+  @beartype
+  def process_images(self, images:List[torch.Tensor]):
 
     for processor, image in zip(self.processors, images):
       processor.load_image(image)
 
     min_maxs = np.array([processor.min_max for processor in self.processors])
-    min_maxs = np.array([min_maxs[0].min(), min_maxs[1].max()])
+    min_maxs = np.array([min_maxs[:, 0].min(), min_maxs[:, 1].max()])
 
     self.min_max = ema(self.min_max, min_maxs, self.settings.ema_alpha)
-
-    return [ImageOutputs(processor.name, raw, *processor.outputs(self.min_max), 
-                         jpeg=self.jpeg, jpeg_quality=self.settings.jpeg_quality)
-                         for raw, processor in zip(self.processors, images)]
+    return processor.outputs(self.min_max)
 
 
+  def stop(self):
+    self.queue.stop()

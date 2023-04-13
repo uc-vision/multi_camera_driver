@@ -18,7 +18,7 @@ camera_settings:
       - "Backlight"
       - ENUM
     - AutoExposureExposureTimeUpperLimit:
-      - 4000
+      - 4000.0
       - FLOAT
     - AutoExposureControlPriority:
       - ExposureTime
@@ -32,8 +32,8 @@ camera_settings:
       - ENUM     
       
     - PixelFormat:
-      - BayerRG16
-      # - BayerRG12p
+      # - BayerRG16
+      - BayerRG12p
       - ENUM
 
   transport_layer:

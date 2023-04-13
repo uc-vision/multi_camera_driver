@@ -1,4 +1,5 @@
 
+from typing import Callable, Optional
 from beartype import beartype
 from cached_property import cached_property
 
@@ -15,28 +16,16 @@ import torch
 class ImageOutputs(object):
 
   @beartype
-  def __init__(self, camera_name:str, raw:CameraImage, rgb:torch.Tensor, preview:torch.Tensor,
-               calibration:Camera, encoder:Jpeg, jpeg_quality:int):
+  def __init__(self, camera_image:CameraImage, rgb:torch.Tensor, preview:torch.Tensor, 
+               encode:Callable, calibration:Optional[Camera]=None):
     
-    self.camera_name = camera_name
     self.calibration = calibration
     
-    self.raw = raw
+    self.raw = camera_image
     self.rgb = rgb
     self.preview = preview
-    
-    self.encoder = encoder
-    self.jpeg_quality = jpeg_quality
+    self.encode = encode
 
-
-  def encode(self, rgb):
-    try:
-      return self.encoder.encode(rgb,
-                              quality=self.jpeg_quality,
-                              input_format=Jpeg.RGBI).numpy().tobytes()
-
-    except JpegException as e:
-      raise EncoderError(str(e))
 
   @cached_property
   def compressed(self):
@@ -45,6 +34,10 @@ class ImageOutputs(object):
   @cached_property
   def compressed_preview(self):
       return self.encode(self.preview)
+  
+  @property
+  def camera_name(self) -> str:
+    return self.raw.camera_name
 
   @property
   def camera_info(self) -> CameraInfo:

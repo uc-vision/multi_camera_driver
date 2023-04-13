@@ -26,8 +26,7 @@ class CameraProcessor(object):
     self.bilinear_kernel = interpolate.bilinear_kernel(self.dtype)
 
     self.bayer_to_rgb = bayer.bayer_to_rgb_kernel(taichi_pattern[self.pattern], self.dtype)
-    self.load_kernel = (load_16f_kernel if self.bits == 16  
-                         else packed.decode12_kernel(self.dtype, scaled=True))
+    self.load_kernel = packed.decode12_kernel(self.dtype, scaled=True)
     
     self.min_max_kernel = tonemap.min_max_kernel(dtype=self.dtype)
     self.create_buffers()
@@ -70,8 +69,9 @@ class CameraProcessor(object):
 
     self.scale_offset_kernel(self.resized, 
         scale=1/(min_max[1] - min_max[0]), offset=-min_max[0])
-    self.reinhard_kernel(self.resized, output, self.settings.gamma, 
-        self.settings.intensity, self.settings.light_adapt, self.settings.color_adapt)
+    self.reinhard_kernel(self.resized, output, self.settings.tone_gamma, 
+        self.settings.tone_intensity, self.settings.light_adapt, self.settings.color_adapt)
     
+
     preview = interpolate.resize_bilinear(output, preview_size, preview_scale)
     return output, preview

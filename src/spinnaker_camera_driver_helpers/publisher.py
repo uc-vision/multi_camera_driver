@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List
 
 from camera_geometry_ros.lazy_publisher import LazyPublisher
 from sensor_msgs.msg import CompressedImage, Image, CameraInfo
@@ -16,7 +17,8 @@ class CameraPublisher():
 
   def __init__(self, camera_name:str):    
     self.camera_name = camera_name
-    self.queue = WorkQueue(run=self.publish_worker, max_size=1)
+    self.queue = WorkQueue(name=f"CameraPublisher({camera_name})", run=self.publish_worker, max_size=1)
+    self.queue.start()
 
     bridge = CvBridge()
     topics = {
@@ -33,15 +35,29 @@ class CameraPublisher():
 
 
   def publish(self, image:ImageOutputs):
-      return self.queue.put( image )
+      return self.queue.enqueue( image )
 
 
   def publish_worker(self, image):
+      header = Header(frame_id=image.raw.camera_name, stamp=image.raw.timestamp, seq=image.raw.seq)
+      self.publisher.publish(data=image, header=header)
 
-      header = Header(frame_id=image.raw.camera_name, stamp=image.raw.timestamp, seq=image.seq)
-      outputs = struct(image=self.image_processor(image), camera_info=self.camera_info)
-      self.publisher.publish(data=outputs, header=header)
+
+  def stop(self):
+    self.queue.stop()
 
       
 
+class FramePublisher():
+     
+    def __init__(self, camera_names:List[str]):
+      self.publishers = {camera:CameraPublisher(camera) for camera in camera_names}
+  
+    def publish(self, images:List[ImageOutputs]):
+      for image in images:
+        self.publishers[image.camera_name].publish(image)
+  
 
+    def stop(self):
+      for camera in self.publishers.values():
+        camera.stop()

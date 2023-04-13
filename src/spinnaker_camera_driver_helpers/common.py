@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 from traceback import format_exc
 from typing import Optional, Tuple
+from beartype import beartype
 import cv2
 import PySpin
 import numpy as np
@@ -138,7 +139,7 @@ class IncompleteImageError(Exception):
   def __str__(self):
     return f"Incomplete image: {self.status}"
 
-
+@beartype
 @dataclass
 class CameraImage:
   camera_name: str
@@ -156,7 +157,7 @@ class CameraImage:
     return f"CameraImage({self.camera_name}, {w}x{h}, {self.image_data.shape[0]}:{str(self.image_data.dtype)}, {self.encoding.value}, {pretty_time}, seq={self.seq})"
 
   
-
+@beartype
 @dataclass
 class CameraSettings:
   name : str
