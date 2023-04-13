@@ -20,8 +20,8 @@ taichi_pattern = {
 
 # This is needed because torch doesn't have unsigned integer types
 @ti.kernel
-def load_16f_kernel(image: ti.types.ndarray(ti.u16),
-                    out: ti.types.ndarray(ti.f16)):
+def load_16f_kernel(image: ti.types.ndarray(ti.u16, ndim=2),
+                    out: ti.types.ndarray(ti.f16, ndim=2)):
   for I in ti.grouped(image):
     out[I] = ti.cast(ti.cast(image[I], ti.f32) / 65535.0, ti.f16)
 
@@ -39,7 +39,7 @@ def encoding(name, camera:CameraSettings):
   pattern = bayer_pattern(enc)
   bits = encoding_bits(enc)
 
-  if encoding_bits(enc) not in [12]:
+  if encoding_bits(enc) not in [12, 16]:
     raise ValueError(f"Camera {name}: unsupported bits {encoding_bits(enc)} in {enc}")
   
   return pattern, bits

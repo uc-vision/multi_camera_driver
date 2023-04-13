@@ -54,7 +54,6 @@ class FrameProcessor(Dispatcher):
     return self.queue.enqueue(images)
 
   def encode(self, image:torch.Tensor):
-    print("encode", image.shape, image.dtype, image.device)
     try:
       return self.jpeg.encode(image,
                               quality=self.settings.jpeg_quality,
@@ -66,22 +65,22 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def process_worker(self, camera_images:Dict[str, CameraImage]):
-    images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
+    # images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
+    #           for image in camera_images.values()]
+  
+    images = [image.image_data 
               for image in camera_images.values()]
-
+  
     images = TiQueue.run_sync(self.process_images, images)
-
-    for image, preview, k in zip(*images, camera_images.keys()):
-      print(k, shape_info(image), shape_info(preview))
 
 
     outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
-                    for image, preview, k in zip(*images, camera_images.keys())]
+                    for k, (image, preview) in zip(camera_images.keys(), images)]
 
 
     self.emit("on_frame", outputs)
   
-  @beartype
+  # @beartype
   def process_images(self, images:List[torch.Tensor]):
 
     for processor, image in zip(self.processors, images):
@@ -91,7 +90,7 @@ class FrameProcessor(Dispatcher):
     min_maxs = np.array([min_maxs[:, 0].min(), min_maxs[:, 1].max()])
 
     self.min_max = ema(self.min_max, min_maxs, self.settings.ema_alpha)
-    return processor.outputs(self.min_max)
+    return [processor.outputs(self.min_max) for processor in self.processors]
 
 
   def stop(self):

@@ -19,7 +19,9 @@ camera_settings:
       - Rolling
       - ENUM
     - PixelFormat:
-      - BayerRG12p
+      - BayerRG16
+
+      # - BayerRG12p
       - ENUM
 
     - TriggerMode:

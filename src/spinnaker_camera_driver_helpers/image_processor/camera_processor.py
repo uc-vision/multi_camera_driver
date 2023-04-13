@@ -8,7 +8,7 @@ from taichi_image import bayer, interpolate, tonemap, packed, types
 from spinnaker_camera_driver_helpers.common import CameraSettings
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from .util import encoding, load_16f_kernel, resize_width, taichi_pattern
-
+from py_structs.numpy import shape_info
 
 class CameraProcessor(object):
   def __init__(self, name:str, settings:ImageSettings, camera:CameraSettings, dtype = ti.f16, device = "cuda:0"):
@@ -26,8 +26,9 @@ class CameraProcessor(object):
     self.bilinear_kernel = interpolate.bilinear_kernel(self.dtype)
 
     self.bayer_to_rgb = bayer.bayer_to_rgb_kernel(taichi_pattern[self.pattern], self.dtype)
-    self.load_kernel = packed.decode12_kernel(self.dtype, scaled=True)
-    
+    # self.load_kernel = packed.decode12_kernel(self.dtype, scaled=True)
+    self.load_kernel = load_16f_kernel
+
     self.min_max_kernel = tonemap.min_max_kernel(dtype=self.dtype)
     self.create_buffers()
 
@@ -52,10 +53,15 @@ class CameraProcessor(object):
       # self.rescaled = torch.zeros((self.output_size[1], self.output_size[0], 3), dtype=types.ti_to_torch[self.dtype], device=self.device)
     else:
       self.resized = self.rgb
+      self.scale = 1
+      self.output_size = self.camera.image_size
 
 
   def load_image(self, image_raw):
-    self.load_kernel(image_raw, self.bayer16.view(-1))
+    # print(shape_info(image_raw))
+    # self.load_kernel(image_raw, self.bayer16.view(-1))
+    self.load_kernel(image_raw.reshape(self.bayer16.shape), self.bayer16)
+    
     self.bayer_to_rgb(self.bayer16, self.rgb)
     
     if self.scale != 1:
