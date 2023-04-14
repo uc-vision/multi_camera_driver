@@ -135,7 +135,7 @@ class CameraSet(Dispatcher):
       rospy.logerr("Error triggering: " + str(e))
 
 
-  def _camera_update(self, camera, info):
+  def _camera_update(self, camera, info:CameraSettings):
 
     if not self.started:
       time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera))

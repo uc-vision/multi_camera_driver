@@ -21,22 +21,15 @@ class ImageSettings:
   light_adapt : float = 1.0
   color_adapt : float = 1.0
 
+  tone_mapping: str = 'linear'
+
   
   # Moving average to smooth intensity scaling
-  ema_alpha : float = 0.2
+  moving_average : float = 0.01
 
   @property
   def is_sharpening(self):
     return self.sharpen > 0
-
-  @staticmethod
-  def settings():
-    """ Settings able to be changed dynamically """
-
-    return ['preview_size', 'jpeg_quality',  'resize_width', 
-            'tone_gamma', 'tone_intensity', 'light_adapt', 
-            'color_adapt', 'ema_alpha']
-    
 
   @property
   def is_resizing(self):

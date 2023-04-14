@@ -2,9 +2,12 @@
   <arg name="camera_set"/>
   <arg name="namespace" default="$(arg camera_set)"/>
   <arg name="resize_width" default="0"/>
-  <arg name="sharpen" default="0"/>
-  <arg name="backend" default="opencv_nvjpeg"/>
+
   <arg name="reset_cycle" default="false"/>
+  <arg name="exposure" default="2000"/>
+  <arg name="gain" default="0.0"/>
+
+  <arg name="tone_mapping" default="linear"/>
 
   <node pkg="rosservice" type="rosservice" name="set_move_base_log_level" args="call --wait /move_base/set_logger_level 'ros.move_base' 'debug'" />
 
@@ -14,12 +17,10 @@
     <param name="cache_path" value="$(find spinnaker_camera_driver_ros)/cache"/>
     <param name="preview_width" value="200"/>
     <param name="resize_width" value="$(arg resize_width)"/>
-    <param name="sharpen" value="$(arg sharpen)"/>
-    <param name="backend" value="$(arg backend)"/>
 
-    <param name="exposure" value="5000"/>
-    <param name="gain" value="1.0"/>
-
+    <param name="exposure" value="$(arg exposure)"/>
+    <param name="gain" value="$(arg gain)"/>
+    <param name="tone_mapping" value="$(arg tone_mapping)"/>
 
     <param name="reset_cycle" value="$(arg reset_cycle)"/>
 

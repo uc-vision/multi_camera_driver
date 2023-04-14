@@ -2,6 +2,7 @@
 
 from dataclasses import fields, replace
 import gc
+import traceback
 from beartype import beartype
 import rospy
 
@@ -24,7 +25,7 @@ from pydispatch import Dispatcher
 
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
-  _events_ = ["on_image_settings", "on_update"]
+  _events_ = ["on_image_settings", "on_camera_settings", "on_update"]
   
   @beartype
   def __init__(self, camera_set:CameraSet, image_settings:ImageSettings):
@@ -59,19 +60,28 @@ class CameraArrayNode(Dispatcher):
 
 
   def reconfigure_callback(self, config, _):
-    for k, v in config.items():
-      if k == "groups":
-        continue
+    try:
+      for k, v in config.items():
+        if k == "groups":
+          continue
 
-      if self.config.get(k, None) == v:
-        continue
+        if self.config.get(k, None) == v:
+          continue
 
-      if self.started and k in self.delayed_setters:
-        self.pending_config[k] = v
-      else:
-        self.set_property(k, v)
+        if self.started and k in self.delayed_setters:
+          self.pending_config[k] = v
+        else:
+          self.set_property(k, v)
 
-    self.camera_set.check_camera_settings()
+      if self.camera_set.check_camera_settings():
+        self.emit("on_camera_settings", self.camera_set.camera_settings)
+    except Exception as e:
+      trace = traceback.format_exc()
+      print(f"{trace}")
+      rospy.logerr(f"Error while applying settings: {e}")
+
+      raise e
+
     return config
 
   @property

@@ -20,9 +20,6 @@ camera_settings:
     - AutoExposureExposureTimeUpperLimit:
       - 4000.0
       - FLOAT
-    - AutoExposureControlPriority:
-      - ExposureTime
-      - ENUM
 
     - TriggerMode:
       - "Off"  # needs quotes otherwise is evaluated to false
@@ -32,8 +29,8 @@ camera_settings:
       - ENUM     
       
     - PixelFormat:
-      # - BayerRG16
-      - BayerRG12p
+      - BayerRG16
+      # - BayerRG12p
       - ENUM
 
   transport_layer:

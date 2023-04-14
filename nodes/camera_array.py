@@ -84,18 +84,18 @@ def run_node():
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
   camera_set.update_calibration(calib.cameras)
 
-  image_settings = base_settings(config)  
-    
+  camera_node = CameraArrayNode(camera_set, base_settings(config))
+
   handler = SyncHandler(camera_set.camera_settings)
   camera_set.bind(on_image=handler.publish)
 
-  processor = FrameProcessor(camera_set.camera_settings, image_settings)
+  processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   handler.bind(on_frame=processor.process)
+  camera_node.bind(on_image_settings=processor.update_settings)
 
   publisher = FramePublisher(camera_set.camera_ids)
   processor.bind(on_frame=publisher.publish)
 
-  camera_node = CameraArrayNode(camera_set, image_settings)
 
   try:
     camera_node.capture()
@@ -110,7 +110,7 @@ def run_node():
   processor.stop()
   publisher.stop()
   camera_node.stop()
-  
+
   camera_node.cleanup()
 
   del camera_node

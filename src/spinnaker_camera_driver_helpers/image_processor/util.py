@@ -18,18 +18,16 @@ taichi_pattern = {
 }
 
 
-# This is needed because torch doesn't have unsigned integer types
-@ti.kernel
-def load_16f_kernel(image: ti.types.ndarray(ti.u16, ndim=2),
-                    out: ti.types.ndarray(ti.f16, ndim=2)):
-  for I in ti.grouped(image):
-    out[I] = ti.cast(ti.cast(image[I], ti.f32) / 65535.0, ti.f16)
+def load_16u_kernel(dtype, scale):
+  # This is needed because torch doesn't have unsigned integer types
+  @ti.kernel
+  def k(image: ti.types.ndarray(ti.u16, ndim=2),
+                      out: ti.types.ndarray(dtype, ndim=2)):
+    for I in ti.grouped(image):
+      out[I] = ti.cast(ti.cast(image[I], ti.f32) * scale, dtype)
 
+  return k
 
-def load_16f(image: np.ndarray):
-  out = ti.ndarray(shape=tuple(image.shape))
-  load_16f_kernel(image, out)
-  return out
 
 
 

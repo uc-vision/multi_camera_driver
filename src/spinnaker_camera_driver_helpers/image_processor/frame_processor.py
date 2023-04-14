@@ -40,8 +40,8 @@ class FrameProcessor(Dispatcher):
 
   def update_settings(self, settings:ImageSettings):
 
-    for k in self.processors.keys():
-      self.processors[k].update_settings(settings)
+    for processor in self.processors:
+      processor.update_settings(settings)
 
 
   @beartype
@@ -86,10 +86,13 @@ class FrameProcessor(Dispatcher):
     for processor, image in zip(self.processors, images):
       processor.load_image(image)
 
+      
+
     min_maxs = np.array([processor.min_max for processor in self.processors])
     min_maxs = np.array([min_maxs[:, 0].min(), min_maxs[:, 1].max()])
 
-    self.min_max = ema(self.min_max, min_maxs, self.settings.ema_alpha)
+    self.min_max = ema(self.min_max, min_maxs, self.settings.moving_average)
+
     return [processor.outputs(self.min_max) for processor in self.processors]
 
 
