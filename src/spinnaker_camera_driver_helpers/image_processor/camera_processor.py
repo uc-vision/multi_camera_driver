@@ -1,4 +1,5 @@
 
+from typing import List
 import numpy as np
 import torch
 
@@ -7,8 +8,10 @@ from taichi_image import bayer, interpolate, tonemap, packed, types
 
 from spinnaker_camera_driver_helpers.common import CameraSettings
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
-from .util import encoding,  load_16u_kernel, resize_width, taichi_pattern
+from .util import ema, encoding,  load_16u_kernel, resize_width, taichi_pattern
 from py_structs.numpy import shape_info
+
+
 
 class CameraProcessor(object):
   def __init__(self, name:str, settings:ImageSettings, camera:CameraSettings, dtype = ti.f32, device = "cuda:0"):
@@ -19,10 +22,11 @@ class CameraProcessor(object):
 
     self.name = name
     self.pattern, self.bits = encoding(name, camera)
-    self.min_max = np.array([0, 1])
 
+    
     self.reinhard_kernel = tonemap.reinhard_kernel(self.dtype, ti.u8)
     self.bilinear_kernel = interpolate.bilinear_kernel(self.dtype)
+    self.metering_kernel = tonemap.metering_kernel(self.dtype)
 
     self.linear_kernel = tonemap.linear_kernel_for(self.dtype, ti.u8)
 
@@ -74,32 +78,42 @@ class CameraProcessor(object):
     self.load_kernel(image_raw.reshape(self.bayer16.shape), self.bayer16)
     
     self.bayer_to_rgb(self.bayer16, self.rgb)
-    
     if self.scale != 1:
       self.bilinear_kernel(self.rgb, self.resized, scale=ti.math.vec2(self.scale, self.scale))
-    self.min_max = np.array(self.min_max_kernel(self.resized))
     
     # print(self.resized.mean(),  torch.clip(self.resized, min=1e-4).log().mean())
-    
-  
-  def outputs(self, min_max):
+
+  def bounds(self):
+    return self.min_max_kernel(self.resized)
+
+  def metering(self, bounds):
+    return self.metering_kernel(self.resized, *bounds)
+
+
+
+
+  def outputs(self, bounds, metering):
     preview_scale, preview_size = resize_width(self.output_size, self.settings.preview_size)
     output = torch.empty((self.output_size[1], self.output_size[0], 3), dtype=torch.uint8, device=self.device)
 
 
     if self.settings.tone_mapping == "reinhard":
-      tonemap.rescale_kernel(self.resized, *min_max)
 
-    
-      self.reinhard_kernel(self.resized, output, self.settings.tone_gamma, 
+      tonemap.rescale_kernel(self.resized, *bounds)
+      print(type(metering))
+
+      self.reinhard_kernel(self.resized, output, metering, self.settings.tone_gamma, 
           self.settings.tone_intensity, self.settings.light_adapt, self.settings.color_adapt)
+      
+
     elif self.settings.tone_mapping == "linear":      
 
       self.linear_kernel(self.resized, output,
-          *min_max, gamma=self.settings.tone_gamma, scale_factor=255)
+          *bounds, gamma=self.settings.tone_gamma, scale_factor=255)
     else:
       raise NotImplementedError(self.settings.tone_mapping)
     
 
     preview = interpolate.resize_bilinear(output, preview_size, preview_scale)
     return output, preview
+  

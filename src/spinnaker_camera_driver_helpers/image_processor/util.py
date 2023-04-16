@@ -1,13 +1,15 @@
 
 from concurrent.futures import ThreadPoolExecutor, Future
+from functools import reduce
 import math
-from typing import Tuple
+import operator
+from typing import List, Tuple
 import numpy as np
 
 from spinnaker_camera_driver_helpers.common import BayerPattern, CameraSettings, ImageEncoding, bayer_pattern, encoding_bits
 import taichi as ti
 
-from taichi_image import bayer, packed
+from taichi_image import bayer, packed, tonemap
 
 
 taichi_pattern = {
@@ -28,6 +30,38 @@ def load_16u_kernel(dtype, scale):
 
   return k
 
+
+def add_struct(struct, other):
+  d = {k:struct[k] + other[k] for k in struct.keys}
+  return struct.__class__(**d)
+
+def mul_struct(struct, x):
+  d = {k:struct[k] * x for k in struct.keys}
+  return struct.__class__(**d)
+
+def mean_struct(structs):
+  d = {}
+  n = len(structs)
+  for k in structs[0].keys:
+    d[k] = sum([s[k] for s in structs]) / n
+
+  return structs[0].__class__(**d)
+
+def ema_struct(old, new, alpha):
+  if old is None:
+    return new
+
+  d = {}
+  for k in old.keys:
+    d[k] = ema(old[k], new[k], alpha)
+
+  return old.__class__(**d)
+
+
+def merge_metering(metering:List[tonemap.ReinhardStats], current, alpha):
+  metering = mean_struct(metering)
+  current = ema_struct(current, metering, alpha)
+  return current
 
 
 
@@ -78,7 +112,7 @@ class TiQueue():
       
 
   @staticmethod
-  def run_async(func, *args):
+  def run_async(func, *args) -> Future:
     return TiQueue.queue().submit(TiQueue._await_run, func, *args)
 
   @staticmethod

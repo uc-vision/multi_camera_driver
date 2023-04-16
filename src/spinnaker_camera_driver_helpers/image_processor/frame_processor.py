@@ -11,7 +11,7 @@ from nvjpeg_torch import Jpeg
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
 from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
-from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, ema
+from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, ema, merge_metering
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 from .camera_processor import CameraProcessor
@@ -28,8 +28,13 @@ class FrameProcessor(Dispatcher):
     self.settings = settings
     self.cameras = cameras
 
+    print(len(cameras))
+
+
     self.processors = TiQueue.run_sync(self.init_processors, cameras)
-    self.min_max = np.array([0, 1])
+    self.bounds = np.array([0, 1])
+    self.metering = None
+
     self.intensity = 1.0
 
     self.queue = WorkQueue("FrameProcessor", run=self.process_worker, max_size=1)
@@ -46,6 +51,7 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def init_processors(self, cameras:Dict[str, CameraSettings]):
+
     return [CameraProcessor(name, self.settings, camera, device=self.settings.device) 
             for name, camera in cameras.items()]
 
@@ -80,20 +86,23 @@ class FrameProcessor(Dispatcher):
 
     self.emit("on_frame", outputs)
   
+
+
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
 
     for processor, image in zip(self.processors, images):
       processor.load_image(image)
 
-      
+    bounds = np.array([processor.bounds() for processor in self.processors])
+    bounds = np.array([bounds[:, 0].min(), bounds[:, 1].max()])
+    self.bounds = ema(self.bounds, bounds, self.settings.moving_average)
 
-    min_maxs = np.array([processor.min_max for processor in self.processors])
-    min_maxs = np.array([min_maxs[:, 0].min(), min_maxs[:, 1].max()])
-
-    self.min_max = ema(self.min_max, min_maxs, self.settings.moving_average)
-
-    return [processor.outputs(self.min_max) for processor in self.processors]
+    camera_metering = [processor.metering(bounds) for processor in self.processors]
+    self.metering = merge_metering(camera_metering, self.metering, self.settings.moving_average)
+  
+    return [processor.outputs(self.bounds, self.metering) 
+            for processor in self.processors]
 
 
   def stop(self):
