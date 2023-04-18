@@ -9,9 +9,9 @@ from beartype import beartype
 from nvjpeg_torch import Jpeg
 
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
-from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError
+from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError, bayer_pattern
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
-from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, encoding, resize_width
+from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, resize_width, taichi_pattern
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
@@ -51,10 +51,10 @@ class FrameProcessor(Dispatcher):
     image_size = common_value("image size", [camera.image_size for camera in cameras.values()])
     camera_encoding = common_value("encoding", [camera.encoding for camera in cameras.values()])    
   
-    bayer_pattern, _ = encoding(camera_encoding)
-    CameraISP = camera_isp.camera_isp()
+    pattern = bayer_pattern(camera_encoding)
+    CameraISP = camera_isp.camera_isp(ti.f16)
 
-    self.isp = CameraISP(len(cameras), image_size, bayer_pattern, 
+    self.isp = CameraISP(len(cameras), image_size, taichi_pattern[pattern], 
                          resize_width=self.settings.resize_width, 
                         moving_alpha=self.settings.moving_average)
 
@@ -79,10 +79,10 @@ class FrameProcessor(Dispatcher):
     #           for image in camera_images.values()]
   
     images = [image.image_data for image in camera_images.values()]
-    images = TiQueue.run_sync(self.process_images, images)
+    images, previews = TiQueue.run_sync(self.process_images, images)
 
     outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
-                    for k, (image, preview) in zip(camera_images.keys(), images)]
+                    for k, image, preview in zip(camera_images.keys(), images, previews)]
 
 
     self.emit("on_frame", outputs)
@@ -93,7 +93,12 @@ class FrameProcessor(Dispatcher):
   def process_images(self, images:List[torch.Tensor]):
 
     self.isp.load_16u(images)
-    outputs = self.isp.tonemap_linear(self.intensity, self.min_max)
+
+    size = self.isp.output_size
+    outputs = [torch.empty((size[1], size[0], 3), dtype=torch.uint8, device=self.settings.device) 
+              for _ in range(len(images))]
+
+    self.isp.tonemap_linear(outputs, gamma=self.settings.tone_gamma)
 
     _, preview_size = resize_width(self.isp.output_size, self.settings.preview_size)
     previews = [interpolate.resize_bilinear(output, preview_size) for output in outputs]

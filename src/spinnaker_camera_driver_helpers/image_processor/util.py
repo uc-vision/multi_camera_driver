@@ -1,6 +1,6 @@
 
 from concurrent.futures import ThreadPoolExecutor, Future
-from functools import reduce
+from functools import partial, reduce
 import math
 import operator
 from typing import List, Tuple
@@ -54,7 +54,7 @@ class TiQueue():
   def queue(cls):
     if cls.executor is None:
       cls.executor = ThreadPoolExecutor(max_workers=1, 
-        initializer=ti.init, initargs=[ti.cuda])
+        initializer=partial(ti.init, arch=ti.cuda, device_memory_GB=4))
     return cls.executor
 
 
