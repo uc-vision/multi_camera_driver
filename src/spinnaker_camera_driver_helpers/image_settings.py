@@ -25,7 +25,7 @@ class ImageSettings:
 
   
   # Moving average to smooth intensity scaling
-  moving_average : float = 0.01
+  moving_average : float = 0.05
 
   @property
   def is_sharpening(self):

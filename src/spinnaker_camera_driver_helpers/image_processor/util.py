@@ -18,18 +18,6 @@ taichi_pattern = {
 }
 
 
-def load_16u_kernel(dtype, scale):
-  # This is needed because torch doesn't have unsigned integer types
-  @ti.kernel
-  def k(image: ti.types.ndarray(ti.u16, ndim=2),
-                      out: ti.types.ndarray(dtype, ndim=2)):
-    for I in ti.grouped(image):
-      out[I] = ti.cast(ti.cast(image[I], ti.f32) * scale, dtype)
-
-  return k
-
-
-
 
 def encoding(name, camera:CameraSettings):
   enc = camera.encoding
@@ -56,9 +44,6 @@ def resize_longest(size:Tuple[int, int], max_size: int) -> Tuple[int, int]:
   h, w = size
   scale = max_size / max(h, w)
   return int(h * scale), int(w * scale)
-
-def ema(old, new, alpha):
-  return new * alpha + old * (1 - alpha)
 
 class TiQueue():
   executor = None

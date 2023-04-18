@@ -11,13 +11,17 @@ from nvjpeg_torch import Jpeg
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
 from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
-from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, ema
+from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, encoding, resize_width
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
-from .camera_processor import CameraProcessor
 
-from py_structs.torch import shape_info
+from taichi_image import camera_isp, interpolate
+import taichi as ti
 
+
+def common_value(name, values):
+  assert len(set(values)) == 1, f"All cameras must have the same {name}"
+  return values[0]
 
 class FrameProcessor(Dispatcher):
   _events_ = ["on_frame"]
@@ -28,7 +32,7 @@ class FrameProcessor(Dispatcher):
     self.settings = settings
     self.cameras = cameras
 
-    self.processors = TiQueue.run_sync(self.init_processors, cameras)
+    self.processor = TiQueue.run_sync(self.init_processor, cameras)
     self.min_max = np.array([0, 1])
     self.intensity = 1.0
 
@@ -45,9 +49,17 @@ class FrameProcessor(Dispatcher):
 
 
   @beartype
-  def init_processors(self, cameras:Dict[str, CameraSettings]):
-    return [CameraProcessor(name, self.settings, camera, device=self.settings.device) 
-            for name, camera in cameras.items()]
+  def init_processor(self, cameras:Dict[str, CameraSettings]):
+    image_size = common_value("image size", [camera.image_size for camera in cameras.values()])
+    camera_encoding = common_value("encoding", [camera.encoding for camera in cameras.values()])    
+  
+    bayer_pattern, _ = encoding(camera_encoding)
+    CameraISP = camera_isp.camera_isp()
+
+    self.isp = CameraISP(len(cameras), image_size, bayer_pattern, 
+                         resize_width=self.settings.resize_width, 
+                        moving_alpha=self.settings.moving_average)
+
 
   @beartype
   def process(self, images:Dict[str, CameraImage]):
@@ -68,11 +80,8 @@ class FrameProcessor(Dispatcher):
     # images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
     #           for image in camera_images.values()]
   
-    images = [image.image_data 
-              for image in camera_images.values()]
-  
+    images = [image.image_data for image in camera_images.values()]
     images = TiQueue.run_sync(self.process_images, images)
-
 
     outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
                     for k, (image, preview) in zip(camera_images.keys(), images)]
@@ -83,17 +92,13 @@ class FrameProcessor(Dispatcher):
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
 
-    for processor, image in zip(self.processors, images):
-      processor.load_image(image)
+    self.isp.load_16u(images)
+    outputs = self.isp.tonemap_linear(self.intensity, self.min_max)
 
-      
+    _, preview_size = resize_width(self.isp.output_size, self.settings.preview_size)
+    previews = [interpolate.resize_bilinear(output, preview_size) for output in outputs]
 
-    min_maxs = np.array([processor.min_max for processor in self.processors])
-    min_maxs = np.array([min_maxs[:, 0].min(), min_maxs[:, 1].max()])
-
-    self.min_max = ema(self.min_max, min_maxs, self.settings.moving_average)
-
-    return [processor.outputs(self.min_max) for processor in self.processors]
+    return outputs, previews
 
 
   def stop(self):
