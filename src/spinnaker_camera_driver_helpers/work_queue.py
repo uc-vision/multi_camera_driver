@@ -11,9 +11,11 @@ from threading import Thread
 
 class WorkQueue():
 
-  def __init__(self, name, run:Callable, max_size=0):    
-    self.queue = Queue(max_size)
-    self.worker = None
+  def __init__(self, name, run:Callable, num_workers=1):    
+    self.queue = Queue(num_workers)
+    self.workers = None
+    self.num_workers = num_workers
+    
     self.name = name
     self.run = run
 
@@ -35,17 +37,22 @@ class WorkQueue():
         
 
   def stop(self):
-    rospy.loginfo(f"Waiting for {self.name}: thread {self.worker}")
+    rospy.loginfo(f"Waiting for {self.name}: threads {self.workers}")
     
-    self.queue.put(None)
-    self.worker.join()
-    print(f"Done {self.name}: thread {self.worker}")
+    for worker in self.workers:
+      self.queue.put(None)
+    
+    for worker in self.workers:
+      worker.join()
+    print(f"Done {self.name}: thread {self.workers}")
 
 
   def start(self):
-    assert self.worker is None
+    assert self.workers is None
 
-    self.worker = Thread(target = self.run_worker)
-    self.worker.start()
+    self.workers = [Thread(target = self.run_worker) 
+                    for _ in range(self.num_workers)]
+    for worker in self.workers:
+      worker.start()
 
       

@@ -13,7 +13,7 @@ from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 
 from spinnaker_camera_driver_helpers.image_processor import FrameProcessor, TiQueue
 
-from taichi_image import bayer
+from taichi_image import bayer, packed
 
 import cv2
 
@@ -43,14 +43,17 @@ def main():
   bayer_image = TiQueue.run_sync(bayer.rgb_to_bayer, cv2.cvtColor(image, cv2.COLOR_BGR2RGB), 
                                    bayer.BayerPattern.BGGR)
   
-  bayer_image16 = bayer_image.astype(np.uint16) * 256
-  h, w = bayer_image16.shape[:2]
+  # bayer_image16 = bayer_image.astype(np.uint16) * 256
+  # bayer_image16 = bayer_image.astype(np.float16) / 256
+  packed12_image = TiQueue.run_sync(packed.encode12, bayer_image.reshape(-1)) 
 
+  h, w = image.shape[:2]
+  encoding = ImageEncoding.Bayer_BGGR12
   camera_settings = {f"{n}":CameraSettings(
       name="test{n}",
       serial="{n}",
       connection_speed="SuperSpeed",
-      encoding = ImageEncoding.Bayer_BGGR16,
+      encoding = encoding,
       image_size=(w, h),
       is_master=False,
       is_free_running=True,
@@ -62,10 +65,10 @@ def main():
   frame_processor = FrameProcessor(camera_settings, image_settings)
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
-    image_data=bayer_image16.copy(),
+    image_data=packed12_image.copy(),
     seq=0,
     image_size=(w, h),
-    encoding=ImageEncoding.Bayer_BGGR16,
+    encoding=encoding,
     timestamp=rospy.Time())
 
     for n in range(int(args.n)) }
@@ -84,16 +87,17 @@ def main():
 
     pbar.update(1)
 
-  processor = WorkQueue("publisher", run=on_frame, max_size=1)
+  processor = WorkQueue("publisher", run=on_frame)
   processor.start()
   frame_processor.bind(on_frame=processor.enqueue)
       
   for _ in range(int(args.frames)):
     frame_processor.process(images)
 
-
-
   frame_processor.stop()
+  processor.stop()
+
+  print("Finished")
 
 if __name__ == "__main__":
   main()
