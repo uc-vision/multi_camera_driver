@@ -1,13 +1,15 @@
 
 from concurrent.futures import ThreadPoolExecutor, Future
+from functools import reduce
 import math
-from typing import Tuple
+import operator
+from typing import List, Tuple
 import numpy as np
 
 from spinnaker_camera_driver_helpers.common import BayerPattern, CameraSettings, ImageEncoding, bayer_pattern, encoding_bits
 import taichi as ti
 
-from taichi_image import bayer, packed
+from taichi_image import bayer, packed, tonemap
 
 
 taichi_pattern = {
@@ -63,7 +65,7 @@ class TiQueue():
       
 
   @staticmethod
-  def run_async(func, *args):
+  def run_async(func, *args) -> Future:
     return TiQueue.queue().submit(TiQueue._await_run, func, *args)
 
   @staticmethod

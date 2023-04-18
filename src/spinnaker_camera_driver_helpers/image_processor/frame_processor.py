@@ -33,8 +33,6 @@ class FrameProcessor(Dispatcher):
     self.cameras = cameras
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
-    self.min_max = np.array([0, 1])
-    self.intensity = 1.0
 
     self.queue = WorkQueue("FrameProcessor", run=self.process_worker, max_size=1)
     self.queue.start()
@@ -89,6 +87,8 @@ class FrameProcessor(Dispatcher):
 
     self.emit("on_frame", outputs)
   
+
+
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
 
