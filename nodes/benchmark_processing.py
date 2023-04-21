@@ -43,10 +43,9 @@ def main():
   test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
   h, w, _ = test_image.shape
 
-  # bayer_image16 = bayer_image.astype(np.uint16) * 256
 
-  h, w = bayer_image12.shape[:2]
-
+  h, w = image.shape[:2]
+  encoding = ImageEncoding.Bayer_BGGR12
   camera_settings = {f"{n}":CameraSettings(
       name="test{n}",
       serial="{n}",
@@ -85,16 +84,17 @@ def main():
 
     pbar.update(1)
 
-  processor = WorkQueue("publisher", run=on_frame, max_size=1)
+  processor = WorkQueue("publisher", run=on_frame)
   processor.start()
   frame_processor.bind(on_frame=processor.enqueue)
       
   for _ in range(int(args.frames)):
     frame_processor.process(images)
 
-
-
   frame_processor.stop()
+  processor.stop()
+
+  print("Finished")
 
 if __name__ == "__main__":
   main()

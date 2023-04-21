@@ -54,7 +54,7 @@ class TiQueue():
   def queue(cls):
     if cls.executor is None:
       cls.executor = ThreadPoolExecutor(max_workers=1, 
-        initializer=partial(ti.init, arch=ti.cuda, device_memory_GB=4))
+        initializer=partial(ti.init, arch=ti.cuda, device_memory_GB=4, offline_cache=True))
     return cls.executor
 
 
