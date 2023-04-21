@@ -48,13 +48,12 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def init_processor(self, cameras:Dict[str, CameraSettings]):
-    image_size = common_value("image size", [camera.image_size for camera in cameras.values()])
     camera_encoding = common_value("encoding", [camera.encoding for camera in cameras.values()])    
   
     pattern = bayer_pattern(camera_encoding)
     CameraISP = camera_isp.camera_isp(ti.f16)
 
-    self.isp = CameraISP(len(cameras), image_size, taichi_pattern[pattern], 
+    self.isp = CameraISP(taichi_pattern[pattern], 
                          resize_width=self.settings.resize_width, 
                         moving_alpha=self.settings.moving_average)
 
@@ -75,10 +74,10 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def process_worker(self, camera_images:Dict[str, CameraImage]):
-    # images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
-    #           for image in camera_images.values()]
+    images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
+              for image in camera_images.values()]
   
-    images = [image.image_data for image in camera_images.values()]
+    # images = [image.image_data for image in camera_images.values()]
     images, previews = TiQueue.run_sync(self.process_images, images)
 
     outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
@@ -88,17 +87,11 @@ class FrameProcessor(Dispatcher):
     self.emit("on_frame", outputs)
   
 
-
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
 
-    self.isp.load_16u(images)
-
-    size = self.isp.output_size
-    outputs = [torch.empty((size[1], size[0], 3), dtype=torch.uint8, device=self.settings.device) 
-              for _ in range(len(images))]
-
-    self.isp.tonemap_linear(outputs, gamma=self.settings.tone_gamma)
+    images = [self.isp.load_packed12(image.view(-1), camera.image_size) for image, camera in zip(images, self.cameras.values())]
+    outputs = self.isp.tonemap_linear(images, gamma=self.settings.tone_gamma)
 
     _, preview_size = resize_width(self.isp.output_size, self.settings.preview_size)
     previews = [interpolate.resize_bilinear(output, preview_size) for output in outputs]

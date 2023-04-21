@@ -14,6 +14,7 @@ from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.image_processor import FrameProcessor, TiQueue
 
 from taichi_image import bayer
+from taichi_image.test.camera_isp import load_test_image
 
 import cv2
 
@@ -39,18 +40,18 @@ def main():
       tone_mapping="reinhard"
   )
 
-  image = cv2.imread(args.filename)
-  bayer_image = TiQueue.run_sync(bayer.rgb_to_bayer, cv2.cvtColor(image, cv2.COLOR_BGR2RGB), 
-                                   bayer.BayerPattern.BGGR)
-  
-  bayer_image16 = bayer_image.astype(np.uint16) * 256
-  h, w = bayer_image16.shape[:2]
+  test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
+  h, w, _ = test_image.shape
+
+  # bayer_image16 = bayer_image.astype(np.uint16) * 256
+
+  h, w = bayer_image12.shape[:2]
 
   camera_settings = {f"{n}":CameraSettings(
       name="test{n}",
       serial="{n}",
       connection_speed="SuperSpeed",
-      encoding = ImageEncoding.Bayer_BGGR16,
+      encoding = ImageEncoding.Bayer_BGGR12,
       image_size=(w, h),
       is_master=False,
       is_free_running=True,
@@ -62,10 +63,10 @@ def main():
   frame_processor = FrameProcessor(camera_settings, image_settings)
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
-    image_data=bayer_image16.copy(),
+    image_data=bayer_image12.copy(),
     seq=0,
     image_size=(w, h),
-    encoding=ImageEncoding.Bayer_BGGR16,
+    encoding=ImageEncoding.Bayer_BGGR12,
     timestamp=rospy.Time())
 
     for n in range(int(args.n)) }
