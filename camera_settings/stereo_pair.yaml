@@ -19,16 +19,8 @@ camera_settings:
       - Rolling
       - ENUM
     - PixelFormat:
-      - BayerRG16
-
-      # - BayerRG12p
-      - ENUM
-
-    - TriggerMode:
-      - "Off"  # needs quotes otherwise is evaluated to false
-      - ENUM
-    - AcquisitionMode:
-      - Continuous
+      # - BayerRG16
+      - BayerRG12p
       - ENUM
       
   transport_layer:

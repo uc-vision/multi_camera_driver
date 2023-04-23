@@ -6,17 +6,17 @@ import torch
 from pydispatch import Dispatcher
 from beartype import beartype
 
-from nvjpeg_torch import Jpeg
 
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
-from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError, bayer_pattern
+from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError, bayer_pattern, encoding_bits
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
-from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, resize_width, taichi_pattern
+from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, encoding, resize_width, taichi_pattern
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
 from taichi_image import camera_isp, interpolate
 import taichi as ti
+import gc
 
 
 def common_value(name, values):
@@ -28,7 +28,6 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def __init__(self, cameras:Dict[str, CameraSettings], settings:ImageSettings):
-    self.jpeg = Jpeg()
     self.settings = settings
     self.cameras = cameras
 
@@ -38,77 +37,81 @@ class FrameProcessor(Dispatcher):
     self.queue.start()
 
   def update_camera(self, k, camera):
-    self.processors[k].update_camera(camera)
+    self.cameras[k] = camera
 
   def update_settings(self, settings:ImageSettings):
+    self.settings = settings
+    
+    self.isp.set(moving_alpha=self.settings.moving_average, 
+                 resize_width=self.settings.resize_width)
 
-    for processor in self.processors:
-      processor.update_settings(settings)
 
 
   @beartype
   def init_processor(self, cameras:Dict[str, CameraSettings]):
-    camera_encoding = common_value("encoding", [camera.encoding for camera in cameras.values()])    
-  
-    pattern = bayer_pattern(camera_encoding)
-    CameraISP = camera_isp.camera_isp(ti.f32)
+    enc = common_value("encoding", [camera.encoding for camera in cameras.values()])    
+    
+    self.pattern = bayer_pattern(enc)
+    self.bits = encoding_bits(enc)
 
-    self.isp = CameraISP(taichi_pattern[pattern], 
+    if encoding_bits(enc) not in [12, 16]:
+      raise ValueError(f"Unsupported bits {encoding_bits(enc)} in {enc}")
+
+    self.isp = camera_isp.Camera16(taichi_pattern[self.pattern], 
                          resize_width=self.settings.resize_width, 
-                        moving_alpha=self.settings.moving_average)
+                        moving_alpha=self.settings.moving_average,
+                        device=torch.device('cuda', 0))
 
 
   @beartype
   def process(self, images:Dict[str, CameraImage]):
     return self.queue.enqueue(images)
 
-  def encode(self, image:torch.Tensor):
-    try:
-      return self.jpeg.encode(image,
-                              quality=self.settings.jpeg_quality,
-                              input_format=Jpeg.RGBI).numpy().tobytes()
 
-    except Jpeg.Exception as e:
-      raise EncoderError(str(e))
+  def upload_image(self, image:np.array):
+    return torch.from_numpy(image.view(np.uint8)
+                            ).to(device=self.settings.device)
+  
 
 
   @beartype
   def process_worker(self, camera_images:Dict[str, CameraImage]):
-    images = [torch.from_numpy(image.image_data).to(device=self.settings.device) 
-              for image in camera_images.values()]
-<<<<<<< HEAD
-=======
-    
->>>>>>> 20ac489fcad720a3255c5b691c3f85e8e6322fe0
-  
-    # images = [image.image_data for image in camera_images.values()]
-    images, previews = TiQueue.run_sync(self.process_images, images)
 
-    outputs = [ImageOutputs(camera_images[k], image, preview, encode=self.encode, calibration=self.cameras[k].calibration)
+    images = [self.upload_image(image.image_data) 
+              for image in camera_images.values()]
+
+    images, previews = TiQueue.run_sync(self.process_images, images)
+    outputs = [ImageOutputs(
+      raw = camera_images[k], 
+      rgb = image, 
+      preview = preview, 
+      settings = self.settings,
+      calibration=self.cameras[k].calibration)
                     for k, image, preview in zip(camera_images.keys(), images, previews)]
 
     self.emit("on_frame", outputs)
   
 
+
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
-<<<<<<< HEAD
+    load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
+    images = [load_data(image) for image in images]
+    
 
-    images = [self.isp.load_packed12(image.view(-1), camera.image_size) for image, camera in zip(images, self.cameras.values())]
-    outputs = self.isp.tonemap_linear(images, gamma=self.settings.tone_gamma)
-=======
-    self.isp.load_packed12(images)
+    if self.settings.tone_mapping == "linear":
+      outputs = self.isp.tonemap_linear(images, gamma=self.settings.tone_gamma)
+    elif self.settings.tone_mapping == "reinhard":
+      outputs = self.isp.tonemap_reinhard(
+        images, gamma=self.settings.tone_gamma, 
+        intensity = self.settings.tone_intensity,
+        light_adapt = self.settings.light_adapt,
+        color_adapt = self.settings.color_adapt)
+    else:
+      raise ValueError(f"Unknown tone mapper {self.settings.tone_mapper}")
 
-    size = self.isp.output_size
-    outputs = [torch.empty((size[1], size[0], 3), dtype=torch.uint8, device=self.settings.device) 
-              for _ in range(len(images))]
 
-    self.isp.tonemap_linear(outputs, gamma=self.settings.tone_gamma)
->>>>>>> 20ac489fcad720a3255c5b691c3f85e8e6322fe0
-
-    _, preview_size = resize_width(self.isp.output_size, self.settings.preview_size)
-    previews = [interpolate.resize_bilinear(output, preview_size) for output in outputs]
-
+    previews = [interpolate.resize_width(output, self.settings.preview_size) for output in outputs]
     return outputs, previews
 
 

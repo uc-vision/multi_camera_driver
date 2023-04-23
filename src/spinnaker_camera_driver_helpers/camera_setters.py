@@ -9,21 +9,21 @@ from . import spinnaker_helpers
 def set_exposure(camera : PySpin.Camera, exposure_time, info:CameraSettings):
     """Set the cameras exposure time to the given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
-    # if exposure_time > 0:
-    spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Off")
-    return spinnaker_helpers.try_set_float(node_map, "ExposureTime", exposure_time)
-    # else:
-    #     spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
+    if exposure_time > 0:
+      spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Off")
+      return spinnaker_helpers.try_set_float(node_map, "ExposureTime", exposure_time)
+    else:
+        spinnaker_helpers.set_enum(node_map, "ExposureAuto", "Continuous")
 
 
 def set_gain(camera : PySpin.Camera, gain, info:CameraSettings):
     """Set the cameras gain to given value. If 0 set to auto"""
     node_map = camera.GetNodeMap()
-    # if gain > 0:
-    spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
-    return spinnaker_helpers.try_set_float(node_map, "Gain", gain)
-    # else:
-        # spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
+    if gain > 0:
+      spinnaker_helpers.set_enum(node_map, "GainAuto", "Off")
+      return spinnaker_helpers.try_set_float(node_map, "Gain", gain)
+    else:
+        spinnaker_helpers.set_enum(node_map, "GainAuto", "Continuous")
 
 
 def set_balance_ratio(camera : PySpin.Camera, balance_ratio, info:CameraSettings):

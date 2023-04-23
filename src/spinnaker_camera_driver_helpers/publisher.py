@@ -42,6 +42,8 @@ class CameraPublisher():
       header = Header(frame_id=image.raw.camera_name, stamp=image.raw.timestamp, seq=image.raw.seq)
       self.publisher.publish(data=image, header=header)
 
+      del image
+
 
   def stop(self):
     self.queue.stop()

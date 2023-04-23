@@ -54,7 +54,7 @@ class TiQueue():
   def queue(cls):
     if cls.executor is None:
       cls.executor = ThreadPoolExecutor(max_workers=1, 
-        initializer=partial(ti.init, arch=ti.cuda, device_memory_GB=4, offline_cache=True))
+        initializer=partial(ti.init, arch=ti.gpu, device_memory_GB=1.0, offline_cache=True))
     return cls.executor
 
 
@@ -71,3 +71,10 @@ class TiQueue():
   @staticmethod
   def run_sync(func, *args):
     return TiQueue.run_async(func, *args).result()
+  
+  @staticmethod
+  def stop():
+    executor = TiQueue.executor
+    if executor is not None:
+      executor.shutdown(wait=True)
+      executor = None

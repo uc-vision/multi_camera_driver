@@ -7,7 +7,9 @@
   <arg name="exposure" default="2000"/>
   <arg name="gain" default="0.0"/>
 
-  <arg name="tone_mapping" default="linear"/>
+  <arg name="tone_mapping" default="reinhard"/>
+  <arg name="max_framerate" default="16"/>
+
 
   <node pkg="rosservice" type="rosservice" name="set_move_base_log_level" args="call --wait /move_base/set_logger_level 'ros.move_base' 'debug'" />
 
@@ -23,6 +25,8 @@
     <param name="tone_mapping" value="$(arg tone_mapping)"/>
 
     <param name="reset_cycle" value="$(arg reset_cycle)"/>
+    <param name="max_framerate" value="$(arg max_framerate)"/>
+
 
 
   </node>

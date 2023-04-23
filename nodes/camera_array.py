@@ -12,6 +12,7 @@ LICENSE file.
 
 from dataclasses import replace
 from pathlib import Path
+from typing import List
 import PySpin
 from beartype import beartype
 
@@ -19,10 +20,11 @@ import rospy
 import rospkg
 
 from spinnaker_camera_driver_helpers.camera_node import CameraArrayNode
+from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
 from spinnaker_camera_driver_helpers.publisher import FramePublisher
 import tf2_ros
 from std_msgs.msg import String
-
+import numpy as np
 
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers import spinnaker_helpers
@@ -71,6 +73,24 @@ def init_calibrations(camera_ids):
   return calib, recalibrate_sub
 
 
+class ImageWriterRaw:
+  def __init__(self, base_path:Path, camera_ids:List[str]):
+    self.base_path = Path(base_path)
+
+    self.camera_paths = [self.base_path / f"{id}" for id in camera_ids]
+    for path in self.camera_paths:
+      path.mkdir(parents=True, exist_ok=True)
+
+    self.camera_ids = camera_ids
+
+  def write(self, outputs:List[ImageOutputs]):
+
+    for i, output in enumerate(outputs):
+      raw = output.raw
+      path = self.camera_paths[i] / f"{raw.seq}.npy"
+      np.save(path, raw.image_data, allow_pickle=True)
+
+
 def run_node():
   config_file = rospy.get_param("~config_file")
   config = load_config(config_file)
@@ -96,6 +116,9 @@ def run_node():
   publisher = FramePublisher(camera_set.camera_ids)
   processor.bind(on_frame=publisher.publish)
 
+  # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
+  # processor.bind(on_frame=raw_writer.write)
+
 
   try:
     camera_node.capture()
@@ -110,12 +133,13 @@ def run_node():
   processor.stop()
   publisher.stop()
   camera_node.stop()
-
   camera_node.cleanup()
 
   del camera_node
   del camera_set
-  # del image_publisher
+  del handler
+  del processor
+  del publisher
 
 def main():
   exceptions_to_rosout()

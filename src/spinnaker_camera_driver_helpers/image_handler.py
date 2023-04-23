@@ -4,7 +4,6 @@ import rospy
 import PySpin
 
 
-
 def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration) -> CameraImage:
     if image.IsIncomplete():
       status = image.GetImageStatus()
@@ -13,11 +12,10 @@ def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.D
     
     image_data = image.GetData()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
-
+    
     image_info = CameraImage(
-
       camera_name = camera_name,
-      image_data = image_data,
+      image_data = image_data.reshape(image.GetHeight(), -1),
       timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9) + time_offset_sec,
       seq = image.GetFrameID(),
 

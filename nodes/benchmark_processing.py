@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import threading
 from typing import List
 import rospy
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
@@ -16,6 +17,7 @@ from spinnaker_camera_driver_helpers.image_processor import FrameProcessor, TiQu
 from taichi_image import bayer
 from taichi_image.test.camera_isp import load_test_image
 
+import taichi as ti
 import cv2
 
 
@@ -43,14 +45,12 @@ def main():
   test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
   h, w, _ = test_image.shape
 
-
-  h, w = image.shape[:2]
   encoding = ImageEncoding.Bayer_BGGR12
   camera_settings = {f"{n}":CameraSettings(
       name="test{n}",
       serial="{n}",
       connection_speed="SuperSpeed",
-      encoding = ImageEncoding.Bayer_BGGR12,
+      encoding = encoding,
       image_size=(w, h),
       is_master=False,
       is_free_running=True,
@@ -62,38 +62,38 @@ def main():
   frame_processor = FrameProcessor(camera_settings, image_settings)
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
-    image_data=bayer_image12.copy(),
+    image_data=image.copy(),
     seq=0,
     image_size=(w, h),
-    encoding=ImageEncoding.Bayer_BGGR12,
+    encoding=encoding,
     timestamp=rospy.Time())
 
-    for n in range(int(args.n)) }
+    for n, image in enumerate(test_images) }
 
 
   pbar = tqdm(total=int(args.frames))
-  n_bytes = 0 
 
-  def on_frame(outputs:List[ImageOutputs]):
-    nonlocal n_bytes
-
+  def on_frame(outputs):
+    output:ImageOutputs
     for output in outputs:
       compressed = output.compressed
       preview = output.compressed_preview
-      n_bytes += len(compressed) + len(preview)
 
     pbar.update(1)
-
-  processor = WorkQueue("publisher", run=on_frame)
+  processor = WorkQueue("publisher", run=on_frame, num_workers=1, max_size=2)
   processor.start()
-  frame_processor.bind(on_frame=processor.enqueue)
+
+
+  frame_processor.bind(on_frame=on_frame)
       
   for _ in range(int(args.frames)):
+    # frame_processor.settings.tone_intensity += 0.01
     frame_processor.process(images)
 
   frame_processor.stop()
   processor.stop()
 
+  TiQueue.stop()
   print("Finished")
 
 if __name__ == "__main__":

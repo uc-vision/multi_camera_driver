@@ -11,22 +11,6 @@ camera_settings:
     - SensorShutterMode:
       - Global
       - ENUM
-    - BalanceWhiteAutoProfile:
-      - "Outdoor"
-      - ENUM
-    - AutoExposureLightingMode:
-      - "Backlight"
-      - ENUM
-    - AutoExposureExposureTimeUpperLimit:
-      - 4000.0
-      - FLOAT
-
-    - TriggerMode:
-      - "Off"  # needs quotes otherwise is evaluated to false
-      - ENUM
-    - AcquisitionMode:
-      - Continuous
-      - ENUM     
       
     - PixelFormat:
       - BayerRG12p
@@ -38,7 +22,7 @@ camera_settings:
       - ENUM
 
     - StreamBufferCountManual:
-      - 4
+      - 2
       - INT
 
     - StreamBufferHandlingMode:
