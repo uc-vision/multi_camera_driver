@@ -4,6 +4,7 @@
 
   <arg name="namespace" default="$(arg camera_set)"/>
   <arg name="device" default="cuda:0"/>
+  <arg name="reset_cycle" default="true"/>
 
 
   <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="$(arg namespace)" output="screen" required="true">
@@ -11,11 +12,11 @@
     <rosparam file="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg settings).yaml" />
 
     <param name="device" value="$(arg device)"/>
+    <param name="reset_cycle" value="$(arg reset_cycle)"/>
+
 
   </node>
-
-  <node pkg="rosservice" type="rosservice" name="set_log_level" args="call --wait /$(arg camera_set)/set_logger_level  {logger: 'rosout', level: 'debug'}" />
-
-
 </launch>
+  
+<!-- <node pkg="rosservice" type="rosservice" name="set_log_level" args="call  /$(arg camera_set)/set_logger_level  {logger: 'rosout', level: 'debug'}" /> -->
 

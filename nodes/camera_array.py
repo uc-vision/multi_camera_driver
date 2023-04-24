@@ -11,6 +11,7 @@ LICENSE file.
 """
 
 from dataclasses import replace
+from functools import partial
 from pathlib import Path
 from typing import List
 import PySpin
@@ -108,8 +109,13 @@ def run_node():
   camera_node = CameraArrayNode(camera_set, base_settings())
 
   handler = SyncHandler(camera_set.camera_settings)
+  def f(x):
+    print("asdf")
+
+  camera_set.bind(on_image=f)  
+
   camera_set.bind(on_image=handler.publish)
-  camera_set.bind(on_image=lambda x: rospy.logwarn("!!!!"))
+
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   handler.bind(on_frame=processor.process)
