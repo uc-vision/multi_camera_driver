@@ -109,13 +109,13 @@ def run_node():
   camera_node = CameraArrayNode(camera_set, base_settings())
 
   handler = SyncHandler(camera_set.camera_settings)
-  def f(x):
-    print("asdf")
-
-  camera_set.bind(on_image=f)  
-
   camera_set.bind(on_image=handler.publish)
 
+  diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
+  camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
+
+  camera_node.bind(on_update=diagnostics.reset)
+  camera_node.bind(on_update=handler.report_recieved)
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   handler.bind(on_frame=processor.process)
@@ -148,6 +148,7 @@ def run_node():
   del handler
   del processor
   del publisher
+  del diagnostics
 
 def main():
   exceptions_to_rosout()

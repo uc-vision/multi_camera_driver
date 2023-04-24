@@ -46,7 +46,6 @@ class FrameProcessor(Dispatcher):
                  resize_width=self.settings.resize_width)
 
 
-
   @beartype
   def init_processor(self, cameras:Dict[str, CameraSettings]):
     enc = common_value("encoding", [camera.encoding for camera in cameras.values()])    
@@ -60,7 +59,7 @@ class FrameProcessor(Dispatcher):
     self.isp = camera_isp.Camera16(taichi_pattern[self.pattern], 
                          resize_width=self.settings.resize_width, 
                         moving_alpha=self.settings.moving_average,
-                        device=torch.device('cuda', 0))
+                        device=self.settings.device)
 
 
   @beartype

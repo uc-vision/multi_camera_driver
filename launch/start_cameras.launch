@@ -18,5 +18,5 @@
   </node>
 </launch>
   
-<!-- <node pkg="rosservice" type="rosservice" name="set_log_level" args="call  /$(arg camera_set)/set_logger_level  {logger: 'rosout', level: 'debug'}" /> -->
+<!-- <node pkg="rosservice" type="rosservice" name="set_log_level" args="call  /$(arg camera_set)/camera_array/set_logger_level  {logger: 'rosout', level: 'debug'}" /> -->
 

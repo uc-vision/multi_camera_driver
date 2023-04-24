@@ -36,10 +36,6 @@ class CameraArrayNode(Dispatcher):
     self.pending_config = {}
     self.image_settings = image_settings
 
-    self.diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
-    camera_set.bind(on_settings=self.diagnostics.on_camera_info, on_image=self.diagnostics.on_image)
-
-
     self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
     for camera_name, info in camera_set.camera_settings.items():
@@ -128,7 +124,7 @@ class CameraArrayNode(Dispatcher):
 
     while not rospy.is_shutdown():
       self.update_pending()
-      self.diagnostics.reset()
+      self.emit("on_update")
       
       rospy.sleep(0.2)
 

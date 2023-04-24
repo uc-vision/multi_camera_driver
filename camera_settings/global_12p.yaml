@@ -1,6 +1,6 @@
 exposure: 2000
 gain: 0.1
-max_framerate: 14
+max_framerate: 12
 jpeg_quality: 95
 resize_width: 2560
 balance_ratio: 1.0

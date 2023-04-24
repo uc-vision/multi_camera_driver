@@ -24,7 +24,7 @@ camera_settings:
       - Manual
       - ENUM
     - StreamBufferCountManual:
-      - 2
+      - 4
       - INT
     - StreamBufferHandlingMode:
       - OldestFirst

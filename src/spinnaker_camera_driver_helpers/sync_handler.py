@@ -1,7 +1,7 @@
 
 from dataclasses import replace
 from statistics import mean
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 import rospy
 
 
@@ -24,7 +24,7 @@ class SyncHandler(Dispatcher):
 
   @beartype
   def __init__(self, camera_settings:Dict[str, CameraSettings],
-    timeout_msec=1000, sync_threshold_msec=20.0):
+    timeout_msec=1000, sync_threshold_msec=10.0):
 
     self.camera_settings = camera_settings
     self.queue = WorkQueue("SyncHandler", run=self.process_image, max_size=len(camera_settings))
@@ -33,7 +33,7 @@ class SyncHandler(Dispatcher):
     self.sync_threshold = rospy.Duration.from_sec(sync_threshold_msec / 1000.0)
 
     self.report_rate = rospy.Duration.from_sec(4.0)
-    self.frame_queue = []
+    self.frame_queue:List[CameraImage] = []
 
     self.camera_ids = natsorted(camera_settings.keys())
     self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_ids}
@@ -43,7 +43,7 @@ class SyncHandler(Dispatcher):
     
   def reset_recieved(self):
     self.recieved = 0 
-    self.dropped = 0
+    self.dropped = {k:0 for k in self.camera_ids}
     self.published = 0
 
     self.update = rospy.Time.now()
@@ -54,7 +54,7 @@ class SyncHandler(Dispatcher):
     if duration > self.report_rate:
       message = f"published {self.published} ({self.published / duration.to_sec() : .2f} fps), {self.recieved} in {format_sec(duration)}"
 
-      if self.dropped > 0:
+      if sum(self.dropped.values()) > 0:
        rospy.logwarn(f"dropped {self.dropped}, {message}")
       else:
        rospy.logdebug(message)
@@ -77,8 +77,9 @@ class SyncHandler(Dispatcher):
 
     timeout_time = rospy.Time.now() - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-      self.frame_queue.pop(0)
-      self.dropped += 1
+      
+      frame:CameraImage = self.frame_queue.pop(0)
+      self.dropped[frame.camera_name] += 1
 
 
   def update_offsets(self, group):
