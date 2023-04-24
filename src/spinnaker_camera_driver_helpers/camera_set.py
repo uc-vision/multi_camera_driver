@@ -92,7 +92,6 @@ class CameraSet(Dispatcher):
     return list(camera_setters.property_setters.keys())
   
 
-
   def set_property(self, key, value):
     if not key in camera_setters.property_setters:
         return 
@@ -100,14 +99,14 @@ class CameraSet(Dispatcher):
     setter = camera_setters.property_setters[key]
 
     try:
-      rospy.logdebug(f"CameraSet: set_property {key}: {value}")
+      rospy.loginfo(f"CameraSet: set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
         setter(camera, value, self.camera_settings[k])
 
     except PySpin.SpinnakerException as e:
-      rospy.logdebug(f"set_property: {key} {value} {e} ")
+      rospy.logwarn(f"set_property: {key} {value} {e} ")
     except spinnaker_helpers.NodeException as e:
-      rospy.logdebug(f"set_property: {key} {value} {e} ")
+      rospy.logwarn(f"set_property: {key} {value} {e} ")
 
   def start(self):
     assert not self.started
@@ -144,16 +143,14 @@ class CameraSet(Dispatcher):
       time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera))
     else:
       time_offset_sec = info.time_offset_sec
-    
-    is_free_running, max_framerate = spinnaker_helpers.get_framerate_info(camera)
+
+    max_framerate = spinnaker_helpers.get_framerate_info(camera)
 
     return replace(info,
         image_size = spinnaker_helpers.get_image_size(camera),
         time_offset_sec = time_offset_sec,
-        is_free_running = is_free_running,
-        max_framerate = max_framerate
+        framerate = max_framerate
       )
-
 
 
   def _camera_info(self, camera_name, camera):
@@ -161,17 +158,15 @@ class CameraSet(Dispatcher):
     if encoding not in camera_encodings:
       raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
 
-    is_master = camera_name == self.master_id
-    is_free_running, max_framerate = spinnaker_helpers.get_framerate_info(camera)
+    framerate = spinnaker_helpers.get_framerate_info(camera)
 
     return CameraSettings(
           name=camera_name,
           connection_speed=spinnaker_helpers.get_current_speed(camera),
           serial=str(spinnaker_helpers.get_camera_serial(camera)),
           time_offset_sec=rospy.Duration.from_sec(spinnaker_helpers.camera_time_offset(camera)),
-          is_master=is_master,
-          max_framerate = max_framerate,
-          is_free_running=is_free_running,
+          master_id=self.master_id,
+          framerate = framerate,
           image_size = spinnaker_helpers.get_image_size(camera),
           encoding = camera_encodings[encoding],
           calibration=self.calibration.get(camera_name, None),
@@ -190,13 +185,12 @@ class CameraSet(Dispatcher):
       if encoding not in camera_encodings:
         raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
 
+      if self.master_id is None or self.master_id == camera_name:
+        spinnaker_helpers.trigger_master(camera, True)
+      else:
+        spinnaker_helpers.trigger_slave(camera)
+
       info = self._camera_info(camera_name, camera)
-      rospy.loginfo(f"{camera_name}: {info}")
-
-      if self.master_id is not None:
-        spinnaker_helpers.trigger_master(camera, True)\
-            if info.is_master else spinnaker_helpers.trigger_slave(camera)
-
       return info
     
     except PySpin.SpinnakerException as e:

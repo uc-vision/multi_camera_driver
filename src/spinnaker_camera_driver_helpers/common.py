@@ -161,17 +161,19 @@ class CameraImage:
 @dataclass
 class CameraSettings:
   name : str
+  master_id:Optional[str]
 
   connection_speed:str
   time_offset_sec:rospy.Duration
   serial:str
-
-  is_master:bool
-  is_free_running:bool
-
-  max_framerate : float
+  
+  framerate : Optional[float]
 
   image_size:Tuple[int, int]
   encoding : ImageEncoding
 
   calibration: Optional[camera_geometry.Camera] = None
+
+  @property
+  def is_master(self):
+    return self.name == self.master_id 

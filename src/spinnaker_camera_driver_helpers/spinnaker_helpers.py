@@ -433,4 +433,4 @@ def get_framerate_info(camera : PySpin.Camera):
   is_free_running = get_bool(node_map, "AcquisitionFrameRateEnable")
   max_framerate = get_float(node_map, "AcquisitionFrameRate")
 
-  return is_free_running, max_framerate
+  return max_framerate if is_free_running else None

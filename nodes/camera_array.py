@@ -109,6 +109,7 @@ def run_node():
 
   handler = SyncHandler(camera_set.camera_settings)
   camera_set.bind(on_image=handler.publish)
+  camera_set.bind(on_image=lambda x: rospy.logwarn("!!!!"))
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   handler.bind(on_frame=processor.process)

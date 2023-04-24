@@ -2,7 +2,7 @@ from beartype import beartype
 import rospy
 import diagnostic_updater
 import diagnostic_msgs
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 from spinnaker_camera_driver_helpers.camera_set import CameraSet
 
 from spinnaker_camera_driver_helpers.common import CameraSettings
@@ -71,7 +71,7 @@ class CameraState(object):
 class CameraDiagnosticUpdater:
 
   @beartype
-  def __init__(self, camera_settings:Dict[str, CameraSettings], tolerance: float = 2):
+  def __init__(self, camera_settings:Dict[str, CameraSettings], master_id:Optional[str],  tolerance: float = 2):
     """ Creates diagnostics tasks for each camera
 
     camera_serials is a dict composed of camera_serial->camera_name
@@ -79,8 +79,14 @@ class CameraDiagnosticUpdater:
     self.updater = diagnostic_updater.Updater()
     self.updater.setHardwareID("cameras")  
 
+    self.master_id = master_id    
+
+
     self.camera_states = {
-      k: CameraState(self.updater, v.name, v.serial, v.max_framerate, tolerance=tolerance)
+      k: CameraState(self.updater, v.name, v.serial, 
+                     ideal_framerate = v.framerate if v.is_master else camera_settings[master_id].framerate, 
+                     tolerance=tolerance)
+
       for k, v in camera_settings.items()
     }
 
@@ -92,7 +98,7 @@ class CameraDiagnosticUpdater:
 
   def on_camera_info(self, camera_settings:Dict[str, CameraSettings]):
     for k, v in camera_settings.items():
-      self.camera_states[k].ideal_framerate = v.max_framerate 
+      self.camera_states[k].ideal_framerate = v.framerate if v.is_master else camera_settings[self.master_id].framerate
 
   def on_image(self, image):
     camera_name, _ = image
