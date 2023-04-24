@@ -39,8 +39,11 @@ class CameraSet(Dispatcher):
 
     self.started = False
 
-    assert (master_id is None) or master_id in camera_serials
-    self.master_id = camera_serials.get(master_id, None)
+    if not (master_id is None or master_id in camera_serials):
+      raise ValueError(f"Master camera '{master_id}' not in camera_serials {camera_serials}")
+    
+    self.master_id = master_id
+
     self.camera_serials = camera_serials
     self.camera_dict = spinnaker_helpers.find_cameras(
         camera_serials)  # camera_name -> camera

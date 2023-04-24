@@ -42,13 +42,7 @@ from traceback import format_exc
 import gc
 
 
-def base_settings(config):
-  return ImageSettings(
-      device=rospy.get_param("~device", 'cuda:0'),
-      jpeg_quality=95,
-      preview_size=rospy.get_param("~preview_width", 200),
-      resize_width=rospy.get_param("~resize_width", 0),
-  )
+
 
 def init_calibrations(camera_ids):
   calibration_file = rospy.get_param("~calibration_file", None)
@@ -91,20 +85,27 @@ class ImageWriterRaw:
       np.save(path, raw.image_data, allow_pickle=True)
 
 
+def base_settings():
+    return ImageSettings(
+      device=rospy.get_param("~device", 'cuda:0'),
+      jpeg_quality=95,
+      preview_size=rospy.get_param("~preview_width", 200),
+      resize_width=rospy.get_param("~resize_width", 0),
+  )
+
+
 def run_node():
-  config_file = rospy.get_param("~config_file")
-  config = load_config(config_file)
 
   camera_set = CameraSet(
-      camera_serials=config["camera_aliases"],
-      camera_settings=config["camera_settings"],
-      master_id=config.get("master", None)
+      camera_serials=rospy.get_param("~cameras"),
+      camera_settings = rospy.get_param("~camera_settings"),
+      master_id=rospy.get_param("~master")
   )
 
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
   camera_set.update_calibration(calib.cameras)
 
-  camera_node = CameraArrayNode(camera_set, base_settings(config))
+  camera_node = CameraArrayNode(camera_set, base_settings())
 
   handler = SyncHandler(camera_set.camera_settings)
   camera_set.bind(on_image=handler.publish)

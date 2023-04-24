@@ -1,33 +1,15 @@
 <launch>
   <arg name="camera_set"/>
+  <arg name="settings"/>
+
   <arg name="namespace" default="$(arg camera_set)"/>
-  <arg name="resize_width" default="0"/>
-
-  <arg name="reset_cycle" default="false"/>
-  <arg name="exposure" default="2000"/>
-  <arg name="gain" default="0.0"/>
-
-  <arg name="tone_mapping" default="reinhard"/>
-  <arg name="max_framerate" default="16"/>
-
-
-  <node pkg="rosservice" type="rosservice" name="set_move_base_log_level" args="call --wait /move_base/set_logger_level 'ros.move_base' 'debug'" />
+  <arg name="device" default="cuda:0"/>
 
   <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="$(arg namespace)" output="screen" required="true">
-    <param name="config_file" value="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg camera_set).yaml"/>
-    <param name="calibration_file" value="$(find spinnaker_camera_driver_ros)/calibration/$(arg camera_set).json"/>
-    <param name="cache_path" value="$(find spinnaker_camera_driver_ros)/cache"/>
-    <param name="preview_width" value="200"/>
-    <param name="resize_width" value="$(arg resize_width)"/>
+    <rosparam file="$(find spinnaker_camera_driver_ros)/camera_sets/$(arg camera_set).yaml" />
+    <rosparam file="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg settings).yaml" />
 
-    <param name="exposure" value="$(arg exposure)"/>
-    <param name="gain" value="$(arg gain)"/>
-    <param name="tone_mapping" value="$(arg tone_mapping)"/>
-
-    <param name="reset_cycle" value="$(arg reset_cycle)"/>
-    <param name="max_framerate" value="$(arg max_framerate)"/>
-
-
+    <param name="device" value="$(arg device)"/>
 
   </node>
 

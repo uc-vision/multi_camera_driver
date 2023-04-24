@@ -1,0 +1,9 @@
+camera_aliases:
+  cam1: 22083922
+  cam2: 22083907
+  cam3: 22083921
+  cam4: 22083916
+  cam5: 22083908
+  cam6: 22083915
+
+master: cam1

@@ -1,14 +1,11 @@
-camera_aliases:
-  20068364: left
-  19423933: right
-    
-master: 20068364
+exposure: 2000
+gain: 0.1
+max_framerate: 14
+jpeg_quality: 95
+resize_width: 2560
+balance_ratio: 1.0
+gamma: 1.0
 
-
-stereo_pairs:
-  stereo1:
-    - left
-    - right
 
 camera_settings:
   device:
@@ -19,20 +16,16 @@ camera_settings:
       - Rolling
       - ENUM
     - PixelFormat:
-      # - BayerRG16
       - BayerRG12p
       - ENUM
-      
+
   transport_layer:
     - StreamBufferCountMode:
       - Manual
       - ENUM
-
     - StreamBufferCountManual:
-      - 4
+      - 2
       - INT
-
     - StreamBufferHandlingMode:
       - OldestFirst
       - ENUM
-#  Stream:
