@@ -5,7 +5,8 @@ jpeg_quality: 95
 resize_width: 2560
 balance_ratio: 1.0
 gamma: 1.0
-
+tone_mapping: reinhard
+sync_threshold_msec: 20
 
 camera_settings:
   device:

@@ -108,7 +108,9 @@ def run_node():
 
   camera_node = CameraArrayNode(camera_set, base_settings())
 
-  handler = SyncHandler(camera_set.camera_settings)
+  handler = SyncHandler(camera_set.camera_settings, 
+                        timeout_msec=rospy.get_param("~timeout_msec", 1000), 
+                        sync_threshold_msec=rospy.get_param("~sync_threshold_msec", 10))
   camera_set.bind(on_image=handler.publish)
 
   diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)

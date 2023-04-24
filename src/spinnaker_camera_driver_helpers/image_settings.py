@@ -21,7 +21,7 @@ class ImageSettings:
   light_adapt : float = 1.0
   color_adapt : float = 1.0
 
-  tone_mapping: str = 'linear'
+  tone_mapping: str = 'reinhard'
 
   
   # Moving average to smooth intensity scaling
