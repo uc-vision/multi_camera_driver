@@ -33,7 +33,7 @@ class FrameProcessor(Dispatcher):
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
 
-    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=2, max_size=2)
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=4, max_size=2)
     self.queue.start()
 
   def update_camera(self, k, camera):
