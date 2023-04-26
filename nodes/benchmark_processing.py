@@ -48,6 +48,7 @@ def main():
   test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
   h, w, _ = test_image.shape
 
+
   encoding = ImageEncoding.Bayer_BGGR12
   camera_settings = {f"{n}":CameraSettings(
       name="test{n}",
@@ -62,6 +63,24 @@ def main():
   for n in range(args.n)}
 
   frame_processor = FrameProcessor(camera_settings, image_settings)
+
+
+  # images = {k:frame_processor.upload_image(image.image_data) 
+  #                 for k, image in images.items()}
+
+  pbar = tqdm(total=int(args.frames))
+
+  def on_frame(outputs):
+    for output in outputs:
+      compressed = output.compressed
+      preview = output.compressed_preview
+
+    pbar.update(1)
+
+  processor = WorkQueue("publisher", run=on_frame, num_workers=2, max_size=2)
+  processor.start()
+
+
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
     image_data=image.copy(),
@@ -72,23 +91,10 @@ def main():
 
     for n, image in enumerate(test_images) }
 
-
-  pbar = tqdm(total=int(args.frames))
-
-  def on_frame(outputs):
-    output:ImageOutputs
-    for output in outputs:
-      compressed = output.compressed
-      preview = output.compressed_preview
-
-    pbar.update(1)
-  processor = WorkQueue("publisher", run=on_frame, num_workers=2, max_size=2)
-  processor.start()
-
-
   frame_processor.bind(on_frame=on_frame)
       
   for _ in range(int(args.frames)):
+
     # frame_processor.settings.tone_intensity += 0.01
     frame_processor.process(images)
 

@@ -33,7 +33,7 @@ class FrameProcessor(Dispatcher):
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
 
-    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=2)
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=2, max_size=2)
     self.queue.start()
 
   def update_camera(self, k, camera):
@@ -77,11 +77,11 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def process_worker(self, camera_images:Dict[str, CameraImage]):
-
     images = [self.upload_image(image.image_data) 
               for image in camera_images.values()]
 
     images, previews = TiQueue.run_sync(self.process_images, images)
+
     outputs = [ImageOutputs(
       raw = camera_images[k], 
       rgb = image, 
@@ -95,6 +95,7 @@ class FrameProcessor(Dispatcher):
 
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
+
     load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
     images = [load_data(image) for image in images]
     
