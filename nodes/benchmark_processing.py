@@ -28,7 +28,7 @@ def main():
   parser.add_argument("--resize_width", type=int, default=0, help="Resize width")
   parser.add_argument("--n", type=int, default=6, help="Number of cameras to test")
   parser.add_argument("--frames", type=int, default=300, help="Number of cameras to test")
-  
+  parser.add_argument("--no_compress", action="store_true", help="Disable compression")
 
   args = parser.parse_args()
   print(args)
@@ -71,9 +71,11 @@ def main():
   pbar = tqdm(total=int(args.frames))
 
   def on_frame(outputs):
-    for output in outputs:
-      compressed = output.compressed
-      preview = output.compressed_preview
+    if not args.no_compress:
+
+      for output in outputs:
+        compressed = output.compressed
+        preview = output.compressed_preview
 
     pbar.update(1)
 
