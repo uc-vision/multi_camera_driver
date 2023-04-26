@@ -62,7 +62,9 @@ class ImageOutputs(object):
     height, width, _ = self.rgb.shape
 
     if self.calibration is not None:  
-      calibration = self.calibration.resize_image( (width, height) )
+      if self.calibration.width != width or self.calibration.height != height:
+        calibration = self.calibration.resize_image( (width, height) )
+        
       return camera_info_msg(calibration)
 
     else:

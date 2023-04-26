@@ -44,7 +44,6 @@ import gc
 
 
 
-
 def init_calibrations(camera_ids):
   calibration_file = rospy.get_param("~calibration_file", None)
   tracking_frame = rospy.get_param("tracking_frame", None)
@@ -86,15 +85,6 @@ class ImageWriterRaw:
       np.save(path, raw.image_data, allow_pickle=True)
 
 
-def base_settings():
-    return ImageSettings(
-      device=rospy.get_param("~device", 'cuda:0'),
-      jpeg_quality=95,
-      preview_size=rospy.get_param("~preview_width", 200),
-      resize_width=rospy.get_param("~resize_width", 0),
-  )
-
-
 def run_node():
 
   camera_set = CameraSet(
@@ -106,7 +96,7 @@ def run_node():
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
   camera_set.update_calibration(calib.cameras)
 
-  camera_node = CameraArrayNode(camera_set, base_settings())
+  camera_node = CameraArrayNode(camera_set)
 
   handler = SyncHandler(camera_set.camera_settings, 
                         timeout_msec=rospy.get_param("~timeout_msec", 1000), 

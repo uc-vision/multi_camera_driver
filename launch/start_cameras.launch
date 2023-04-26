@@ -6,7 +6,7 @@
   <arg name="reset_cycle" default="true"/>
 
 
-  <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" output="screen" required="true">
+  <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" ns="camera_array" name="camera_array" output="screen" required="true">
     <rosparam file="$(find spinnaker_camera_driver_ros)/camera_sets/$(arg camera_set).yaml" />
     <rosparam file="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg settings).yaml" />
 

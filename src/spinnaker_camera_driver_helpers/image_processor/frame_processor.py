@@ -43,7 +43,8 @@ class FrameProcessor(Dispatcher):
     self.settings = settings
     
     self.isp.set(moving_alpha=self.settings.moving_average, 
-                 resize_width=self.settings.resize_width)
+                 resize_width=self.settings.resize_width, 
+                 transform=interpolate.ImageTransform(self.settings.transform))
 
 
   @beartype
@@ -59,7 +60,8 @@ class FrameProcessor(Dispatcher):
     self.isp = camera_isp.Camera16(taichi_pattern[self.pattern], 
                          resize_width=self.settings.resize_width, 
                         moving_alpha=self.settings.moving_average,
-                        device=self.settings.device)
+                        transform=interpolate.ImageTransform(self.settings.transform),
+                        device=torch.device(self.settings.device))
 
 
   @beartype
@@ -91,7 +93,6 @@ class FrameProcessor(Dispatcher):
     self.emit("on_frame", outputs)
   
 
-
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
     load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
@@ -108,7 +109,6 @@ class FrameProcessor(Dispatcher):
         color_adapt = self.settings.color_adapt)
     else:
       raise ValueError(f"Unknown tone mapper {self.settings.tone_mapper}")
-
 
     previews = [interpolate.resize_width(output, self.settings.preview_size) for output in outputs]
     return outputs, previews

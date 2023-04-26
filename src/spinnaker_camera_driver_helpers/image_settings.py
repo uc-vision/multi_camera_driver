@@ -8,17 +8,10 @@ class InvalidOption(Exception):
   pass
 
 
-class ImageTransform(Enum):
-  none = 'none'
-  rotate_90 = 'rotate_90'
-  rotate_180 = 'rotate_180'
-  rotate_270 = 'rotate_270'
-  transpose = 'transpose'
-  flip_horiz = 'flip_horiz'
-  flip_vert = 'flip_vert'
 
 
-  
+
+
 
 @dataclass
 class ImageSettings:
@@ -28,7 +21,6 @@ class ImageSettings:
   preview_size : int = 200
   jpeg_quality : int = 94
 
-  # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
 
 
   # Tonemapping parameters
@@ -38,10 +30,13 @@ class ImageSettings:
   light_adapt : float = 1.0
   color_adapt : float = 1.0
 
+  # linear reinhard
   tone_mapping: str = 'reinhard'
+
+  # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
   transform : str = 'none'
   
-  # Moving average to smooth intensity scaling
+  # Moving average to smooth intensity scaling over time
   moving_average : float = 0.05
 
   @property
