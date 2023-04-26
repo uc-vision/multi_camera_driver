@@ -7,3 +7,12 @@ cameras:
   cam6: 19340240
 
 master: cam1
+
+
+reset_cycle: true
+device: cuda:0
+
+sync_threshold_msec: 20   # threshold to consider images from the same trigger
+timeout_msec: 1000       # timeout for images waiting to be matched up with a trigger
+
+transform: rotate_90

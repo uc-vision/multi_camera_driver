@@ -1,13 +1,12 @@
 <launch>
   <arg name="camera_set"/>
-  <arg name="settings"/>
+  <arg name="settings" default="camera_12p"/>
 
-  <arg name="namespace" default="$(arg camera_set)"/>
   <arg name="device" default="cuda:0"/>
   <arg name="reset_cycle" default="true"/>
 
 
-  <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" ns="$(arg namespace)" output="screen" required="true">
+  <node  pkg="spinnaker_camera_driver_ros" type="camera_array.py" name="camera_array" output="screen" required="true">
     <rosparam file="$(find spinnaker_camera_driver_ros)/camera_sets/$(arg camera_set).yaml" />
     <rosparam file="$(find spinnaker_camera_driver_ros)/camera_settings/$(arg settings).yaml" />
 

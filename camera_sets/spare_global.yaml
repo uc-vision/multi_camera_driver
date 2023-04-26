@@ -4,3 +4,5 @@ cameras:
 master: left
 
 
+sync_threshold_msec: 10   # threshold to consider images from the same trigger
+image_timeout: 500        # timeout for images waiting to be matched up with a trigger

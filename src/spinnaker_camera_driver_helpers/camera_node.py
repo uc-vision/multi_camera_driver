@@ -28,7 +28,7 @@ class CameraArrayNode(Dispatcher):
   _events_ = ["on_image_settings", "on_camera_settings", "on_update"]
   
   @beartype
-  def __init__(self, camera_set:CameraSet, image_settings:ImageSettings):
+  def __init__(self, camera_set:CameraSet, image_settings:ImageSettings = ImageSettings()):
 
     self.camera_set = camera_set
 
