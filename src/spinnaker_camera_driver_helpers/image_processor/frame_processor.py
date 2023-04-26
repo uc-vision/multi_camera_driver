@@ -33,7 +33,7 @@ class FrameProcessor(Dispatcher):
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
 
-    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=4, max_size=2)
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=2, max_size=2)
     self.queue.start()
 
   def update_camera(self, k, camera):
@@ -71,9 +71,8 @@ class FrameProcessor(Dispatcher):
 
   def upload_image(self, image:np.array):
     return torch.from_numpy(image.view(np.uint8)
-                            ).to(device=self.settings.device)
+                            ).to(device=self.settings.device, non_blocking=True)
   
-
 
   @beartype
   def process_worker(self, camera_images:Dict[str, CameraImage]):
