@@ -29,7 +29,6 @@ def main():
   parser.add_argument("--n", type=int, default=6, help="Number of cameras to test")
   parser.add_argument("--frames", type=int, default=300, help="Number of cameras to test")
   
-  
 
   args = parser.parse_args()
   print(args)
@@ -39,7 +38,11 @@ def main():
       jpeg_quality=95,
       preview_size=200,
       resize_width=args.resize_width,
-      tone_mapping="reinhard"
+      tone_mapping="reinhard",
+      tone_gamma= 1.0,
+      tone_intensity= 1.0,
+      color_adapt=0.0,
+      light_adapt=0.5
   )
 
   test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
@@ -52,9 +55,8 @@ def main():
       connection_speed="SuperSpeed",
       encoding = encoding,
       image_size=(w, h),
-      is_master=False,
-      is_free_running=True,
-      max_framerate=30.0,
+      framerate=30.0,
+      master_id="test0",
       time_offset_sec=rospy.Duration(0))
 
   for n in range(args.n)}
@@ -80,7 +82,7 @@ def main():
       preview = output.compressed_preview
 
     pbar.update(1)
-  processor = WorkQueue("publisher", run=on_frame, num_workers=1, max_size=2)
+  processor = WorkQueue("publisher", run=on_frame, num_workers=2, max_size=2)
   processor.start()
 
 

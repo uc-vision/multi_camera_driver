@@ -43,7 +43,7 @@ class FrameProcessor(Dispatcher):
     self.settings = settings
     
     self.isp.set(moving_alpha=self.settings.moving_average, 
-                 resize_width=self.settings.resize_width, 
+                 resize_width=int(self.settings.resize_width), 
                  transform=interpolate.ImageTransform(self.settings.transform))
 
 
@@ -58,7 +58,7 @@ class FrameProcessor(Dispatcher):
       raise ValueError(f"Unsupported bits {encoding_bits(enc)} in {enc}")
 
     self.isp = camera_isp.Camera16(taichi_pattern[self.pattern], 
-                         resize_width=self.settings.resize_width, 
+                         resize_width=int(self.settings.resize_width), 
                         moving_alpha=self.settings.moving_average,
                         transform=interpolate.ImageTransform(self.settings.transform),
                         device=torch.device(self.settings.device))

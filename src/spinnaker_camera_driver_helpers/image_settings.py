@@ -9,10 +9,6 @@ class InvalidOption(Exception):
 
 
 
-
-
-
-
 @dataclass
 class ImageSettings:
   device : str = 'cuda:0'
@@ -20,8 +16,6 @@ class ImageSettings:
 
   preview_size : int = 200
   jpeg_quality : int = 94
-
-
 
   # Tonemapping parameters
   tone_gamma: float = 1.0
@@ -37,7 +31,7 @@ class ImageSettings:
   transform : str = 'none'
   
   # Moving average to smooth intensity scaling over time
-  moving_average : float = 0.05
+  moving_average : float = 0.02
 
   @property
   def is_sharpening(self):
