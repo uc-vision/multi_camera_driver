@@ -33,7 +33,7 @@ class FrameProcessor(Dispatcher):
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
 
-    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=2, max_size=2)
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=4, max_size=2)
     self.queue.start()
 
   def update_camera(self, k, camera):
@@ -90,14 +90,11 @@ class FrameProcessor(Dispatcher):
                     for k, image, preview in zip(camera_images.keys(), images, previews)]
 
     self.emit("on_frame", outputs)
-  
 
   # @beartype
   def process_images(self, images:List[torch.Tensor]):
-
     load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
-    images = [load_data(image) for image in images]
-    
+    images =  [load_data(image) for image in images]
 
     if self.settings.tone_mapping == "linear":
       outputs = self.isp.tonemap_linear(images, gamma=self.settings.tone_gamma)

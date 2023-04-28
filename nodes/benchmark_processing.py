@@ -5,6 +5,7 @@ import threading
 from typing import List
 import rospy
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
+import torch
 
 from tqdm import tqdm
 import numpy as np
@@ -45,7 +46,7 @@ def main():
       light_adapt=0.5
   )
 
-  test_images, test_image  = TiQueue.run_sync(load_test_image, args.filename, 6, bayer.BayerPattern.RGGB)
+  test_packed, test_image  = TiQueue.run_sync(load_test_image, args.filename, bayer.BayerPattern.RGGB)
   h, w, _ = test_image.shape
 
 
@@ -65,9 +66,6 @@ def main():
   frame_processor = FrameProcessor(camera_settings, image_settings)
 
 
-  # images = {k:frame_processor.upload_image(image.image_data) 
-  #                 for k, image in images.items()}
-
   pbar = tqdm(total=int(args.frames))
 
   def on_frame(outputs):
@@ -85,13 +83,13 @@ def main():
 
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
-    image_data=image.copy(),
+    image_data=test_packed.copy(),
     seq=0,
     image_size=(w, h),
     encoding=encoding,
     timestamp=rospy.Time())
 
-    for n, image in enumerate(test_images) }
+    for n in range(6) }
 
   frame_processor.bind(on_frame=on_frame)
       
@@ -107,4 +105,5 @@ def main():
   print("Finished")
 
 if __name__ == "__main__":
-  main()
+  with torch.inference_mode():
+    main()

@@ -72,9 +72,10 @@ class TiQueue():
   def run_sync(func, *args):
     return TiQueue.run_async(func, *args).result()
   
-  @staticmethod
-  def stop():
+  @classmethod
+  def stop(cls):
     executor = TiQueue.executor
     if executor is not None:
+      cls.run_sync(ti.reset)
       executor.shutdown(wait=True)
       executor = None
