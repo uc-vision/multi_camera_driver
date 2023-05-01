@@ -8,12 +8,12 @@ balance_ratio: 1.0
 gamma: 1.0
 
 # image processing parameters
-jpeg_quality: 92
-resize_width: 2560.0
+jpeg_quality: 95
+resize_width: 3072.0
 tone_mapping: reinhard
 
 # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
-#transform: rotate_90
+transform: rotate_90
 
 
 camera_settings:
