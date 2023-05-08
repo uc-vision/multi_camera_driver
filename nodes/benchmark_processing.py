@@ -27,6 +27,8 @@ def main():
   parser.add_argument("filename", help="Path to image file")
   parser.add_argument("--device", default="cuda", help="Device to use for processing")
   parser.add_argument("--resize_width", type=int, default=0, help="Resize width")
+  parser.add_argument("--transform", type=str, default='none', help="Transformation to apply")
+  parser.add_argument("--preload", action="store_true", help="Preload imges to cuda")
   parser.add_argument("--n", type=int, default=6, help="Number of cameras to test")
   parser.add_argument("--frames", type=int, default=300, help="Number of cameras to test")
   parser.add_argument("--no_compress", action="store_true", help="Disable compression")
@@ -43,10 +45,16 @@ def main():
       tone_gamma= 1.0,
       tone_intensity= 1.0,
       color_adapt=0.0,
-      light_adapt=0.5
+      light_adapt=0.5,
+      transform=args.transform
   )
 
   test_packed, test_image  = TiQueue.run_sync(load_test_image, args.filename, bayer.BayerPattern.RGGB)
+  test_packed = torch.from_numpy(test_packed)
+
+  if args.preload:
+      test_packed = test_packed.cuda()
+
   h, w, _ = test_image.shape
 
 
