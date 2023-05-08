@@ -3,7 +3,6 @@ from dataclasses import replace
 from statistics import mean
 from typing import Dict, List, Tuple
 import rospy
-import numba
 
 
 from spinnaker_camera_driver_helpers.common import CameraImage, CameraSettings
@@ -84,7 +83,6 @@ class SyncHandler(Dispatcher):
       frame:CameraImage = self.frame_queue.pop(0)
       self.dropped[frame.camera_name] += 1
 
-  @numba.jit
   def update_offsets(self, group):
     times = {k:frame.timestamp for k, frame in group.items()}
     mean_time = rospy.Time.from_sec( mean([time.to_sec() for time in times.values()]) )

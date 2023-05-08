@@ -8,7 +8,7 @@ balance_ratio: 1.0
 gamma: 1.0
 
 # image processing parameters
-jpeg_quality: 95
+jpeg_quality: 92
 resize_width: 3072.0
 tone_mapping: reinhard
 
