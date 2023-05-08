@@ -69,9 +69,10 @@ class FrameProcessor(Dispatcher):
     return self.queue.enqueue(images)
 
 
-  def upload_image(self, image:np.array):
-    return torch.from_numpy(image.view(np.uint8)
-                            ).to(device=self.settings.device, non_blocking=True)
+  def upload_image(self, image:torch.Tensor):
+    assert image.dtype == torch.uint8
+    
+    return image.to(device=self.settings.device, non_blocking=True)
   
 
   @beartype

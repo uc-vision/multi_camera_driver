@@ -91,7 +91,7 @@ def main():
 
   images = {f"{n}":CameraImage(
     camera_name=f"test{n}",
-    image_data=test_packed.copy(),
+    image_data=test_packed.clone(),
     seq=0,
     image_size=(w, h),
     encoding=encoding,

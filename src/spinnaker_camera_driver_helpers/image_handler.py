@@ -1,7 +1,9 @@
 
+import numpy as np
 from spinnaker_camera_driver_helpers.common import CameraImage, IncompleteImageError, from_pyspin
 import rospy
 import PySpin
+import torch
 
 
 def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration) -> CameraImage:
@@ -13,6 +15,8 @@ def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.D
     image_data = image.GetData()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
     
+    image_data = torch.from_numpy(image_data.view(np.uint8))
+
     image_info = CameraImage(
       camera_name = camera_name,
       image_data = image_data.reshape(image.GetHeight(), -1),
