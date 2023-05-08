@@ -3,6 +3,7 @@ from dataclasses import replace
 from statistics import mean
 from typing import Dict, List, Tuple
 import rospy
+import numba
 
 
 from spinnaker_camera_driver_helpers.common import CameraImage, CameraSettings
@@ -17,13 +18,14 @@ from beartype import beartype
 
 import PySpin
 from natsort import natsorted
+import torch
 
 
 class SyncHandler(Dispatcher):
   _events_ = ["on_frame"]
 
   @beartype
-  def __init__(self, camera_settings:Dict[str, CameraSettings],
+  def __init__(self, camera_settings:Dict[str, CameraSettings], device:torch.device,
     timeout_msec=1000, sync_threshold_msec=10.0):
 
     self.camera_settings = camera_settings
@@ -40,6 +42,7 @@ class SyncHandler(Dispatcher):
     self.reset_recieved()
 
     self.queue.start()
+    self.device = device
     
   def reset_recieved(self):
     self.recieved = 0 
@@ -81,7 +84,7 @@ class SyncHandler(Dispatcher):
       frame:CameraImage = self.frame_queue.pop(0)
       self.dropped[frame.camera_name] += 1
 
-
+  @numba.jit
   def update_offsets(self, group):
     times = {k:frame.timestamp for k, frame in group.items()}
     mean_time = rospy.Time.from_sec( mean([time.to_sec() for time in times.values()]) )
@@ -108,7 +111,7 @@ class SyncHandler(Dispatcher):
 
     try:
       offset = self.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
-      image_info = spinnaker_image(camera_name, image, time_offset_sec=offset)
+      image_info = spinnaker_image(camera_name, image, time_offset_sec=offset, device=self.device)
 
 
       self.add_frame(image_info)

@@ -19,6 +19,7 @@ from beartype import beartype
 
 import rospy
 import rospkg
+import torch
 
 from spinnaker_camera_driver_helpers.camera_node import CameraArrayNode
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
@@ -100,7 +101,8 @@ def run_node():
 
   handler = SyncHandler(camera_set.camera_settings, 
                         timeout_msec=rospy.get_param("~timeout_msec", 1000), 
-                        sync_threshold_msec=rospy.get_param("~sync_threshold_msec", 10))
+                        sync_threshold_msec=rospy.get_param("~sync_threshold_msec", 10),
+                        device=torch.device(camera_node.image_settings.device))
   camera_set.bind(on_image=handler.publish)
 
   diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)

@@ -6,7 +6,7 @@ import PySpin
 import torch
 
 
-def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration) -> CameraImage:
+def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration, device:torch.device) -> CameraImage:
     if image.IsIncomplete():
       status = image.GetImageStatus()
       image.Release()          
@@ -15,7 +15,7 @@ def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.D
     image_data = image.GetData()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
     
-    image_data = torch.from_numpy(image_data.view(np.uint8))
+    image_data = torch.from_numpy(image_data.view(np.uint8)).to(device)
 
     image_info = CameraImage(
       camera_name = camera_name,
