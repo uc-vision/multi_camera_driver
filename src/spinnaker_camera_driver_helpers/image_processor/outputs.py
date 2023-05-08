@@ -12,7 +12,7 @@ from camera_geometry_ros.conversions import camera_info_msg
 from camera_geometry import Camera
 from sensor_msgs.msg import CameraInfo
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
-from exif import Image
+#from exif import Image
 
 import torch
 
