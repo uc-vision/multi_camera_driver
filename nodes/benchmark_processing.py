@@ -34,11 +34,12 @@ def main():
   parser.add_argument("--no_compress", action="store_true", help="Disable compression")
 
   args = parser.parse_args()
-  print(args)
 
+
+  print(args)
   image_settings= ImageSettings(
       device=args.device,
-      jpeg_quality=95,
+      jpeg_quality=96,
       preview_size=200,
       resize_width=args.resize_width,
       tone_mapping="reinhard",

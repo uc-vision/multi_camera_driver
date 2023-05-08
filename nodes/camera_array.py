@@ -156,7 +156,8 @@ def main():
 
   system = PySpin.System.GetInstance()
 
-  run_node()
+  with torch.inference_mode():
+    run_node()
   
   gc.collect(generation=0)
   rospy.sleep(2.0)

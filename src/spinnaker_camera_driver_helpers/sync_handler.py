@@ -94,12 +94,9 @@ class SyncHandler(Dispatcher):
   def try_publish(self):
     found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_ids))
     if found is not None:
-      timestamp, group, self.frame_queue = found
+      group, self.frame_queue = found
 
-      # Set timestamps to be equal
-      images = {k:replace(group[k], timestamp=timestamp)
-                     for k in self.camera_ids}
-      self.emit("on_frame", images)
+      self.emit("on_frame", group)
 
       self.published += 1
       self.update_offsets(group)

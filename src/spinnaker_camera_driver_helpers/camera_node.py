@@ -22,7 +22,6 @@ from . import camera_setters
 
 from pydispatch import Dispatcher
 
-
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
   _events_ = ["on_image_settings", "on_camera_settings", "on_update"]
