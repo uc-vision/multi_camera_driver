@@ -1,30 +1,37 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import Header, Float64
+from std_msgs.msg import Header
+from spinnaker_camera_driver_ros.msg import FloatStamped
+
 import numpy as np
 
 def main():
-  rospy.init_node('ping_client', anonymous=False)
+  rospy.init_node('ping_server', anonymous=False)
   pub = rospy.Publisher("/ping", Header, queue_size=10)
 
-  offsets = []
-  returns = []
+  window = rospy.Duration(secs = rospy.get_param("~window", 100))
+
+  entries = []
+
 
   def on_pong(msg):
-    ret = (rospy.Time.now() - msg.header.stamp).to_sec()
-    returns.append(ret)
-    offsets.append(msg.data)
+    now = rospy.Time.now()
+    ret = (now - msg.header.stamp).to_sec()
+    entries.append(dict(time=now, pong_time=ret, ping_time=msg.data))
 
-    med_offset = np.median(offsets)
-    med_return = np.median(returns)
+    while len(entries) > 0 and ((entries[0]["time"] + window) < now ):
+      entries.pop(0)
 
+
+    med_offset = np.median([e["ping_time"] for e in entries])
+    med_return = np.median([e["pong_time"] for e in entries])
     diff = (med_offset - med_return) / 2
     ping_time = (med_offset + med_return) / 2
 
     rospy.loginfo(f"Time offset: {diff:.3f} Ping: {ping_time:.3f}")
 
-  sub = rospy.Subscriber("/pong", Float64, on_pong)
+  sub = rospy.Subscriber("/pong", FloatStamped, on_pong)
   rate = rospy.Rate(10)
 
   while not rospy.is_shutdown():
