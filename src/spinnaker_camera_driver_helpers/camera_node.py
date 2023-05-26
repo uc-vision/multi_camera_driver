@@ -49,14 +49,16 @@ class CameraArrayNode(Dispatcher):
       rospy.loginfo(f"Setting {k}={v}")
 
       if k in self.camera_set.camera_properties():
-        self.camera_set.set_property(k, v)
+        if self.camera_set.set_property(self.config, k, v):
+          self.config[k] = v
+
       elif hasattr(self.image_settings, k):
         self.image_settings = replace(self.image_settings, **{k: v})    
         self.emit("on_image_settings", self.image_settings)    
       else:
         rospy.logwarn(f"Unknown property {k}")
       
-      self.config[k] = v
+      return self.config
 
 
   def reconfigure_callback(self, config, _):
@@ -71,7 +73,7 @@ class CameraArrayNode(Dispatcher):
         if self.started and k in self.delayed_setters:
           self.pending_config[k] = v
         else:
-          self.set_property(k, v)
+          config = self.set_property(k, v)
 
       if self.camera_set.check_camera_settings():
         self.emit("on_camera_settings", self.camera_set.camera_settings)
@@ -115,7 +117,9 @@ class CameraArrayNode(Dispatcher):
 
       self.start()
     else:
-      self.set_property(self.pending_config)
+      config = self.set_property(self.pending_config)
+      self.reconfigure_srv.update_configuration(config)
+
 
     self.pending_config = {}
 

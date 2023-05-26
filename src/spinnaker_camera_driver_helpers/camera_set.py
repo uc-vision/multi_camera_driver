@@ -92,21 +92,25 @@ class CameraSet(Dispatcher):
     return list(camera_setters.property_setters.keys())
   
 
-  def set_property(self, key, value):
+  def set_property(self, config:dict, key, value):
     if not key in camera_setters.property_setters:
-        return 
+        return False
     
     setter = camera_setters.property_setters[key]
 
     try:
       rospy.loginfo(f"CameraSet: set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
-        setter(camera, value, self.camera_settings[k])
+        setter(camera, value, config, self.camera_settings[k])
 
     except PySpin.SpinnakerException as e:
       rospy.logwarn(f"set_property: {key} {value} {e} ")
+      return False
     except spinnaker_helpers.NodeException as e:
       rospy.logwarn(f"set_property: {key} {value} {e} ")
+      return False
+
+    return True
 
   def start(self):
     assert not self.started
