@@ -6,9 +6,8 @@ from spinnaker_camera_driver_helpers.common import CameraSettings
 
 from . import spinnaker_helpers
 
-@dataclass
-class CameraSettings:
-   
+
+
 
 
 def get_config(camera : PySpin.Camera):
