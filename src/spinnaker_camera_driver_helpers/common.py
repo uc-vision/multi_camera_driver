@@ -7,6 +7,7 @@ from beartype import beartype
 import cv2
 import PySpin
 import numpy as np
+import torch
 import rospy
 
 import camera_geometry 
@@ -143,7 +144,7 @@ class IncompleteImageError(Exception):
 @dataclass
 class CameraImage:
   camera_name: str
-  image_data: np.ndarray
+  image_data: torch.Tensor
   timestamp: rospy.Time
   seq: int
   image_size: Tuple[int, int]

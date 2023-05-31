@@ -12,6 +12,7 @@ from camera_geometry_ros.conversions import camera_info_msg
 from camera_geometry import Camera
 from sensor_msgs.msg import CameraInfo
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
+#from exif import Image
 
 import torch
 
@@ -22,6 +23,20 @@ def jpeg():
   if not hasattr(local_jpeg, "encoder"):
     local_jpeg.encoder = Jpeg()
   return local_jpeg.encoder
+
+
+
+#   # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
+exif_orientations = {
+  'none': 1,
+  'flip_horiz': 2,
+  'rotate_180': 3,
+  'flip_vert': 4,
+  'transpose': 5,
+  'rotate_90': 6,
+  'transverse': 7,  
+  'rotate_270': 8,  
+}
 
 
 
@@ -41,6 +56,11 @@ class ImageOutputs(object):
       return jpeg().encode(image,
                               quality=self.settings.jpeg_quality,
                               input_format=Jpeg.RGBI).numpy().tobytes()
+      
+      # if self.settings.transform != 'none':
+      #   exif_image = Image(data)
+      #   exif_image['orientation'] = exif_orientations[self.settings.transform]
+      #   data = exif_image.get_file()
 
     except Jpeg.Exception as e:
       raise EncoderError(str(e))
