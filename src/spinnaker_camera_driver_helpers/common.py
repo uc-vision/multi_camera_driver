@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from traceback import format_exc
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from beartype import beartype
 import cv2
 import PySpin
@@ -173,6 +173,7 @@ class CameraSettings:
   encoding : ImageEncoding
 
   calibration: Optional[camera_geometry.Camera] = None
+  settings: Dict[str, Any] = field(default_factory=dict)
 
   @property
   def is_master(self):

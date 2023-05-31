@@ -12,7 +12,7 @@ class InvalidOption(Exception):
 @dataclass
 class ImageSettings:
   device : str = 'cuda:0'
-  resize_width: float = 0.0
+  resize_width: int = 2048
 
   preview_size : int = 200
   jpeg_quality : int = 94

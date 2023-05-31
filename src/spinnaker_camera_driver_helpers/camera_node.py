@@ -58,11 +58,13 @@ class CameraArrayNode(Dispatcher):
       else:
         rospy.logwarn(f"Unknown property {k}")
       
+
       return self.config
 
 
   def reconfigure_callback(self, config, _):
     try:
+      updates = {}
       for k, v in config.items():
         if k == "groups":
           continue
@@ -73,7 +75,7 @@ class CameraArrayNode(Dispatcher):
         if self.started and k in self.delayed_setters:
           self.pending_config[k] = v
         else:
-          config = self.set_property(k, v)
+          self.set_property(k, v)
 
       if self.camera_set.check_camera_settings():
         self.emit("on_camera_settings", self.camera_set.camera_settings)

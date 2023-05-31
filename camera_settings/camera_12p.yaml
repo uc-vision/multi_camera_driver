@@ -2,41 +2,36 @@
 
 # dynamic reconfigure parameters
 exposure: 2000
-gain: 0.1
+gain: 0.0
 max_framerate: 12
 balance_ratio: 1.0
-gamma: 1.0
 
-#all auto off
-auto_exposure: False
-auto_gain: False
-auto_white_balance: False
 
 # image processing parameters
 jpeg_quality: 95
 resize_width: 3072.0
+
 tone_mapping: reinhard
 
 # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
-transform: rotate_90
+transform: rotate_270
 
 
 camera_settings:
   device:
-    - UserSetSelector:
-      - Default
-      - ENUM
-    - PixelFormat:
-      - BayerRG12p
-      - ENUM
+    - UserSetSelector: Default
+    - PixelFormat: BayerRG12p
+
+    # Turn all the auto off
+    - ExposureAuto: "Off"
+    - GainAuto: "Off"
+    - BalanceWhiteAuto: "Off"
+    - BlackLevel: 0
+    - BlackLevelClampingEnable: False
+    - GammaEnable: False
 
   transport_layer:
-    - StreamBufferCountMode:
-      - Manual
-      - ENUM
-    - StreamBufferCountManual:
-      - 2
-      - INT
-    - StreamBufferHandlingMode:
-      - OldestFirst
-      - ENUM
+    - StreamBufferCountMode: Manual
+    - StreamBufferCountManual: 2
+    - StreamBufferHandlingMode: OldestFirst
+

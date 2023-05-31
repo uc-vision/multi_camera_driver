@@ -15,9 +15,9 @@ from fuzzywuzzy import process
 
 def suggest_node(nodemap, k, threshold=50):
   names = [node.GetName() for node in nodemap.GetNodes()]
-  if k in names:
-    return "Node {} has wrong type".format(k)
-
+  if k in names:  
+    return "Node {} exists, but not available".format(k)
+  
   nearest, score = process.extractOne(k, names)
   suggest = "" if score < threshold else ", did you mean '{}' ({})?".format(nearest, score)
   return 'Node not available {}'.format(k, suggest)
@@ -26,22 +26,48 @@ def suggest_node(nodemap, k, threshold=50):
 class NodeException(RuntimeError):
   def __init__(self, msg):
     super(NodeException, self).__init__(msg)
-    
 
 
-def get_writable(nodemap, node_name, ptr):
-  node = ptr(nodemap.GetNode(node_name))
+
+
+
+node_type_mapping = {
+   2: PySpin.CIntegerPtr,
+   3: PySpin.CBooleanPtr,
+   5: PySpin.CFloatPtr,
+   9: PySpin.CEnumerationPtr
+}
+
+def get_node(nodemap, node_name):
+  node = nodemap.GetNode(node_name)
+  if node is None:
+    raise NodeException(suggest_node(nodemap, node_name))
+
+  t = node.GetPrincipalInterfaceType()
+  if not t in node_type_mapping:
+    raise NodeException(f'Node type for {node_name} not supported {t}')
+  return node_type_mapping[t](node)
+
+
+def is_enum(node):
+  return node.GetPrincipalInterfaceType() == 9
+
+def get_writable(nodemap, node_name):
+  node = get_node(nodemap, node_name)
   if not PySpin.IsAvailable(node):
     raise NodeException(suggest_node(nodemap, node_name))
 
-  # if not PySpin.IsWritable(node):
-  #   raise NodeException('Node not writable {}. '.format(node_name))
+  if not PySpin.IsWritable(node):
+    raise NodeException('Node not writable {}. '.format(node_name))
   return node
 
 
 
-def get_readable(nodemap, node_name, ptr):
-  node = ptr(nodemap.GetNode(node_name))
+  
+  
+def get_readable(nodemap, node_name):
+  node = get_node(nodemap, node_name)
+    
   if not PySpin.IsAvailable(node):
     raise NodeException(suggest_node(nodemap, node_name))
 
@@ -49,83 +75,78 @@ def get_readable(nodemap, node_name, ptr):
     raise NodeException('Node not readable {}. '.format(node_name))
   return node
 
-def get_value(nodemap, node_name, ptr):
-  node = get_readable(nodemap, node_name, ptr)
-  return node.GetValue()
+def get_value(nodemap, node_name):
+  node = get_readable(nodemap, node_name)
+  if is_enum(node):
+     return node.GetCurrentEntry().GetSymbolic()
+  else:
+    return node.GetValue()
 
-def set_enum(nodemap, node_name, value):
-    node = get_writable(nodemap, node_name, PySpin.CEnumerationPtr)
-
-    # Retrieve entry node from enumeration node
-    entry = node.GetEntryByName(value)
-    if not PySpin.IsAvailable(entry):
-        raise NodeException('Entry not available {} - {}. '.format(node_name, value))
-
-    if not PySpin.IsReadable(entry):
-        raise NodeException('Entry not readable {} - {} '.format(node_name, value))
-
-
-    # Retrieve integer value from entry node
-    value = entry.GetValue()
-
-    # Set integer value from entry node as new value of enumeration node
-    node.SetIntValue(value)
+def try_get_value(nodemap, node_name, default=None):
+  try:
+    return get_value(nodemap, node_name)
+  except NodeException as e:
+    rospy.logwarn(f"Node {node_name} not available")
+    return default
 
 
-def get_enum(nodemap, node_name):
-    node = get_readable(nodemap, node_name, PySpin.CEnumerationPtr)
-    # Set integer value from entry node as new value of enumeration node
-    return node.GetCurrentEntry().GetSymbolic()
+def set_value(nodemap, node_name, value):
+  try:
+    node = get_writable(nodemap, node_name)
+    if is_enum(node):
+      # Retrieve entry node from enumeration node
+      entry = node.GetEntryByName(value)
+      if not PySpin.IsAvailable(entry):
+          raise NodeException('Entry not available {} - {}. '.format(node_name, value))
 
-def get_float(nodemap, node_name):
-    return get_value(nodemap, node_name, PySpin.CFloatPtr)
+      if not PySpin.IsReadable(entry):
+          raise NodeException('Entry not readable {} - {} '.format(node_name, value))
 
-def get_int(nodemap, node_name):
-    return get_value(nodemap, node_name, PySpin.CIntegerPtr)
+      value = entry.GetValue()
+      node.SetIntValue(value)
+    else:
+      node.SetValue(value)
+  except ValueError as e:
+    raise NodeException(f"Invalid value {value} for node {node_name}: {e}")
 
-def get_bool(nodemap, node_name):
-    return get_value(nodemap, node_name, PySpin.CBooleanPtr)
-
-
-
-def set_value(nodemap, node_name, value, ptr):
-    node = get_writable(nodemap, node_name, ptr)
-    node.SetValue(value)
-    return value
+  return value
 
 
 @beartype
 def set_bool(nodemap, node_name:str, value:bool):
-  return set_value(nodemap, node_name, value, PySpin.CBooleanPtr)
+  return set_value(nodemap, node_name, value)
 
 @beartype
 def set_float(nodemap, node_name:str, value:Number):
-  return set_value(nodemap, node_name, value, PySpin.CFloatPtr)
+  return set_value(nodemap, node_name, value)
 
 @beartype
 def set_int(nodemap, node_name:str, value:int):
-  return set_value(nodemap, node_name, value, PySpin.CIntegerPtr)
+  return set_value(nodemap, node_name, value)
 
-def try_set_float(nodemap, node_name, value):
-    try:
-        return set_float(nodemap, node_name, value)
-    except PySpin.SpinnakerException as e:
-        rospy.loginfo(f"try_set_float {node_name} {value}: {e}")
-        return get_float(nodemap, node_name)
 
-def try_set_int(nodemap, node_name, value):
-    try:
-        return set_int(nodemap, node_name, value)
-    except PySpin.SpinnakerException as e:
-        rospy.loginfo(f"try_set_int {node_name} {value}: {e}")
-        return get_int(nodemap, node_name)
+@beartype
+def set_enum(nodemap, node_name:str, value:str):
+  return set_value(nodemap, node_name, value)
 
-def try_set_bool(nodemap, node_name, value):
-    try:
-        return set_bool(nodemap, node_name, value)
-    except PySpin.SpinnakerException as e:
-        rospy.loginfo(f"try_set_bool {node_name} {value}: {e}")
-        return get_bool(nodemap, node_name)
+def try_set_value(nodemap, node_name:str, value):
+  try:
+      return set_value(nodemap, node_name, value)
+  except PySpin.SpinnakerException as e:
+      rospy.loginfo(f"try_set_value {node_name} {value}: {e}")
+      return get_value(nodemap, node_name)
+
+@beartype
+def try_set_bool(nodemap, node_name:str, value:bool):
+  return try_set_value(nodemap, node_name, value)
+
+@beartype
+def try_set_float(nodemap, node_name:str, value:Number):
+  return try_set_value(nodemap, node_name, value)
+
+@beartype
+def try_set_int(nodemap, node_name:str, value:int):
+  return try_set_value(nodemap, node_name, value)
 
 
 @disable_gc
@@ -333,52 +354,42 @@ def trigger_master(camera : PySpin.Camera, free_running : bool):
 
 
 
-def set_setting(nodemap, setting:Dict):
+def set_setting(nodemap, setting_name, value):
   try:
+    set_value(nodemap, setting_name, value)
 
-    setting_name = next(iter(setting)) # setting.keys()[0]
-    value, type_ = setting[setting_name]
-    if type_ == "ENUM":
-        set_enum(nodemap, setting_name, value)
-        if setting == "UserSetSelector":
-            execute(nodemap, "UserSetLoad")
-    elif type_ == "BOOL":
-        set_bool(nodemap, setting_name, value)
-    elif type_ == "CHUNK":
-        activate_image_chunks(nodemap)
-    elif type_ == "FLOAT":
-        set_float(nodemap, setting_name, value)
-    elif type_ == "INT":
-        set_int(nodemap, setting_name, value)
-
-    else:
-        rospy.logerr("Unknown type {} for {}".format(type_, setting_name))
   except (NodeException, PySpin.SpinnakerException) as e:
     rospy.logerr("Exception setting {}: {}".format(setting_name, str(e)))
 
+def dict_item(d):
+    k = next(iter(d)) # setting.keys()[0]
+    v = d[k]
+    return k, v
 
-def set_settings(nodemap, settings:List[Dict]):
-  for setting in settings:
-      set_setting(nodemap, setting)
+def set_settings(name, nodemap, settings:List[Dict]):
+  settings = [dict_item(setting) for setting in settings]
 
+  settings_str = ", ".join([f"{k}={v}" for k, v in settings])
+  rospy.loginfo(f"{name} settings: {settings_str}")
 
+  for k, v in settings:
+    set_setting(nodemap, k, v)
 
 def set_camera_settings(camera, settings):
 
     nodemap = camera.GetNodeMap()
-    set_settings(nodemap, settings["device"])
-
+    set_settings("Device", nodemap, settings["device"])
 
     s_node_map = camera.GetTLStreamNodeMap()
-    set_settings(s_node_map, settings["transport_layer"])
+    set_settings("Transport", s_node_map, settings["transport_layer"])
 
 def get_camera_encoding(camera):
     nodemap = camera.GetNodeMap()
-    return get_enum(nodemap, "PixelFormat")
+    return get_value(nodemap, "PixelFormat")
 
 def get_current_speed(camera):
     d_node_map = camera.GetTLDeviceNodeMap()
-    return get_enum(d_node_map, "DeviceCurrentSpeed")
+    return get_value(d_node_map, "DeviceCurrentSpeed")
  
 
 def get_camera_serial(cam):
@@ -421,8 +432,8 @@ def validate_streaming(camera):
 def get_image_size(camera : PySpin.Camera):
     node_map = camera.GetNodeMap()
 
-    w = get_int(node_map, "Width")
-    h = get_int(node_map, "Height")
+    w = get_value(node_map, "Width")
+    h = get_value(node_map, "Height")
 
     return (w, h)
 
@@ -430,7 +441,7 @@ def get_image_size(camera : PySpin.Camera):
 def get_framerate_info(camera : PySpin.Camera):
   node_map = camera.GetNodeMap()
 
-  is_free_running = get_bool(node_map, "AcquisitionFrameRateEnable")
-  max_framerate = get_float(node_map, "AcquisitionFrameRate")
+  is_free_running = get_value(node_map, "AcquisitionFrameRateEnable")
+  max_framerate = get_value(node_map, "AcquisitionFrameRate")
 
   return max_framerate if is_free_running else None

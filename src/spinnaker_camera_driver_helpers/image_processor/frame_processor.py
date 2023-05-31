@@ -43,7 +43,7 @@ class FrameProcessor(Dispatcher):
     self.settings = settings
     
     self.isp.set(moving_alpha=self.settings.moving_average, 
-                 resize_width=int(self.settings.resize_width), 
+                 resize_width=int(self.settings.resize_width),
                  transform=interpolate.ImageTransform(self.settings.transform))
 
 

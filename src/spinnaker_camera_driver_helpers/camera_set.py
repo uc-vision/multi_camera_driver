@@ -101,7 +101,10 @@ class CameraSet(Dispatcher):
     try:
       rospy.loginfo(f"CameraSet: set_property {key}: {value}")
       for k, camera in self.camera_dict.items():
-        setter(camera, value, config, self.camera_settings[k])
+        config = {**self.camera_settings[k].settings, key: value}
+        setter(camera, config, self.camera_settings[k])
+
+        self.camera_settings[k].settings = config
 
     except PySpin.SpinnakerException as e:
       rospy.logwarn(f"set_property: {key} {value} {e} ")
@@ -174,6 +177,7 @@ class CameraSet(Dispatcher):
           image_size = spinnaker_helpers.get_image_size(camera),
           encoding = camera_encodings[encoding],
           calibration=self.calibration.get(camera_name, None),
+          settings=camera_setters.get_config(camera)
 
     )
 
@@ -195,6 +199,7 @@ class CameraSet(Dispatcher):
         spinnaker_helpers.trigger_slave(camera)
 
       info = self._camera_info(camera_name, camera)
+      print(info)
       return info
     
     except PySpin.SpinnakerException as e:
