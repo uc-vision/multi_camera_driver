@@ -29,7 +29,7 @@ def main():
     diff = (med_offset - med_return) / 2
     ping_time = (med_offset + med_return) / 2
 
-    rospy.loginfo(f"Time offset: {diff:.3f} Ping: {ping_time:.3f}")
+    rospy.loginfo(f"Time offset {len(entries)}: {diff:.4f} Ping: {ping_time:.4f}")
 
   sub = rospy.Subscriber("/pong", FloatStamped, on_pong)
   rate = rospy.Rate(10)
