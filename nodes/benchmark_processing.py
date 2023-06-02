@@ -42,7 +42,6 @@ def main():
       jpeg_quality=96,
       preview_size=200,
       resize_width=args.resize_width,
-      enable_resizing=args.resize_width > 0,
       tone_mapping="reinhard",
       tone_gamma= 1.0,
       tone_intensity= 1.0,
