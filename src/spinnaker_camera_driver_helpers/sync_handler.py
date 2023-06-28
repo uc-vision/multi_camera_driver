@@ -86,7 +86,7 @@ class SyncHandler(Dispatcher):
   def update_offsets(self, group):
     times = {k:frame.timestamp for k, frame in group.items()}
     mean_time = rospy.Time.from_sec( mean([time.to_sec() for time in times.values()]) )
-        
+    
     self.camera_offsets = {k: self.camera_offsets[k] + (time - mean_time) 
       for k, time in times.items()}
 
@@ -94,12 +94,18 @@ class SyncHandler(Dispatcher):
   def try_publish(self):
     found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_ids))
     if found is not None:
-      group, self.frame_queue = found
-
-      self.emit("on_frame", group)
+      group, timestamp, self.frame_queue = found
 
       self.published += 1
-      self.update_offsets(group)
+
+      # Update offsets *before* setting timestamps equal
+      self.update_offsets(group)  
+              
+      # Set timestamps to be equal
+      group = {k:replace(image, timestamp=timestamp)
+                    for k, image in group.items()}
+
+      self.emit("on_frame", group)
 
   def process_image(self, camera_image_pair:Tuple[str, PySpin.ImagePtr]):
     camera_name, image = camera_image_pair

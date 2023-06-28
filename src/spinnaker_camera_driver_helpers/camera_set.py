@@ -222,21 +222,24 @@ class CameraSet(Dispatcher):
 
 
   def unregister_handlers(self):
-    for k, handler in self._handler_dict.items():
-      camera = self.camera_dict[k]
-      camera.UnregisterEventHandler(handler)
+    if self._handler_dict is not None:
+      for k, handler in self._handler_dict.items():
+        camera = self.camera_dict[k]
+        camera.UnregisterEventHandler(handler)
 
     self._handler_dict = None
   
 
   def cleanup(self):
     rospy.loginfo("Cleanup cameras")
+    self.unregister_handlers()
+    del self._handler_dict
 
     for camera in self.camera_dict.values():
       spinnaker_helpers.load_defaults(camera)
       camera.DeInit()
-
-    del self.camera_dict
+      
     del camera
+    del self.camera_dict
 
 

@@ -69,11 +69,6 @@ def take_group(frame_queue:List[CameraImage], sync_threshold:float, min_size:int
       images = group_cameras(frame_queue[start:end])
       if len(images) >= min_size:
         timestamp = frame_queue[start].timestamp
-        
-        # Set timestamps to be equal
-        images = {k:replace(image, timestamp=timestamp)
-                     for k, image in images.items()}
-
-        return images, frame_queue[:start] + frame_queue[end:]
+        return images, timestamp, frame_queue[:start] + frame_queue[end:]
 
   return None

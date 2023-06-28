@@ -3,7 +3,7 @@
 # dynamic reconfigure parameters
 exposure: 2000
 gain: 0.0
-max_framerate: 12
+max_framerate: 10
 balance_ratio: 1.0
 
 
