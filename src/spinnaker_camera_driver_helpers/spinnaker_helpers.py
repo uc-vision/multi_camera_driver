@@ -150,7 +150,7 @@ def try_set_int(nodemap, node_name:str, value:int):
 
 
 @disable_gc
-def camera_time_offset(cam, iters=250):
+def camera_time_offset(cam, iters=50):
     """ Gets timestamp offset in seconds from input camera """
 
     # This method is required because the timestamp stored in the camera is relative to when it was powered on, so an
@@ -165,6 +165,7 @@ def camera_time_offset(cam, iters=250):
 
         # Compute timestamp offset in seconds; note that timestamp latch value is in nanoseconds
         timestamp_offset = rospy.get_time() - cam.TimestampLatchValue.GetValue()/1e9
+
 
         # Append
         timestamp_offsets.append(timestamp_offset)

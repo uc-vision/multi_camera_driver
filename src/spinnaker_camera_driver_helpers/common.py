@@ -146,6 +146,8 @@ class CameraImage:
   camera_name: str
   image_data: torch.Tensor
   timestamp: rospy.Time
+  clock_time: rospy.Time
+
   seq: int
   image_size: Tuple[int, int]
   encoding: ImageEncoding

@@ -1,6 +1,8 @@
 
 from dataclasses import replace
+import datetime
 from statistics import mean
+import time
 from typing import Dict, List, Tuple
 import rospy
 
@@ -38,6 +40,10 @@ class SyncHandler(Dispatcher):
 
     self.camera_ids = natsorted(camera_settings.keys())
     self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_ids}
+
+    self.start_time = rospy.Time.now()
+
+    self.running_clock_drift = 0.0
     self.reset_recieved()
 
     self.queue.start()
@@ -52,7 +58,8 @@ class SyncHandler(Dispatcher):
 
 
   def report_recieved(self):
-    duration = rospy.Time.now() - self.update
+    now = rospy.Time.now()
+    duration = now - self.update
     if duration > self.report_rate:
       message = f"published {self.published} ({self.published / duration.to_sec() : .2f} fps), {self.recieved} in {format_sec(duration)}"
 
@@ -61,9 +68,13 @@ class SyncHandler(Dispatcher):
       else:
        rospy.logdebug(message)
 
-      rospy.logdebug([(k, format_msec(self.camera_offsets[k])) 
-        for k in self.camera_ids ])
-    
+      time_offsets = [ f"{k}={format_msec(self.camera_offsets[k])}" 
+                      for k in sorted(self.camera_offsets.keys()) ]
+      
+      total = time.strftime("%H:%M:%S", time.gmtime((now - self.start_time).to_sec()))
+
+      rospy.logdebug(f"camera offsets: {', '.join(time_offsets)}, clock offset: {1000.0 * self.running_clock_drift:.2f}ms, running time {total}")
+
       self.reset_recieved()
 
   @beartype
@@ -104,6 +115,12 @@ class SyncHandler(Dispatcher):
       # Set timestamps to be equal
       group = {k:replace(image, timestamp=timestamp)
                     for k, image in group.items()}
+      
+      clock_time = min([image.clock_time for image in group.values()])
+      diff = clock_time - timestamp
+
+      t = 0.01
+      self.running_clock_drift = self.running_clock_drift * t + diff.to_sec() * (1 - t)
 
       self.emit("on_frame", group)
 

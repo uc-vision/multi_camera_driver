@@ -29,6 +29,7 @@ camera_settings:
     - BlackLevel: 0
     - BlackLevelClampingEnable: False
     - GammaEnable: False
+    # - TriggerDelay: 29.0 # Microseconds
 
   transport_layer:
     - StreamBufferCountMode: Manual

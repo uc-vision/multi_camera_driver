@@ -15,18 +15,22 @@ def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.D
       status = image.GetImageStatus()
       image.Release()          
       raise IncompleteImageError(status)
-    
+
+    clock_time = rospy.Time.now()
+  
     image_data = image.GetData()
     image_data.setflags(write=True)  # Suppress pytorch warning about non-writable array (we don't write to it.)
     
-    image_data = torch.from_numpy(image_data.view(np.uint8)).to(device)
+    image_data = torch.from_numpy(image_data.view(
+      np.uint8)).to(device, non_blocking=True)
 
     image_info = CameraImage(
       camera_name = camera_name,
       image_data = image_data.reshape(image.GetHeight(), -1),
       timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9) + time_offset_sec,
-      seq = image.GetFrameID(),
+      clock_time = clock_time,
 
+      seq = image.GetFrameID(),
       image_size = (image.GetWidth(), image.GetHeight()),
       encoding = from_pyspin(image.GetPixelFormat()),
     )
@@ -39,7 +43,7 @@ def format_msec(dt):
   return f"{dt.to_sec() * 1000.0:.2f}ms"
 
 def format_sec(dt):
-  return f"{dt.to_sec():.2f}ms"
+  return f"{dt.to_sec():.2f}s"
 
 def group_cameras(frame_group:List[CameraImage]) -> Dict[str, CameraImage]:
   cameras = {}
