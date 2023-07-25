@@ -390,7 +390,10 @@ def get_camera_encoding(camera):
 
 def get_current_speed(camera):
     d_node_map = camera.GetTLDeviceNodeMap()
-    return get_value(d_node_map, "DeviceCurrentSpeed")
+    if get_value(d_node_map, "DeviceType") == "GigEVision":
+        return f"{get_value(d_node_map, 'DeviceLinkSpeed')} Mbps"
+    else:
+        return get_value(d_node_map, "DeviceCurrentSpeed")
  
 
 def get_camera_serial(cam):
