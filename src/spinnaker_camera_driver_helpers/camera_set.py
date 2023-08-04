@@ -33,7 +33,8 @@ class CameraSet(Dispatcher):
   
 
   def __init__(self, camera_serials:Dict[str, str], 
-      camera_settings:List[Dict], 
+      camera_settings:List[Dict],
+      interface_settings:List[Dict],
       master_id:Optional[str]=None,
       calibration:Dict[str, Camera]={}):
 
@@ -47,6 +48,12 @@ class CameraSet(Dispatcher):
     self.camera_serials = camera_serials
     self.camera_dict = spinnaker_helpers.find_cameras(
         camera_serials)  # camera_name -> camera
+    
+    self.interface = spinnaker_helpers.find_interface(camera_serials)
+    if self.interface is None:
+      raise ValueError(f"Could not find interface for {camera_serials}")
+    else:
+      rospy.loginfo(f"Got camera interface {self.interface}")
 
     rospy.loginfo(f"Initialising cameras: {camera_serials}")
     rospy.loginfo(
@@ -193,7 +200,7 @@ class CameraSet(Dispatcher):
       if encoding not in camera_encodings:
         raise ValueError(f"Unsupported encoding {encoding}, options are: {list(camera_encodings.keys())}")
 
-      if self.master_id is None or self.master_id == camera_name:
+      if self.master_id == camera_name:
         spinnaker_helpers.trigger_master(camera, True)
       else:
         spinnaker_helpers.trigger_slave(camera)

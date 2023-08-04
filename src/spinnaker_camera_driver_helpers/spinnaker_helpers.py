@@ -424,6 +424,16 @@ def find_cameras(camera_serials):
     camera_list.Clear()
     return cameras
 
+def find_interface(camera_serials):
+    "Returns the interface containing the cameras"
+    interfaces = PySpin.System.GetInstance().GetInterfaces()
+    target_cameras = set(camera_serials.values())
+    for interface in interfaces:
+        interface.UpdateCameras()
+        interface_cameras = set([get_camera_serial(cam) for cam in interface.GetCameras()])
+        if target_cameras.issubset(interface_cameras):
+            return interface
+    return None
 
 def validate_init(camera):
     return camera.IsValid() and camera.IsInitialized()

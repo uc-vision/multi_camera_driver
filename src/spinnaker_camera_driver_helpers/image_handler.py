@@ -27,7 +27,7 @@ def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.D
     image_info = CameraImage(
       camera_name = camera_name,
       image_data = image_data.reshape(image.GetHeight(), -1),
-      timestamp = rospy.Time.from_sec(image.GetTimeStamp() / 1e9) + time_offset_sec,
+      timestamp = rospy.Time.from_sec(image.GetChunkData().GetTimestamp() / 1e9) + time_offset_sec,
       clock_time = clock_time,
 
       seq = image.GetFrameID(),
@@ -50,7 +50,7 @@ def group_cameras(frame_group:List[CameraImage]) -> Dict[str, CameraImage]:
   for frame in frame_group:
     if frame.camera_name in cameras:
       dt = frame.timestamp - cameras[frame.camera_name].timestamp
-      rospy.logwarn(f"Duplicate frame {next.camera_name} dt={format_msec(dt)}")
+      rospy.logwarn(f"Duplicate frame {frame.camera_name} dt={format_msec(dt)}")
     else:
       cameras[frame.camera_name] = frame
   return cameras

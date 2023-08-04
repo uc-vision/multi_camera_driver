@@ -81,15 +81,13 @@ class CameraDiagnosticUpdater:
 
     self.master_id = master_id    
 
-
     self.camera_states = {
       k: CameraState(self.updater, v.name, v.serial, 
-                     ideal_framerate = v.framerate if v.is_master else camera_settings[master_id].framerate, 
+                     ideal_framerate = v.framerate if v.is_master or master_id is None else camera_settings[master_id].framerate, 
                      tolerance=tolerance)
 
       for k, v in camera_settings.items()
     }
-
 
   def reset(self):
     self.updater.update()
@@ -98,7 +96,7 @@ class CameraDiagnosticUpdater:
 
   def on_camera_info(self, camera_settings:Dict[str, CameraSettings]):
     for k, v in camera_settings.items():
-      self.camera_states[k].ideal_framerate = v.framerate if v.is_master else camera_settings[self.master_id].framerate
+      self.camera_states[k].ideal_framerate = v.framerate if v.is_master or self.master_id is None else camera_settings[self.master_id].framerate
 
   def on_image(self, image):
     camera_name, _ = image

@@ -1,0 +1,19 @@
+cameras:
+  cam1: 22580855
+  cam2: 22580857
+  cam3: 22395934
+  cam4: 22580858
+  cam5: 22395939
+  cam6: 22395922
+
+microcontroller: /dev/serial/by-id/usb-MicroPython_Board_in_FS_mode_e660d05113943d35-if00
+
+master: cam6
+
+reset_cycle: false
+device: cuda:0
+
+sync_threshold_msec: 10   # threshold to consider images from the same trigger
+timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
+
+transform: rotate_90

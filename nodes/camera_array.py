@@ -91,7 +91,8 @@ def run_node():
   camera_set = CameraSet(
       camera_serials=rospy.get_param("~cameras"),
       camera_settings = rospy.get_param("~camera_settings"),
-      master_id=rospy.get_param("~master")
+      interface_settings = rospy.get_param("~interface_settings", []),
+      master_id=rospy.get_param("~master", None)
   )
 
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
@@ -147,7 +148,7 @@ def run_node():
 def main():
   exceptions_to_rosout()
   rospy.init_node('camera_array_node', anonymous=False)
-
+  rospy.loginfo(rospy.get_param("~reset_cycle"))
   if rospy.get_param("~reset_cycle", True):
     spinnaker_helpers.reset_all()
     rospy.sleep(1)
