@@ -86,7 +86,7 @@ def main():
 
     pbar.update(1)
 
-  processor = WorkQueue("publisher", run=on_frame, num_workers=2, max_size=2)
+  processor = WorkQueue("publisher", run=on_frame, num_workers=4, max_size=4)
   processor.start()
 
 
@@ -96,7 +96,8 @@ def main():
     seq=0,
     image_size=(w, h),
     encoding=encoding,
-    timestamp=rospy.Time())
+    timestamp=rospy.Time(),
+    clock_time=rospy.Time())
 
     for n in range(6) }
 
