@@ -6,6 +6,7 @@ from beartype import beartype
 from cached_property import cached_property
 
 from nvjpeg_torch import Jpeg, JpegException
+from taichi_image import color
 
 from spinnaker_camera_driver_helpers.common import CameraImage, EncoderError
 from camera_geometry_ros.conversions import camera_info_msg
@@ -13,6 +14,7 @@ from camera_geometry import Camera
 from sensor_msgs.msg import CameraInfo
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 #from exif import Image
+
 
 import torch
 
@@ -25,18 +27,6 @@ def jpeg():
   return local_jpeg.encoder
 
 
-
-#   # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
-exif_orientations = {
-  'none': 1,
-  'flip_horiz': 2,
-  'rotate_180': 3,
-  'flip_vert': 4,
-  'transpose': 5,
-  'rotate_90': 6,
-  'transverse': 7,  
-  'rotate_270': 8,  
-}
 
 
 
@@ -53,14 +43,24 @@ class ImageOutputs(object):
 
   def encode(self, image:torch.Tensor):
     try:
-      return jpeg().encode(image,
+      encoder = jpeg()
+
+      
+      if hasattr(encoder, 'encode'):
+        return encoder.encode(image,
                               quality=self.settings.jpeg_quality,
                               input_format=Jpeg.RGBI).numpy().tobytes()
+      elif hasattr(encoder, 'encode_yuv_420'):
+        from spinnaker_camera_driver_helpers.image_processor import  TiQueue
+
+
+        yuv = TiQueue.run_sync(color.rgb_yuv420_image, image)
+        bytes = encoder.encode_yuv_420(yuv.to('cpu', non_blocking=True),
+                                  quality=self.settings.jpeg_quality).numpy().tobytes()
+        return bytes
+      else:
+        raise EncoderError(f"Encoder does not support encode or encode_yuv_420: {encoder}")
       
-      # if self.settings.transform != 'none':
-      #   exif_image = Image(data)
-      #   exif_image['orientation'] = exif_orientations[self.settings.transform]
-      #   data = exif_image.get_file()
 
     except Jpeg.Exception as e:
       raise EncoderError(str(e))

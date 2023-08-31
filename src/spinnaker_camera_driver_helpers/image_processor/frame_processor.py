@@ -10,7 +10,7 @@ from beartype import beartype
 from spinnaker_camera_driver_helpers.image_handler import CameraImage
 from spinnaker_camera_driver_helpers.common import CameraSettings, EncoderError, bayer_pattern, encoding_bits
 from spinnaker_camera_driver_helpers.image_processor.outputs import ImageOutputs
-from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, encoding, resize_width, taichi_pattern
+from spinnaker_camera_driver_helpers.image_processor.util import TiQueue, taichi_pattern
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
 from spinnaker_camera_driver_helpers.work_queue import WorkQueue
 
@@ -33,7 +33,7 @@ class FrameProcessor(Dispatcher):
 
     self.processor = TiQueue.run_sync(self.init_processor, cameras)
 
-    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=4, max_size=2)
+    self.queue = WorkQueue("FrameProcessor", run=self.process_worker, num_workers=4, max_size=4)
     self.queue.start()
 
   def update_camera(self, k, camera):
