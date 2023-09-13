@@ -3,7 +3,7 @@
 # dynamic reconfigure parameters
 exposure: 2000
 gain: 0.0
-max_framerate: 10
+max_framerate: 2
 balance_ratio: 1.0
 
 
@@ -16,6 +16,11 @@ tone_mapping: reinhard
 # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
 transform: rotate_270
 
+# interface_settings:
+  # transport_layer:
+  #   - GevActionDeviceKey: 0
+  #   - GevActionGroupKey: 1
+  #   - GevActionGroupMask: 1
 
 camera_settings:
   device:
@@ -31,11 +36,30 @@ camera_settings:
     - GammaEnable: False
     # - TriggerDelay: 29.0 # Microseconds
 
+    # Configure Action
+    # - ActionDeviceKey: 0
+    # - ActionGroupKey: 1
+    # - ActionGroupMask: 1
+
+    - GevIEEE1588: False    
+
+    # - TriggerSelector: "AcquisitionStart"
+    # - TriggerSource: "Action0"
+
     - ChunkModeActive: True
     - ChunkSelector: "Timestamp"
     - ChunkEnable: True
-    - ChunkSelector: "FrameID"
-    - ChunkEnable: True
+
+    # - AcquisitionMode: "Continuous"
+    #- DeviceLinkThroughputLimit: 50000000 # 50 MBytes/s
+    - GevSCPSPacketSize: 1400
+    #- GevSCPD: 11500 # 2 cameras 1g connection 11312
+    #- GevSCPD: 25000 # 3 cameras 1g connection 22624
+    #- GevSCPD: 40000 # 4 cameras 1g connection 33936
+    #- GevSCPD: 20000 # 4 cameras 2.5g connection 18099.2
+    - GevSCPD: 60000 # 6 cameras 1g connection 56560
+
+
 
   transport_layer:
     - StreamBufferCountMode: Manual
