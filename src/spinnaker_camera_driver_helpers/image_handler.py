@@ -6,7 +6,6 @@ import rospy
 import PySpin
 import torch
 
-import numba
 from typing import List, Dict, Tuple, Optional
 
 

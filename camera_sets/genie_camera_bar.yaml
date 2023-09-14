@@ -1,10 +1,19 @@
 cameras:
-  cam1: 22083922
-  cam2: 22083907
-  cam3: 22083921
-  cam4: 22083916
-  cam5: 22083908
-  cam6: 22083915
+  cam1: 22083916 # TOP MIDDLE
+  cam2: 22083907 # ONE BEFORE TOP
+  cam3: 22083922 # TOP
+  cam4: 22083908 # BOTTOM MIDDLE
+  cam5: 22083915 # ONE BEFORE BOTTOM
+  cam6: 22083921 # BOTTOM
+
+# old camera config
+# cameras:
+#  cam1: 22083922
+#  cam2: 22083907
+#  cam3: 22083921
+#  cam4: 22083916
+#  cam5: 22083908
+#  cam6: 22083915
 
 master: cam1
 
@@ -15,3 +24,4 @@ sync_threshold_msec: 10   # threshold to consider images from the same trigger
 timeout_msec: 500        # timeout for images waiting to be matched up with a trigger
 
 transform: rotate_90
+
