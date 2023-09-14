@@ -1,12 +1,12 @@
 cameras:
-  cam1: 22395922
-  cam2: 22395934
-  cam3: 22395939
+  cam1: 22580855
+  cam2: 22580857
+  cam3: 22395934
   cam4: 22580858
-#  cam5: 
-#  cam6: 
+  cam5: 22395939
+  cam6: 22395922
 
-#master: cam1
+master: cam6
 
 reset_cycle: true
 device: cuda:0
