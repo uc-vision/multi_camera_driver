@@ -13,6 +13,7 @@ from spinnaker_camera_driver_helpers.common import \
 from pydispatch import Dispatcher
 
 from . import spinnaker_helpers
+from .external_trigger import ExternalTrigger
 
 
 class ImageEventHandler(PySpin.ImageEventHandler):
@@ -29,13 +30,14 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 
 
 class CameraSet(Dispatcher):
-  _events_ = ["on_settings", "on_image"]
+  _events_ = ["on_settings", "on_image", "on_trigger"]
   
 
   def __init__(self, camera_serials:Dict[str, str], 
       camera_settings:List[Dict],
       interface_settings:List[Dict],
       master_id:Optional[str]=None,
+      external_trigger:Optional[str]=None,
       calibration:Dict[str, Camera]={}):
 
     self.started = False
@@ -44,6 +46,16 @@ class CameraSet(Dispatcher):
       raise ValueError(f"Master camera '{master_id}' not in camera_serials {camera_serials}")
     
     self.master_id = master_id
+
+    self.external_trigger = None
+    if external_trigger is not None:
+      self.external_trigger = ExternalTrigger(external_trigger)
+
+      def trigger_callback(count, utc):
+        self.emit("on_trigger", (count, utc))       
+      self.external_trigger.trigger_callback = trigger_callback
+
+      self.external_trigger.start()
 
     self.camera_serials = camera_serials
     self.camera_dict = spinnaker_helpers.find_cameras(
@@ -103,6 +115,10 @@ class CameraSet(Dispatcher):
     if not key in camera_setters.property_setters:
         return False
     
+    if key == "max_framerate" and self.external_trigger is not None:
+      self.external_trigger.set_framerate(value)
+      return True
+    
     setter = camera_setters.property_setters[key]
 
     try:
@@ -130,11 +146,16 @@ class CameraSet(Dispatcher):
       camera.BeginAcquisition()
       assert spinnaker_helpers.validate_streaming(camera),\
           f"Camera {k} did not begin streaming"
+      
+    if self.external_trigger is not None:
+      self.external_trigger.trigger_start()
 
     self.started = True
 
   def stop(self):
     if self.started:
+      if self.external_trigger is not None:
+        self.external_trigger.trigger_stop()
       for k, camera in self.camera_dict.items():
         rospy.loginfo(f"Ending acquisition {k}..")
         camera.EndAcquisition()
@@ -144,11 +165,14 @@ class CameraSet(Dispatcher):
 
 
   def trigger(self):
-    assert self.master_id is not None
-    try:
-      spinnaker_helpers.trigger(self.master)
-    except PySpin.SpinnakerException as e:
-      rospy.logerr("Error triggering: " + str(e))
+    assert self.master_id is not None and self.external_trigger is not None
+    if self.external_trigger is not None:
+      self.external_trigger.trigger_start()
+    else:
+      try:
+        spinnaker_helpers.trigger(self.master)
+      except PySpin.SpinnakerException as e:
+        rospy.logerr("Error triggering: " + str(e))
 
 
   def _camera_update(self, camera, info:CameraSettings):
@@ -248,5 +272,10 @@ class CameraSet(Dispatcher):
       
     del camera
     del self.camera_dict
+
+    if self.external_trigger is not None:
+      self.external_trigger.trigger_stop()
+      self.external_trigger.stop()
+      rospy.loginfo("External trigger stopped")
 
 
