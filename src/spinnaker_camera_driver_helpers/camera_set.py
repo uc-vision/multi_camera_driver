@@ -49,7 +49,7 @@ class CameraSet(Dispatcher):
 
     self.trigger_reporter = None
     if trigger_reporter is not None:
-      rospy.loginfo("Starting trigger reporter")
+      rospy.loginfo(f"Starting trigger reporter {trigger_reporter}")
       self.trigger_reporter = TriggerReporter(trigger_reporter)
 
       def trigger_callback(count, utc):
