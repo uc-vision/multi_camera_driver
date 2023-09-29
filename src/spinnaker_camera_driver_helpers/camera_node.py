@@ -35,12 +35,15 @@ class CameraArrayNode(Dispatcher):
     self.pending_config = {}
     self.image_settings = image_settings
 
+    self.require_resync = False
+
     self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
 
     for camera_name, info in camera_set.camera_settings.items():
       rospy.loginfo(f"{camera_name}: {info}")
 
-
+  def resync(self):
+    self.require_resync = True
 
   def set_property(self, k, v):
       assert not (k in self.delayed_setters and self.started),\
@@ -130,6 +133,12 @@ class CameraArrayNode(Dispatcher):
     while not rospy.is_shutdown():
       self.update_pending()
       self.emit("on_update")
+
+      if self.require_resync:
+        self.camera_set.stop()
+        rospy.sleep(1.0)
+        self.camera_set.start()
+        self.require_resync = False  
       
       rospy.sleep(0.2)
 

@@ -151,6 +151,7 @@ class CameraImage:
   seq: int
   image_size: Tuple[int, int]
   encoding: ImageEncoding
+  utc_time: Optional[datetime] = None
 
   def __repr__(self):
     date = datetime.fromtimestamp(self.timestamp.to_sec())

@@ -4,3 +4,4 @@ pyturbojpeg
 python-dispatch
 nvjpeg-torch
 taichi_image
+pyserial

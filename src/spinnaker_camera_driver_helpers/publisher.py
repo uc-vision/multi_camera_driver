@@ -2,9 +2,10 @@ from __future__ import annotations
 from typing import List
 
 from camera_geometry_ros.lazy_publisher import LazyPublisher
-from sensor_msgs.msg import CompressedImage, Image, CameraInfo
+from sensor_msgs.msg import CompressedImage, Image, CameraInfo, TimeReference
 
 from std_msgs.msg import Header
+import rospy
 
 from cv_bridge import CvBridge
 from py_structs import struct
@@ -25,7 +26,8 @@ class CameraPublisher():
         "color"        : (Image, lambda data: bridge.cv2_to_imgmsg(data.rgb.cpu().numpy(), encoding="rgb8")),
         "color/compressed"       : (CompressedImage, lambda data: CompressedImage(data = data.compressed, format = "jpeg")), 
         "color/preview/compressed" :  (CompressedImage, lambda data: CompressedImage(data = data.compressed_preview, format = "jpeg")),
-        "camera_info" : (CameraInfo, lambda data: data.camera_info)
+        "camera_info" : (CameraInfo, lambda data: data.camera_info),
+        "utc" : (TimeReference, lambda data: TimeReference( time_ref=rospy.Time.from_sec(data.raw.utc_time.timestamp()), source="utc time of capture"))
     }
 
     self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)

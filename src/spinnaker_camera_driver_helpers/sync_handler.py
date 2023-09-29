@@ -23,7 +23,7 @@ import torch
 
 
 class SyncHandler(Dispatcher):
-  _events_ = ["on_frame"]
+  _events_ = ["on_frame", "on_dsync"]
 
   @beartype
   def __init__(self, camera_settings:Dict[str, CameraSettings], device:torch.device,
@@ -37,6 +37,7 @@ class SyncHandler(Dispatcher):
 
     self.report_rate = rospy.Duration.from_sec(4.0)
     self.frame_queue:List[CameraImage] = []
+    self.trigger_queue:List[Tuple[int, datetime.datetime]] = []
 
     self.camera_ids = natsorted(camera_settings.keys())
     self.camera_offsets = {k: rospy.Duration(0.0) for k in self.camera_ids}
@@ -81,16 +82,29 @@ class SyncHandler(Dispatcher):
   def publish(self, camera_image_pair:Tuple[str, PySpin.ImagePtr]):
       self.queue.enqueue( camera_image_pair )
 
+  @beartype
+  def trigger_time(self, trigger_meta:Tuple[int, datetime.datetime]):
+
+    highest_trigger_id = -1
+    if len(self.trigger_queue) > 0:
+      highest_trigger_id = max([trigger[0] for trigger in self.trigger_queue])
+
+    if trigger_meta[0] < highest_trigger_id:
+      rospy.logwarn(f"Trigger has lower id ({trigger_meta[0]}) than previous ({highest_trigger_id}) - flushing trigger queue")
+    
+    self.trigger_queue.append(trigger_meta)
+    self.trigger_queue.sort(key=lambda r: r[0])
+    if len(self.trigger_queue) > 10:
+      self.trigger_queue = self.trigger_queue[-10:] 
 
   def add_frame(self, image_info):
     self.recieved += 1
     self.frame_queue.append(image_info)
     self.frame_queue.sort(key=lambda r: r.timestamp)
 
-
-    timeout_time = rospy.Time.now() - self.timeout
+    timeout_time = self.frame_queue[-1].timestamp - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-      
+      rospy.logwarn(f"dropping frame from {self.frame_queue[0].camera_name} because it is too old, {self.frame_queue[0].timestamp} < {timeout_time} ({(timeout_time - self.frame_queue[0].timestamp)/1e6}ms)")
       frame:CameraImage = self.frame_queue.pop(0)
       self.dropped[frame.camera_name] += 1
 
@@ -106,6 +120,17 @@ class SyncHandler(Dispatcher):
     found = take_group(self.frame_queue, self.sync_threshold, len(self.camera_ids))
     if found is not None:
       group, timestamp, self.frame_queue = found
+
+      settings = list(self.camera_settings.values())[0]
+      if settings.master_id is not None:
+        seq_num = group[settings.master_id].seq
+        rospy.loginfo(f"Master frame {seq_num} at {timestamp}")
+        for i in self.trigger_queue:
+          if i[0] == seq_num:
+            rospy.loginfo(f"Trigger time {i[1]}")
+
+            group = {k:replace(image, utc_time=i[1])
+                    for k, image in group.items()}
 
       self.published += 1
 

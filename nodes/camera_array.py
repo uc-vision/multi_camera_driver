@@ -32,7 +32,7 @@ from spinnaker_camera_driver_helpers.camera_set import CameraSet
 from spinnaker_camera_driver_helpers import spinnaker_helpers
 from spinnaker_camera_driver_helpers.diagnostics import CameraDiagnosticUpdater
 from spinnaker_camera_driver_helpers.image_processor.frame_processor import FrameProcessor
-from spinnaker_camera_driver_helpers.monotonic_sync_handler import SyncHandler
+from spinnaker_camera_driver_helpers.sync_handler import SyncHandler
 
 
 from spinnaker_camera_driver_helpers.image_settings import ImageSettings
@@ -93,7 +93,7 @@ def run_node():
       camera_settings = rospy.get_param("~camera_settings"),
       interface_settings = rospy.get_param("~interface_settings", []),
       master_id=rospy.get_param("~master", None),
-      external_trigger=rospy.get_param("~external_trigger", None)
+      trigger_reporter=rospy.get_param("~trigger_reporter", None)
   )
 
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
@@ -106,16 +106,17 @@ def run_node():
                         sync_threshold_msec=rospy.get_param("~sync_threshold_msec", 10),
                         device=torch.device(camera_node.image_settings.device))
   camera_set.bind(on_image=handler.publish)
-  camera_set.bind(on_trigger=handler.trigger)
+  camera_set.bind(on_trigger_time=handler.trigger_time)
 
-  #diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
-  #camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
+  diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
+  camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
 
-  #camera_node.bind(on_update=diagnostics.reset)
+  camera_node.bind(on_update=diagnostics.reset)
   camera_node.bind(on_update=handler.report_recieved)
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   handler.bind(on_frame=processor.process)
+  handler.bind(on_dsync=camera_node.resync)
   camera_node.bind(on_image_settings=processor.update_settings)
 
   publisher = FramePublisher(camera_set.camera_ids)

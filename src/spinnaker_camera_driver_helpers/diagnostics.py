@@ -80,10 +80,10 @@ class CameraDiagnosticUpdater:
     self.updater.setHardwareID("cameras")  
 
     self.master_id = master_id    
-
+    
     self.camera_states = {
       k: CameraState(self.updater, v.name, v.serial, 
-                     ideal_framerate = v.framerate if v.is_master or master_id is None else camera_settings[master_id].framerate, 
+                     ideal_framerate = v.framerate if v.is_master or self.master_id is None else camera_settings[self.master_id].framerate, 
                      tolerance=tolerance)
 
       for k, v in camera_settings.items()
