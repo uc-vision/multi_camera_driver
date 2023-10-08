@@ -1,0 +1,1 @@
+from matilda_navigation.launch.navigation import generate_launch_description

@@ -1,5 +1,0 @@
-<launch>
-
-  <node  pkg="spinnaker_camera_driver_ros" type="reset_cameras.py" name="camera_array" output="screen"/>
-</launch>
-
