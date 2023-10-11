@@ -1,6 +1,6 @@
 from dataclasses import replace
 from traceback import format_exc
-from typing import Dict, List, Optional
+from beartype.typing import Dict, List, Optional
 
 import PySpin
 import rospy2 as rospy

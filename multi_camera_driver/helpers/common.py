@@ -2,13 +2,18 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from traceback import format_exc
-from typing import Any, Dict, Optional, Tuple
+from beartype.typing import Any, Dict, Optional, Tuple
 from beartype import beartype
+
 import cv2
 import PySpin
 import numpy as np
 import torch
 import rospy2 as rospy
+import rclpy.duration
+import rclpy.time
+from typing import Union
+import builtin_interfaces.msg
 
 import camera_geometry 
 
@@ -145,8 +150,8 @@ class IncompleteImageError(Exception):
 class CameraImage:
   camera_name: str
   image_data: torch.Tensor
-  timestamp: rospy.Time
-  clock_time: rospy.Time
+  timestamp: Union[rospy.Time, builtin_interfaces.msg.Time]
+  clock_time: Union[rospy.Time, builtin_interfaces.msg.Time]
 
   seq: int
   image_size: Tuple[int, int]
@@ -168,7 +173,7 @@ class CameraSettings:
   master_id:Optional[str]
 
   connection_speed:str
-  time_offset_sec:rospy.Duration
+  time_offset_sec: Union[rclpy.duration.Duration, rospy.Duration]
   serial:str
   
   framerate : Optional[float]

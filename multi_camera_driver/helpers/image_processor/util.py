@@ -3,14 +3,13 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from functools import partial, reduce
 import math
 import operator
-from typing import List, Tuple
 import numpy as np
 
 from multi_camera_driver.helpers.common import BayerPattern, CameraSettings, ImageEncoding, bayer_pattern, encoding_bits
 import taichi as ti
 
 from taichi_image import bayer, packed, tonemap
-
+from beartype.typing import Tuple
 
 taichi_pattern = {
     BayerPattern.BGGR: bayer.BayerPattern.BGGR,

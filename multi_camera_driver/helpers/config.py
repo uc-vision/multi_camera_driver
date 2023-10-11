@@ -6,6 +6,7 @@ import rospy2 as rospy
 import shutil
 import errno
 import yaml
+from typing import Dict, Union, NoReturn
 
 import camera_geometry_ros.conversions as conversions
 from camera_geometry.calib import import_rig
@@ -15,12 +16,13 @@ import traceback
 import sys
 import time
 
-def load_config(config_file):
-    if config_file is not None:
-        with open(config_file) as config_file:
-            return yaml.load(config_file, Loader=yaml.Loader)
-    else:
-        return None
+def load_config(config_file) -> Union[Dict, None]:
+  if config_file is not None:
+    with open(config_file) as config_file:
+      return yaml.load(config_file, Loader=yaml.Loader)
+  else:
+    return None
+    
 
 def import_calibrations(calib_string, camera_names, tracking_frame):
   calib = json.load_string(calib_string)

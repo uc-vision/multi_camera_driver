@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import List
 import PySpin
 from beartype import beartype
-
 import rospy2 as rospy
+
 import torch
 
 from multi_camera_driver.helpers.camera_node import CameraArrayNode
@@ -29,10 +29,10 @@ import numpy as np
 
 from multi_camera_driver.helpers.camera_set import CameraSet
 from multi_camera_driver.helpers import spinnaker_helpers
+from multi_camera_driver.helpers.camera_params import declare_ros2_parameters
 from multi_camera_driver.helpers.diagnostics import CameraDiagnosticUpdater
 from multi_camera_driver.helpers.image_processor.frame_processor import FrameProcessor
 from multi_camera_driver.helpers.sync_handler import SyncHandler
-
 
 from multi_camera_driver.helpers.image_settings import ImageSettings
 from multi_camera_driver.helpers.config import (import_calibrations, 
@@ -42,11 +42,14 @@ from multi_camera_driver.helpers.config import (import_calibrations,
 from traceback import format_exc
 import gc
 
-
-
 def init_calibrations(camera_ids):
-  calibration_file = rospy.get_param("~calibration_file", None)
-  tracking_frame = rospy.get_param("tracking_frame", None)
+  calibration_file = rospy.get_param("calibration_file", '')
+  tracking_frame = rospy.get_param("tracking_frame", '')
+
+  if tracking_frame == '':
+    tracking_frame = None
+  if calibration_file == '':
+    calibration_file = None
 
   calib = load_calibrations(calibration_file, camera_ids, tracking_frame)
   broadcaster = tf2_ros.StaticTransformBroadcaster()
@@ -85,14 +88,16 @@ class ImageWriterRaw:
       np.save(path, raw.image_data, allow_pickle=True)
 
 
-def run_node():
+def run_node(camera_set_file, camera_settings_file):
+  camera_set_dict = load_config(camera_set_file)
+  camera_settings_dict = load_config(camera_settings_file)
 
   camera_set = CameraSet(
-      camera_serials=rospy.get_param("~cameras"),
-      camera_settings = rospy.get_param("~camera_settings"),
-      interface_settings = rospy.get_param("~interface_settings", []),
-      master_id=rospy.get_param("~master", None),
-      trigger_reporter=rospy.get_param("~trigger_reporter", None)
+      camera_serials=camera_set_dict.get("cameras"),
+      camera_settings = camera_settings_dict.get("camera_settings"),
+      interface_settings = camera_set_dict.get("interface_settings", []),
+      master_id=camera_set_dict.get("master", None),
+      trigger_reporter=camera_set_dict.get("trigger_reporter", None)
   )
 
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
@@ -101,8 +106,8 @@ def run_node():
   camera_node = CameraArrayNode(camera_set)
 
   handler = SyncHandler(camera_set.camera_settings, 
-                        timeout_msec=rospy.get_param("~timeout_msec", 1000), 
-                        sync_threshold_msec=rospy.get_param("~sync_threshold_msec", 10),
+                        timeout_msec=rospy.get_param("timeout_msec", 1000), 
+                        sync_threshold_msec=rospy.get_param("sync_threshold_msec", 10),
                         device=torch.device(camera_node.image_settings.device))
   camera_set.bind(on_image=handler.publish)
   camera_set.bind(on_trigger_time=handler.trigger_time)
@@ -124,6 +129,8 @@ def run_node():
   # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
   # processor.bind(on_frame=raw_writer.write)
 
+  
+  declare_ros2_parameters(camera_settings_dict)
 
   try:
     camera_node.capture()
@@ -148,9 +155,12 @@ def run_node():
   #del diagnostics
 
 def main():
-  rospy.init_node('camera_array_node', anonymous=False)
-  rospy.loginfo(rospy.get_param("~reset_cycle"))
-  if rospy.get_param("~reset_cycle", True):
+  rospy.init_node('camera_array', anonymous=False)
+  camera_set_file = rospy.get_param("camera_set_file", '')
+  camera_settings_file = rospy.get_param("settings_file", '')
+
+  rospy.loginfo(str(rospy.get_param("reset_cycle", True)))
+  if rospy.get_param("reset_cycle", True):
     spinnaker_helpers.reset_all()
     rospy.sleep(1)
 
@@ -159,7 +169,7 @@ def main():
   system = PySpin.System.GetInstance()
 
   with torch.inference_mode():
-    run_node()
+    run_node(camera_set_file, camera_settings_file)
   
   gc.collect(generation=0)
   rospy.sleep(2.0)

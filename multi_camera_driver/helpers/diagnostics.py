@@ -29,7 +29,7 @@ class CameraState(object):
     self.tolerance = tolerance
 
     self.updated_time = rospy.Time()
-    self.time_since_last_reset = rospy.Time().now()
+    self.time_since_last_reset = rospy.Time.now()
     self._recieved = 0
 
     updater.add(camera_name, self.produce_diagnostics)
@@ -41,28 +41,30 @@ class CameraState(object):
   @recieved.setter
   def recieved(self, new_value):
     self._recieved = new_value
-    self.updated_time = rospy.Time().now()
+    self.updated_time = rospy.Time.now()
   
   
   def reset(self):
     self._recieved = 0
-    self.time_since_last_reset = rospy.Time().now()
+    self.time_since_last_reset = rospy.Time.now()
 
   def produce_diagnostics(self, stat):
     """ Check current state and report statistics """
     stat.hardware_id = self.camera_serial
+
     last_update = (rospy.Time.now() - self.updated_time).to_sec()
 
     if last_update > self.time_before_stale:
       stat.summary(ERROR, f'Haven\'t recieved update in {last_update} seconds')
       return stat
     
-    last_reset = (rospy.Time.now() - self.time_since_last_reset).to_sec()
-    lower_bound = (self.ideal_framerate * last_reset) - self.tolerance
-    upper_bound = (self.ideal_framerate * last_reset) + self.tolerance
-    if lower_bound > self.recieved or self.recieved > upper_bound:
-      stat.summary(WARN, f'Recieved inadequate amount of frames: {self.recieved} instead of {self.ideal_framerate * last_reset}')
-      return stat
+    if self.ideal_framerate is not None:
+      last_reset = (rospy.Time.now() - self.time_since_last_reset).to_sec()
+      lower_bound = (self.ideal_framerate * last_reset) - self.tolerance
+      upper_bound = (self.ideal_framerate * last_reset) + self.tolerance
+      if lower_bound > self.recieved or self.recieved > upper_bound:
+        stat.summary(WARN, f'Recieved inadequate amount of frames: {self.recieved} instead of {self.ideal_framerate * last_reset}')
+        return stat
 
 
     stat.summary(OK, f'Recieved {self.recieved} frames')
@@ -76,11 +78,11 @@ class CameraDiagnosticUpdater:
 
     camera_serials is a dict composed of camera_serial->camera_name
     """
-    self.updater = diagnostic_updater.Updater()
+    self.updater = diagnostic_updater.Updater(rospy._node)
     self.updater.setHardwareID("cameras")  
 
     self.master_id = master_id    
-    
+
     self.camera_states = {
       k: CameraState(self.updater, v.name, v.serial, 
                      ideal_framerate = v.framerate if v.is_master or self.master_id is None else camera_settings[self.master_id].framerate, 

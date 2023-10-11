@@ -6,7 +6,7 @@ import rospy2 as rospy
 import PySpin
 import torch
 
-from typing import List, Dict, Tuple, Optional
+from beartype.typing import List, Dict, Tuple, Optional
 
 
 def spinnaker_image(camera_name:str, image:PySpin.Image, time_offset_sec:rospy.Duration, device:torch.device) -> CameraImage:

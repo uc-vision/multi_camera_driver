@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy2 as rospy
+
+from rcl_interfaces.msg import SetParametersResult
+
+
 from dataclasses import replace
 import gc
 import traceback
@@ -9,6 +13,7 @@ from beartype import beartype
 from .image_settings import ImageSettings
 from .camera_set import CameraSet
 from pydispatch import Dispatcher
+from .camera_params import TRANSFORM, TONE_MAPPING
 
 
 class CameraArrayNode(Dispatcher):
@@ -16,7 +21,7 @@ class CameraArrayNode(Dispatcher):
   _events_ = ["on_image_settings", "on_camera_settings", "on_update"]
   
   @beartype
-  def __init__(self, camera_set:CameraSet, image_settings:ImageSettings = ImageSettings()):
+  def __init__(self, camera_set: CameraSet, image_settings: ImageSettings = ImageSettings()):
 
     self.camera_set = camera_set
 
@@ -26,7 +31,7 @@ class CameraArrayNode(Dispatcher):
 
     self.require_resync = False
 
-    # self.reconfigure_srv = Server(CameraArrayConfig, self.reconfigure_callback)
+    rospy._node.add_on_set_parameters_callback(self.reconfigure_callback)
 
     for camera_name, info in camera_set.camera_settings.items():
       rospy.loginfo(f"{camera_name}: {info}")
@@ -53,15 +58,18 @@ class CameraArrayNode(Dispatcher):
       return self.config
 
 
-  def reconfigure_callback(self, config, _):
+  def reconfigure_callback(self, params):
     try:
-      updates = {}
-      for k, v in config.items():
-        if k == "groups":
-          continue
-
+      for param in params:
+        k, v = param.name, param.value
         if self.config.get(k, None) == v:
           continue
+
+        if k == 'tone_mapping':
+          v = TONE_MAPPING[v]
+
+        if k == 'transform':
+          v = TRANSFORM[v]
 
         if self.started and k in self.delayed_setters:
           self.pending_config[k] = v
@@ -77,7 +85,7 @@ class CameraArrayNode(Dispatcher):
 
       raise e
 
-    return config
+    return SetParametersResult(successful=True)
 
   @property
   def started(self):
