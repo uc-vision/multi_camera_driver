@@ -1,7 +1,7 @@
 from beartype import beartype
 import rospy2 as rospy
-import diagnostic_updater
-import diagnostic_msgs
+#import diagnostic_updater
+#import diagnostic_msgs
 from typing import List, Dict, Optional, Union
 from multi_camera_driver.helpers.camera_set import CameraSet
 

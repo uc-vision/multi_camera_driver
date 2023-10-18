@@ -30,7 +30,7 @@ import numpy as np
 from multi_camera_driver.helpers.camera_set import CameraSet
 from multi_camera_driver.helpers import spinnaker_helpers
 from multi_camera_driver.helpers.camera_params import declare_ros2_parameters
-from multi_camera_driver.helpers.diagnostics import CameraDiagnosticUpdater
+#from multi_camera_driver.helpers.diagnostics import CameraDiagnosticUpdater
 from multi_camera_driver.helpers.image_processor.frame_processor import FrameProcessor
 from multi_camera_driver.helpers.sync_handler import SyncHandler
 
@@ -112,10 +112,10 @@ def run_node(camera_set_file, camera_settings_file):
   camera_set.bind(on_image=handler.publish)
   camera_set.bind(on_trigger_time=handler.trigger_time)
 
-  diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
-  camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
+  #diagnostics = CameraDiagnosticUpdater(camera_set.camera_settings, camera_set.master_id)
+  #camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
 
-  camera_node.bind(on_update=diagnostics.reset)
+  #camera_node.bind(on_update=diagnostics.reset)
   camera_node.bind(on_update=handler.report_recieved)
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
