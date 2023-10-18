@@ -103,7 +103,8 @@ class SyncHandler(Dispatcher):
 
     timeout_time = self.frame_queue[-1].timestamp - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-      rospy.logwarn(f"dropping frame from {self.frame_queue[0].camera_name} because it is too old, {self.frame_queue[0].timestamp} < {timeout_time} ({(timeout_time - self.frame_queue[0].timestamp)/1e6}ms)")
+      dur_to_sec = (timeout_time - self.frame_queue[0].timestamp).to_sec()
+      rospy.logwarn(f"dropping frame from {self.frame_queue[0].camera_name} because it is too old, {self.frame_queue[0].timestamp} < {timeout_time} ({dur_to_sec/1e6}ms)")
       frame:CameraImage = self.frame_queue.pop(0)
       self.dropped[frame.camera_name] += 1
 
