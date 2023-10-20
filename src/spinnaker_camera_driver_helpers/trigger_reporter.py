@@ -47,6 +47,8 @@ class TriggerReporter(threading.Thread):
                 self.send_msg({"keep_alive":True})
                 self.last_kl = time.time()
 
+            time.sleep(0)
+
     def trigger_handler(self, msg):
         if abs(int(msg["sec"]) - msg["sec"]) > 0:
             raise NotImplementedError("Subsecond timestamps not supported")
