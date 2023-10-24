@@ -72,7 +72,7 @@ def publish_extrinsics(broadcaster, calib, camera_names):
   extrinsics = {alias:found.get(alias, np.eye(4))
     for alias in camera_names}
 
-  rig_frame = rospy.get_namespace().strip('/')
+  rig_frame = rospy.get_param('rig_frame', '')
   msgs = camera_transforms(rig_frame, extrinsics, calib.tracking)   
 
   broadcaster.sendTransform(msgs)

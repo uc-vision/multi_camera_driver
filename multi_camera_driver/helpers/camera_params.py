@@ -168,3 +168,4 @@ def declare_ros2_parameters(default_settings: Dict[str, Any]):
     floating_point_range=[FloatingPointRange(from_value=0.0, to_value=1.0)]
   )
   rospy._node.declare_parameter('moving_average', default_moving_average, descriptor = moving_average_desc)
+
