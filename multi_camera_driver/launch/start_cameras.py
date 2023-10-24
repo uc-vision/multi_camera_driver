@@ -15,6 +15,8 @@ def launch_setup(context):
   camera_array_node = Node(
     package='multi_camera_driver',
     executable='start_cameras',
+    respawn = True,
+    respawn_delay = 5.0,
     parameters=[{
       'device': device, 
       'camera_set_file': camera_set, 

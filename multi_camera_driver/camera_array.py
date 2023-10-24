@@ -43,8 +43,8 @@ from traceback import format_exc
 import gc
 
 def init_calibrations(camera_ids):
-  calibration_file = rospy.get_param("calibration_file", '')
-  tracking_frame = rospy.get_param("tracking_frame", '')
+  calibration_file = rospy.get_param('calibration_file', '')
+  tracking_frame = rospy.get_param('tracking_frame', '')
 
   if tracking_frame == '':
     tracking_frame = None
@@ -91,6 +91,12 @@ class ImageWriterRaw:
 def run_node(camera_set_file, camera_settings_file):
   camera_set_dict = load_config(camera_set_file)
   camera_settings_dict = load_config(camera_settings_file)
+
+  default_tracking_frame = camera_settings_dict.get('tracking_frame', 'camera_ref')
+  rospy._node.declare_parameter('tracking_frame', default_tracking_frame)
+
+  default_rig_frame = camera_settings_dict.get('rig_frame', 'camera_bar')
+  rospy._node.declare_parameter('rig_frame', default_rig_frame)
 
   camera_set = CameraSet(
       camera_serials=camera_set_dict.get("cameras"),
