@@ -168,7 +168,7 @@ def main():
   rospy.loginfo(str(rospy.get_param("reset_cycle", True)))
   if rospy.get_param("reset_cycle", True):
     spinnaker_helpers.reset_all()
-    rospy.sleep(1)
+    rospy.sleep(3)
 
   rospy.loginfo("Starting")
 
