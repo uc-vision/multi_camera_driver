@@ -52,7 +52,7 @@ class TriggerReporter(threading.Thread):
     def trigger_handler(self, msg):
         if abs(int(msg["sec"]) - msg["sec"]) > 0:
             raise NotImplementedError("Subsecond timestamps not supported")
-        reference = datetime.datetime(2000 + msg["year"], msg["month"], msg["day"], msg["hour"], msg["min"], int(msg["sec"]))
+        reference = datetime.datetime(2000 + msg["year"], msg["month"], msg["day"], msg["hour"], msg["min"], int(msg["sec"]), tzinfo=datetime.timezone.utc)
         delta = datetime.timedelta(microseconds=msg["delta_us"])
         timestamp = reference + delta
         if self.trigger_callback is not None:
