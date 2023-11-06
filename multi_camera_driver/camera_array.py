@@ -19,6 +19,7 @@ from beartype import beartype
 import rospy2 as rospy
 
 import torch
+from rcl_interfaces.msg import ParameterDescriptor
 
 from multi_camera_driver.helpers.camera_node import CameraArrayNode
 from multi_camera_driver.helpers.image_processor.outputs import ImageOutputs
@@ -29,7 +30,7 @@ import numpy as np
 
 from multi_camera_driver.helpers.camera_set import CameraSet
 from multi_camera_driver.helpers import spinnaker_helpers
-from multi_camera_driver.helpers.camera_params import declare_ros2_parameters
+from multi_camera_driver.helpers.camera_params import declare_camera_parameters, declare_read_only_parameters
 #from multi_camera_driver.helpers.diagnostics import CameraDiagnosticUpdater
 from multi_camera_driver.helpers.image_processor.frame_processor import FrameProcessor
 from multi_camera_driver.helpers.sync_handler import SyncHandler
@@ -37,6 +38,7 @@ from multi_camera_driver.helpers.sync_handler import SyncHandler
 from multi_camera_driver.helpers.image_settings import ImageSettings
 from multi_camera_driver.helpers.config import (import_calibrations, 
   load_calibrations, load_config, publish_extrinsics, write_calibration, exceptions_to_rosout)
+
 
 
 from traceback import format_exc
@@ -92,12 +94,6 @@ def run_node(camera_set_file, camera_settings_file):
   camera_set_dict = load_config(camera_set_file)
   camera_settings_dict = load_config(camera_settings_file)
 
-  default_tracking_frame = camera_settings_dict.get('tracking_frame', 'camera_ref')
-  rospy._node.declare_parameter('tracking_frame', default_tracking_frame)
-
-  default_rig_frame = camera_settings_dict.get('rig_frame', 'camera_bar')
-  rospy._node.declare_parameter('rig_frame', default_rig_frame)
-
   camera_set = CameraSet(
       camera_serials=camera_set_dict.get("cameras"),
       camera_settings = camera_settings_dict.get("camera_settings"),
@@ -136,7 +132,7 @@ def run_node(camera_set_file, camera_settings_file):
   # processor.bind(on_frame=raw_writer.write)
 
   
-  declare_ros2_parameters(camera_settings_dict)
+  declare_camera_parameters(camera_settings_dict)
 
   try:
     camera_node.capture()
@@ -162,10 +158,11 @@ def run_node(camera_set_file, camera_settings_file):
 
 def main():
   rospy.init_node('camera_array', anonymous=False)
+  declare_read_only_parameters()
+
   camera_set_file = rospy.get_param("camera_set_file", '')
   camera_settings_file = rospy.get_param("settings_file", '')
 
-  rospy.loginfo(str(rospy.get_param("reset_cycle", True)))
   if rospy.get_param("reset_cycle", True):
     spinnaker_helpers.reset_all()
     rospy.sleep(3)
