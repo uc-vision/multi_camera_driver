@@ -30,7 +30,7 @@ class CameraPublisher():
         "utc" : (TimeReference, lambda data: TimeReference( time_ref=rospy.Time.from_sec(data.raw.utc_time.timestamp()), source="utc time of capture"))
     }
 
-    self.publisher = LazyPublisher(topics, self.register, name = namespace + self.camera_name)
+    self.publisher = LazyPublisher(topics, self.register, name = f'{namespace}/{self.camera_name}')
 
   def register(self):
     return []     # Here's where the lazy subscriber subscribes to it's inputs (we have no other ROS based inputs)
