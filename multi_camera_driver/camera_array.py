@@ -125,7 +125,8 @@ def run_node(camera_set_file, camera_settings_file):
   handler.bind(on_dsync=camera_node.resync)
   camera_node.bind(on_image_settings=processor.update_settings)
 
-  publisher = FramePublisher(camera_set.camera_ids)
+  namespace = rospy.get_param('rig_frame', '')
+  publisher = FramePublisher(camera_set.camera_ids, namespace)
   processor.bind(on_frame=publisher.publish)
 
   # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
