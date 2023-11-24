@@ -16,7 +16,7 @@ from multi_camera_driver.helpers.work_queue import WorkQueue
 
 class CameraPublisher():
 
-  def __init__(self, camera_name:str):    
+  def __init__(self, camera_name:str, namespace):    
     self.camera_name = camera_name
     self.queue = WorkQueue(name=f"CameraPublisher({camera_name})", run=self.publish_worker, max_size=1)
     self.queue.start()
@@ -30,7 +30,7 @@ class CameraPublisher():
         "utc" : (TimeReference, lambda data: TimeReference( time_ref=rospy.Time.from_sec(data.raw.utc_time.timestamp()), source="utc time of capture"))
     }
 
-    self.publisher = LazyPublisher(topics, self.register, name=self.camera_name)
+    self.publisher = LazyPublisher(topics, self.register, name = f'{namespace}/{self.camera_name}')
 
   def register(self):
     return []     # Here's where the lazy subscriber subscribes to it's inputs (we have no other ROS based inputs)
@@ -54,8 +54,8 @@ class CameraPublisher():
 
 class FramePublisher():
      
-    def __init__(self, camera_names:List[str]):
-      self.publishers = {camera:CameraPublisher(camera) for camera in camera_names}
+    def __init__(self, camera_names:List[str], namespace = ''):
+      self.publishers = {camera:CameraPublisher(camera, namespace) for camera in camera_names}
   
     def publish(self, images:List[ImageOutputs]):
       for image in images:

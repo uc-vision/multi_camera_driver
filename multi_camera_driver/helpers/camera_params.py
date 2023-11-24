@@ -22,8 +22,80 @@ TONE_MAPPING = [
   'linear',
   'reinhard'
 ]
+def declare_read_only_parameters():
 
-def declare_ros2_parameters(default_settings: Dict[str, Any]):
+
+  calibration_file_descriptor = ParameterDescriptor(
+    name='calibration_file', 
+    type=4,
+    read_only=True,
+    description='calibration_file'
+  )
+  rospy._node.declare_parameter('calibration_file', '', calibration_file_descriptor)
+
+  camera_set_file_descriptor = ParameterDescriptor(
+    name='camera_set_file', 
+    type=4,
+    read_only=True,
+    description='camera_set_file'
+  )
+  rospy._node.declare_parameter('camera_set_file', '', camera_set_file_descriptor)
+
+  settings_file_descriptor = ParameterDescriptor(
+    name='settings_file', 
+    type=4,
+    read_only=True,
+    description='settings_file'
+  )
+  rospy._node.declare_parameter('settings_file', '', settings_file_descriptor)
+
+  settings_file_descriptor = ParameterDescriptor(
+    name='reset_cycle', 
+    type=1,
+    read_only=True,
+    description='reset_cycle'
+  )
+  rospy._node.declare_parameter('reset_cycle', True, settings_file_descriptor)
+  
+
+  tracking_frame_descriptor = ParameterDescriptor(
+    name='tracking_frame', 
+    type=4,
+    read_only=True,
+    description='tracking_frame'
+  )
+  rospy._node.declare_parameter('tracking_frame', 'camera_ref', tracking_frame_descriptor)
+
+
+  rig_frame_descriptor = ParameterDescriptor(
+    name='rig_frame', 
+    type=4,
+    read_only=True,
+    description='rig_frame'
+  )
+  rospy._node.declare_parameter('rig_frame', 'camera_bar', rig_frame_descriptor)
+
+
+  rig_frame_descriptor = ParameterDescriptor(
+    name='timeout_msec', 
+    type=2,
+    read_only=True,
+    description='timeout_msec'
+  )
+  rospy._node.declare_parameter('timeout_msec', 1000, rig_frame_descriptor)
+
+  rig_frame_descriptor = ParameterDescriptor(
+    name='sync_threshold_msec', 
+    type=2,
+    read_only=True,
+    description='sync_threshold_msec'
+  )
+  rospy._node.declare_parameter('sync_threshold_msec', 10, rig_frame_descriptor)
+
+
+
+
+def declare_camera_parameters(default_settings: Dict[str, Any]):
 
   default_exposure = default_settings.get('exposure', 4000)
   exposure_desc = ParameterDescriptor(
@@ -67,11 +139,7 @@ def declare_ros2_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Binning', 
     integer_range=[IntegerRange(from_value=1, to_value=2, step=1)],
-    additional_constraints="""
-    Mapping: 
-      1 = Full resolution
-      2 = Half Resolution
-    """
+    additional_constraints="""{ "1": "Full resolution", "2": "Half Resolution" }"""
   )
   rospy._node.declare_parameter('binning', default_binning, descriptor = binning_desc)
 
@@ -100,7 +168,7 @@ def declare_ros2_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Tonemapping method',
     integer_range=[IntegerRange(from_value=1, to_value=2)],
-    additional_constraints='Mapping: 1 = Linear, 2 = Reinhard'
+    additional_constraints="""{ "1": "Linear", "2": "Reinhard" }"""
   )
   rospy._node.declare_parameter('tone_mapping', default_tone_mapping_value, descriptor = tone_mapping_desc)
 
@@ -111,16 +179,16 @@ def declare_ros2_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Transform image',
     additional_constraints="""
-    Mapping:
-      0 = None
-      1 = Rotate 90 degrees CW
-      2 = Rotate 90 degrees CCW
-      3 = Rotate 180 degrees CW
-      4 = Transposed
-      5 = Flip horizontally
-      6 = Flip vertically
-      7 = Flip horizontally and vertically
-      """
+    { "0": "none", 
+      "1": "rotate_90",
+      "2": "rotate_180",
+      "3": "rotate_270",
+      "4": "transpose",
+      "5": "flip_horiz",
+      "6": "flip_vert",
+      "7": "transverse"
+    }
+    """
   )
   rospy._node.declare_parameter('transform', default_transform_value, descriptor = transform_desc)
 
