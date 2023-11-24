@@ -88,9 +88,8 @@ class ImageWriterRaw:
       np.save(path, raw.image_data, allow_pickle=True)
 
 
-def run_node(camera_set_file, camera_settings_file):
-  camera_set_dict = load_config(camera_set_file)
-  camera_settings_dict = load_config(camera_settings_file)
+def run_node(camera_set_dict, camera_settings_dict):
+
 
   default_tracking_frame = camera_settings_dict.get('tracking_frame', 'camera_ref')
   rospy._node.declare_parameter('tracking_frame', default_tracking_frame)
@@ -144,29 +143,32 @@ def run_node(camera_set_file, camera_settings_file):
     pass
   except PySpin.SpinnakerException as e:
     rospy.logerr("Error capturing:" + str(e))
+  finally:
+    recalibrated.unregister()
 
-  recalibrated.unregister()
+    handler.stop()
+    processor.stop()
+    publisher.stop()
+    camera_node.stop()
+    camera_node.cleanup()
 
-  handler.stop()
-  processor.stop()
-  publisher.stop()
-  camera_node.stop()
-  camera_node.cleanup()
-
-  del camera_node
-  del camera_set
-  del handler
-  del processor
-  del publisher
-  #del diagnostics
+    del camera_node
+    del camera_set
+    del handler
+    del processor
+    del publisher
+    #del diagnostics
 
 def main():
   rospy.init_node('camera_array', anonymous=False)
   camera_set_file = rospy.get_param("camera_set_file", '')
   camera_settings_file = rospy.get_param("settings_file", '')
 
-  rospy.loginfo(str(rospy.get_param("reset_cycle", True)))
-  if rospy.get_param("reset_cycle", True):
+  camera_set_dict = load_config(camera_set_file)
+  camera_settings_dict = load_config(camera_settings_file)
+
+  if camera_set_dict.get('reset_cycle', True):
+    rospy.loginfo("Resetting")
     spinnaker_helpers.reset_all()
     rospy.sleep(3)
 
@@ -175,7 +177,7 @@ def main():
   system = PySpin.System.GetInstance()
 
   with torch.inference_mode():
-    run_node(camera_set_file, camera_settings_file)
+    run_node(camera_set_dict, camera_settings_dict)
   
   gc.collect(generation=0)
   rospy.sleep(2.0)
