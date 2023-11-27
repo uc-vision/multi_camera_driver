@@ -32,7 +32,7 @@ def generate_launch_description():
   device_launch_arg = DeclareLaunchArgument(
     'device',
     default_value=default_device,
-    description='Device??')
+    description='Torch device for GPU image processing.')
 
   default_camera_set = os.path.join(config_folder, 'camera_sets', 'spare_global.yaml')
   camera_set_launch_arg = DeclareLaunchArgument(

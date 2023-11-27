@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from multi_camera_driver.helpers.camera_params import ToneMapper, Transform
 import numpy as np
 
 from .common import CameraSettings
@@ -25,10 +26,10 @@ class ImageSettings:
   color_adapt : float = 1.0
 
   # linear reinhard
-  tone_mapping: str = 'reinhard'
+  tone_mapping: int = ToneMapper.linear.value
 
   # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
-  transform : str = 'none'
+  transform : int = Transform.none.value
   
   # Moving average to smooth intensity scaling over time
   moving_average : float = 0.02

@@ -1,6 +1,6 @@
 
-from typing import Dict, List
-import numpy as np
+from typing import Dict, List, Tuple
+from multi_camera_driver.helpers.camera_params import ToneMapper, Transform
 import torch
 
 from pydispatch import Dispatcher
@@ -8,20 +8,16 @@ from beartype import beartype
 
 
 from multi_camera_driver.helpers.image_handler import CameraImage
-from multi_camera_driver.helpers.common import CameraSettings, EncoderError, bayer_pattern, encoding_bits
+from multi_camera_driver.helpers.common import CameraSettings, bayer_pattern, encoding_bits
 from multi_camera_driver.helpers.image_processor.outputs import ImageOutputs
 from multi_camera_driver.helpers.image_processor.util import TiQueue, taichi_pattern
 from multi_camera_driver.helpers.image_settings import ImageSettings
 from multi_camera_driver.helpers.work_queue import WorkQueue
 
-from taichi_image import camera_isp, interpolate
-import taichi as ti
-import gc
+from taichi_image import camera_isp, interpolate, bayer, packed
 
 
-def common_value(name, values):
-  assert len(set(values)) == 1, f"All cameras must have the same {name}"
-  return values[0]
+
 
 class FrameProcessor(Dispatcher):
   _events_ = ["on_frame"]
@@ -41,10 +37,11 @@ class FrameProcessor(Dispatcher):
 
   def update_settings(self, settings:ImageSettings):
     self.settings = settings
+    transform = interpolate.ImageTransform(Transform(settings.transform).name)
     
     self.isp.set(moving_alpha=self.settings.moving_average, 
                  resize_width=int(self.settings.resize_width),
-                 transform=interpolate.ImageTransform(self.settings.transform))
+                 transform=transform)
 
 
   @beartype
@@ -57,11 +54,23 @@ class FrameProcessor(Dispatcher):
     if encoding_bits(enc) not in [12, 16]:
       raise ValueError(f"Unsupported bits {encoding_bits(enc)} in {enc}")
 
+    transform = interpolate.ImageTransform(Transform(self.settings.transform).name)
     self.isp = camera_isp.Camera16(taichi_pattern[self.pattern], 
                          resize_width=int(self.settings.resize_width), 
                         moving_alpha=self.settings.moving_average,
-                        transform=interpolate.ImageTransform(self.settings.transform),
+                        transform=transform,
                         device=torch.device(self.settings.device))
+    
+  
+  def warmup(self):
+    # Warm start - run some empty images through
+    def f():
+      test_images = [empty_test_image(camera.image_size, device=self.settings.device) for camera in self.cameras.values()] 
+      self.process_images(test_images)
+
+
+    TiQueue.run_sync(f)
+
 
 
   @beartype
@@ -97,16 +106,16 @@ class FrameProcessor(Dispatcher):
     load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
     images =  [load_data(image) for image in images]
 
-    if self.settings.tone_mapping == "linear":
+    tone_mapping = ToneMapper(self.settings.tone_mapping)
+
+    if tone_mapping == ToneMapper.linear:
       outputs = self.isp.tonemap_linear(images, gamma=self.settings.tone_gamma)
-    elif self.settings.tone_mapping == "reinhard":
+    elif tone_mapping == ToneMapper.reinhard:
       outputs = self.isp.tonemap_reinhard(
         images, gamma=self.settings.tone_gamma, 
         intensity = self.settings.tone_intensity,
         light_adapt = self.settings.light_adapt,
         color_adapt = self.settings.color_adapt)
-    else:
-      raise ValueError(f"Unknown tone mapper {self.settings.tone_mapper}")
 
     previews = [interpolate.resize_width(output, self.settings.preview_size) for output in outputs]
     return outputs, previews
@@ -114,3 +123,17 @@ class FrameProcessor(Dispatcher):
 
   def stop(self):
     self.queue.stop()
+
+
+def empty_test_image(image_size:Tuple[int, int], pattern = bayer.BayerPattern.RGGB, value=0.5, device="cpu"):
+  w, h = image_size
+  test_image = torch.full( (h, w, 3), value, dtype=torch.float32, device=device)
+  
+  cfa = bayer.rgb_to_bayer(test_image, pattern=pattern) 
+  return packed.encode12(cfa, scaled=True) 
+
+
+
+def common_value(name, values):
+  assert len(set(values)) == 1, f"All cameras must have the same {name}"
+  return values[0]

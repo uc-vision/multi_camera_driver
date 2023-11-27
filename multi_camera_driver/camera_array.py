@@ -121,6 +121,10 @@ def run_node(camera_set_dict, camera_settings_dict):
   camera_node.bind(on_update=handler.report_recieved)
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
+  rospy.loginfo("Frame processor warmup")
+  processor.warmup()
+  rospy.loginfo("Done")
+
   handler.bind(on_frame=processor.process)
   handler.bind(on_dsync=camera_node.resync)
   camera_node.bind(on_image_settings=processor.update_settings)

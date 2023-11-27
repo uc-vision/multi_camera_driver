@@ -13,7 +13,6 @@ from beartype import beartype
 from .image_settings import ImageSettings
 from .camera_set import CameraSet
 from pydispatch import Dispatcher
-from .camera_params import TRANSFORM, TONE_MAPPING
 
 
 class CameraArrayNode(Dispatcher):
@@ -64,12 +63,6 @@ class CameraArrayNode(Dispatcher):
         k, v = param.name, param.value
         if self.config.get(k, None) == v:
           continue
-
-        if k == 'tone_mapping':
-          v = TONE_MAPPING[v]
-
-        if k == 'transform':
-          v = TRANSFORM[v]
 
         if self.started and k in self.delayed_setters:
           self.pending_config[k] = v

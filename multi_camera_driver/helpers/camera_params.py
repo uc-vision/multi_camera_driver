@@ -1,3 +1,4 @@
+from enum import Enum
 import rospy2 as rospy
 
 from beartype.typing import Dict, Any
@@ -6,22 +7,21 @@ from rcl_interfaces.msg import IntegerRange
 from rcl_interfaces.msg import ParameterDescriptor
 
 
-TRANSFORM = [
-  'none',
-  'rotate_90',
-  'rotate_180',
-  'rotate_270',
-  'transpose',
-  'flip_horiz',
-  'flip_vert',
-  'transverse'
-  ]
+class Transform(Enum):
+  none = 0
+  rotate_90 = 1
+  rotate_180 = 2
+  rotate_270 = 3
+  transpose = 4
+  flip_horiz = 5
+  flip_vert = 6
+  transverse = 7
 
-TONE_MAPPING = [
-  None,
-  'linear',
-  'reinhard'
-]
+  
+class ToneMapper(Enum):
+  linear = 1
+  reinhard = 2
+
 def declare_read_only_parameters():
 
 
@@ -161,36 +161,24 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
   )
   rospy._node.declare_parameter('jpeg_quality', default_jpeg_quality, descriptor = jpeg_quality_desc)
 
-  default_tone_mapping = default_settings.get('tone_mapping', 'linear')
-  default_tone_mapping_value = TONE_MAPPING.index(default_tone_mapping)
+  default_tone_mapping = ToneMapper[default_settings.get('tone_mapping', 'reinhard')]
   tone_mapping_desc = ParameterDescriptor(
     name='tone_mapping', 
     type=2, 
     description='Tonemapping method',
     integer_range=[IntegerRange(from_value=1, to_value=2)],
-    additional_constraints="""{ "1": "Linear", "2": "Reinhard" }"""
+    additional_constraints= str({ data.name:data.value for data in ToneMapper })
   )
-  rospy._node.declare_parameter('tone_mapping', default_tone_mapping_value, descriptor = tone_mapping_desc)
+  rospy._node.declare_parameter('tone_mapping', default_tone_mapping.value, descriptor = tone_mapping_desc)
 
-  default_transform = default_settings.get('transform', 'none')
-  default_transform_value = TRANSFORM.index(default_transform)
+  default_transform = Transform[default_settings.get('transform', 'none')]
   transform_desc = ParameterDescriptor(
     name='transform', 
     type=2, 
     description='Transform image',
-    additional_constraints="""
-    { "0": "none", 
-      "1": "rotate_90",
-      "2": "rotate_180",
-      "3": "rotate_270",
-      "4": "transpose",
-      "5": "flip_horiz",
-      "6": "flip_vert",
-      "7": "transverse"
-    }
-    """
+    additional_constraints= str({ data.name:data.value for data in Transform })
   )
-  rospy._node.declare_parameter('transform', default_transform_value, descriptor = transform_desc)
+  rospy._node.declare_parameter('transform', default_transform.value, descriptor = transform_desc)
 
   default_tone_gamma = default_settings.get('tone_gamma', 1.0)
   tone_gamma_desc = ParameterDescriptor(
