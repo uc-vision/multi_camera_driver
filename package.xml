@@ -8,6 +8,9 @@
   <license>BSD</license>
 
   <build_depend>python_disablegc</build_depend>
+  <build_depend>python_fuzzywuzzy</build_depend>
+  <build_depend>python_python-dispatch</build_depend>
+
   <build_depend>diagnostic_updater</build_depend>
   <build_export_depend>cv_bridge</build_export_depend>
 

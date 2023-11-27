@@ -1,5 +1,5 @@
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 import torch
 
@@ -14,14 +14,11 @@ from multi_camera_driver.helpers.image_processor.util import TiQueue, taichi_pat
 from multi_camera_driver.helpers.image_settings import ImageSettings
 from multi_camera_driver.helpers.work_queue import WorkQueue
 
-from taichi_image import camera_isp, interpolate
+from taichi_image import camera_isp, interpolate, bayer, packed
 import taichi as ti
 import gc
 
 
-def common_value(name, values):
-  assert len(set(values)) == 1, f"All cameras must have the same {name}"
-  return values[0]
 
 class FrameProcessor(Dispatcher):
   _events_ = ["on_frame"]
@@ -62,6 +59,18 @@ class FrameProcessor(Dispatcher):
                         moving_alpha=self.settings.moving_average,
                         transform=interpolate.ImageTransform(self.settings.transform),
                         device=torch.device(self.settings.device))
+    
+  
+  def warmup(self):
+    # Warm start - run some empty images through
+    def f():
+      test_images = [empty_test_image(camera.image_size, device=self.settings.device) for camera in self.cameras.values()] 
+      self.process_images(test_images)
+
+
+    TiQueue.run_sync(f)
+
+
 
 
   @beartype
@@ -106,7 +115,7 @@ class FrameProcessor(Dispatcher):
         light_adapt = self.settings.light_adapt,
         color_adapt = self.settings.color_adapt)
     else:
-      raise ValueError(f"Unknown tone mapper {self.settings.tone_mapper}")
+      raise ValueError(f"Unknown tone mapper {self.settings.tone_mapping}")
 
     previews = [interpolate.resize_width(output, self.settings.preview_size) for output in outputs]
     return outputs, previews
@@ -114,3 +123,17 @@ class FrameProcessor(Dispatcher):
 
   def stop(self):
     self.queue.stop()
+
+
+def empty_test_image(image_size:Tuple[int, int], pattern = bayer.BayerPattern.RGGB, value=0.5, device="cpu"):
+  w, h = image_size
+  test_image = torch.full( (h, w, 3), value, dtype=torch.float32, device=device)
+  
+  cfa = bayer.rgb_to_bayer(test_image, pattern=pattern) 
+  return packed.encode12(cfa, scaled=True) 
+
+
+
+def common_value(name, values):
+  assert len(set(values)) == 1, f"All cameras must have the same {name}"
+  return values[0]
