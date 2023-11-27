@@ -105,6 +105,7 @@ def run_node(camera_set_dict, camera_settings_dict):
   camera_set.update_calibration(calib.cameras)
 
   camera_node = CameraArrayNode(camera_set)
+  declare_camera_parameters(camera_settings_dict)
 
   handler = SyncHandler(camera_set.camera_settings, 
                         timeout_msec=rospy.get_param("timeout_msec", 1000), 
@@ -130,10 +131,7 @@ def run_node(camera_set_dict, camera_settings_dict):
 
   # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
   # processor.bind(on_frame=raw_writer.write)
-
   
-  declare_camera_parameters(camera_settings_dict)
-
   try:
     camera_node.capture()
   except KeyboardInterrupt:
