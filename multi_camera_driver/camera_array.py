@@ -104,8 +104,9 @@ def run_node(camera_set_dict, camera_settings_dict):
   calib, recalibrated = init_calibrations(camera_set.camera_ids)
   camera_set.update_calibration(calib.cameras)
 
+  camera_parameters = declare_camera_parameters(camera_settings_dict)
   camera_node = CameraArrayNode(camera_set)
-  declare_camera_parameters(camera_settings_dict)
+  camera_node.reconfigure_callback(camera_parameters)
 
   handler = SyncHandler(camera_set.camera_settings, 
                         timeout_msec=rospy.get_param("timeout_msec", 1000), 

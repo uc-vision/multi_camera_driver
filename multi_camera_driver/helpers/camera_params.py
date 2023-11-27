@@ -212,9 +212,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     description='Moving average alpha', 
     floating_point_range=[FloatingPointRange(from_value=0.0, to_value=1.0)]
   )
-  rospy._node.declare_parameters(
-    namespace = '',
-    parameters=[
+  parameters = [
       ('exposure', default_exposure, exposure_desc),
       ('gain', default_gain, gain_desc),
       ('balance_ratio', default_balance, balance_desc),
@@ -230,6 +228,11 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
       ('light_adapt', default_light_adapt, light_adapt_desc),
       ('moving_average', default_moving_average, moving_average_desc)
     ]
+  rospy._node.declare_parameters(
+    namespace = '',
+    parameters=parameters
   )
+  parameter_names = [ p[0] for p in parameters ]
+  return rospy._node.get_parameters(parameter_names)
   
 
