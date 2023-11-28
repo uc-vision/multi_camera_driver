@@ -5,6 +5,7 @@ from beartype.typing import Dict, Any
 from rcl_interfaces.msg import FloatingPointRange
 from rcl_interfaces.msg import IntegerRange
 from rcl_interfaces.msg import ParameterDescriptor
+import json
 
 
 class Transform(Enum):
@@ -162,7 +163,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Tonemapping method',
     integer_range=[IntegerRange(from_value=1, to_value=2)],
-    additional_constraints= str({ data.name:data.value for data in ToneMapper })
+    additional_constraints= json.dumps({ data.name:data.value for data in ToneMapper })
   )
 
   default_transform = Transform[default_settings.get('transform', 'none')]
@@ -170,7 +171,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     name='transform', 
     type=2, 
     description='Transform image',
-    additional_constraints= str({ data.name:data.value for data in Transform })
+    additional_constraints= json.dumps({ data.name:data.value for data in Transform })
   )
 
   default_tone_gamma = default_settings.get('tone_gamma', 1.0)
