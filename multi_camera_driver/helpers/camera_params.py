@@ -138,7 +138,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Binning', 
     integer_range=[IntegerRange(from_value=1, to_value=2, step=1)],
-    additional_constraints="""{ "1": "Full resolution", "2": "Half Resolution" }"""
+    additional_constraints="""{ "1": "Full resolution", "2": "Half Resolution" }""" # Additional Constraints must be valid json for web dynamic reconfigure
   )
 
   default_width = default_settings.get('resize_width', 0)
@@ -163,7 +163,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     type=2, 
     description='Tonemapping method',
     integer_range=[IntegerRange(from_value=1, to_value=2)],
-    additional_constraints= json.dumps({ data.name:data.value for data in ToneMapper })
+    additional_constraints= json.dumps({ data.name:data.value for data in ToneMapper }) # Additional Constraints must be valid json for web dynamic reconfigure
   )
 
   default_transform = Transform[default_settings.get('transform', 'none')]
@@ -171,7 +171,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     name='transform', 
     type=2, 
     description='Transform image',
-    additional_constraints= json.dumps({ data.name:data.value for data in Transform })
+    additional_constraints= json.dumps({ data.name:data.value for data in Transform }) # Additional Constraints must be valid json for web dynamic reconfigure
   )
 
   default_tone_gamma = default_settings.get('tone_gamma', 1.0)
