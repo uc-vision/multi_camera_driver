@@ -68,7 +68,6 @@ class FrameProcessor(Dispatcher):
       test_images = [empty_test_image(camera.image_size, device=self.settings.device) for camera in self.cameras.values()] 
       self.process_images(test_images)
 
-
     TiQueue.run_sync(f)
 
 
@@ -125,9 +124,9 @@ class FrameProcessor(Dispatcher):
     self.queue.stop()
 
 
-def empty_test_image(image_size:Tuple[int, int], pattern = bayer.BayerPattern.RGGB, value=0.5, device="cpu"):
+def empty_test_image(image_size:Tuple[int, int], pattern = bayer.BayerPattern.RGGB, device="cpu"):
   w, h = image_size
-  test_image = torch.full( (h, w, 3), value, dtype=torch.float32, device=device)
+  test_image = torch.rand( (h, w, 3), dtype=torch.float32, device=device)
   
   cfa = bayer.rgb_to_bayer(test_image, pattern=pattern) 
   return packed.encode12(cfa, scaled=True) 
