@@ -138,7 +138,7 @@ def run_node(camera_set_dict, camera_settings_dict):
   # processor.bind(on_frame=raw_writer.write)
   
   try:
-    camera_node.capture()
+    camera_node.capture(camera_set_dict.get('auto_start'))
   except KeyboardInterrupt:
     pass
   except PySpin.SpinnakerException as e:

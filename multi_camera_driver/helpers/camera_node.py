@@ -12,8 +12,12 @@ from beartype import beartype
 
 from .image_settings import ImageSettings
 from .camera_set import CameraSet
+from std_srvs.srv import Empty
 from pydispatch import Dispatcher
 
+from std_msgs.msg import Bool
+from rclpy.qos import QoSProfile, DurabilityPolicy
+QOS_LATCHING = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
@@ -32,6 +36,12 @@ class CameraArrayNode(Dispatcher):
 
     rospy._node.add_on_set_parameters_callback(self.reconfigure_callback)
 
+
+    self.start_cameras_service()
+    self.stop_cameras_service()
+    self.cameras_started_pub = rospy._node.create_publisher(Bool, '/cameras_started', 
+                                                            qos_profile=QOS_LATCHING)
+    
     for camera_name, info in camera_set.camera_settings.items():
       rospy.loginfo(f"{camera_name}: {info}")
 
@@ -55,6 +65,20 @@ class CameraArrayNode(Dispatcher):
       
 
       return self.config
+
+  def start_cameras_service(self):
+    def start_cameras(req, resp):
+      if not self.started:
+        self.start()
+      return resp
+    return rospy._node.create_service(Empty, '~start_cameras', start_cameras)
+  
+  def stop_cameras_service(self):
+    def stop_cameras(req, resp):
+      if self.started:
+        self.stop()
+      return resp
+    return rospy._node.create_service(Empty, '~stop_cameras', stop_cameras)
 
 
   def reconfigure_callback(self, params):
@@ -88,6 +112,7 @@ class CameraArrayNode(Dispatcher):
     assert not self.started
     self.camera_set.register_handlers()
     self.camera_set.start()
+    self.cameras_started_pub.publish(Bool(data=True))
 
 
   def stop(self):
@@ -96,6 +121,7 @@ class CameraArrayNode(Dispatcher):
 
       gc.collect(0)
       self.camera_set.stop()
+      self.cameras_started_pub.publish(Bool(data=False))
 
 
   def update_pending(self):
@@ -117,8 +143,9 @@ class CameraArrayNode(Dispatcher):
 
     self.pending_config = {}
 
-  def capture(self):
-    self.start()
+  def capture(self, auto_start = True):
+    if auto_start:
+      self.start()
 
     while not rospy.is_shutdown():
       self.update_pending()

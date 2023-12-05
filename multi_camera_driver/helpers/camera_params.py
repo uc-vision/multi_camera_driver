@@ -53,6 +53,13 @@ def declare_read_only_parameters():
     description='reset_cycle'
   )
 
+  auto_start_descriptor = ParameterDescriptor(
+    name='reset_cycle', 
+    type=1,
+    read_only=True,
+    description='reset_cycle'
+  )
+
   tracking_frame_descriptor = ParameterDescriptor(
     name='tracking_frame', 
     type=4,
@@ -88,6 +95,7 @@ def declare_read_only_parameters():
       ('camera_set_file', '', camera_set_file_descriptor),
       ('settings_file', '', settings_file_descriptor),
       ('reset_cycle', True, reset_cycle_descriptor),
+      ('auto_start', True, auto_start_descriptor),
       ('tracking_frame', 'camera_ref', tracking_frame_descriptor),
       ('rig_frame', 'camera_bar', rig_frame_descriptor),
       ('timeout_msec', 1000, timeout_msec_descriptor),
