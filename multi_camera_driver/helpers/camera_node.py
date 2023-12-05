@@ -39,7 +39,7 @@ class CameraArrayNode(Dispatcher):
 
     self.start_cameras_service()
     self.stop_cameras_service()
-    self.cameras_started_pub = rospy._node.create_publisher(Bool, '/cameras_started', 
+    self.cameras_started_pub = rospy._node.create_publisher(Bool, '~/cameras_started', 
                                                             qos_profile=QOS_LATCHING)
     
     for camera_name, info in camera_set.camera_settings.items():
@@ -71,14 +71,14 @@ class CameraArrayNode(Dispatcher):
       if not self.started:
         self.start()
       return resp
-    return rospy._node.create_service(Empty, '~start_cameras', start_cameras)
+    return rospy._node.create_service(Empty, '~/start_cameras', start_cameras)
   
   def stop_cameras_service(self):
     def stop_cameras(req, resp):
       if self.started:
         self.stop()
       return resp
-    return rospy._node.create_service(Empty, '~stop_cameras', stop_cameras)
+    return rospy._node.create_service(Empty, '~/stop_cameras', stop_cameras)
 
 
   def reconfigure_callback(self, params):
