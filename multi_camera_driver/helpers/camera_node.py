@@ -41,6 +41,7 @@ class CameraArrayNode(Dispatcher):
     self.stop_cameras_service()
     self.cameras_started_pub = rospy._node.create_publisher(Bool, '~/cameras_started', 
                                                             qos_profile=QOS_LATCHING)
+    self.cameras_started_pub.publish(Bool(data=False))
     
     for camera_name, info in camera_set.camera_settings.items():
       rospy.loginfo(f"{camera_name}: {info}")
