@@ -13,10 +13,13 @@ from py_structs import struct
 from multi_camera_driver.helpers.image_processor.outputs import ImageOutputs
 from multi_camera_driver.helpers.work_queue import WorkQueue
 
+from pydispatch import Dispatcher
 
-class CameraPublisher():
+class CameraPublisher(Dispatcher):
+  _events_ = ["subscribed", "unsubscribed"]
 
-  def __init__(self, camera_name:str, namespace):    
+  def __init__(self, camera_name:str, namespace): 
+   
     self.camera_name = camera_name
     self.queue = WorkQueue(name=f"CameraPublisher({camera_name})", run=self.publish_worker, max_size=1)
     self.queue.start()
@@ -30,10 +33,15 @@ class CameraPublisher():
         "utc" : (TimeReference, lambda data: TimeReference( time_ref=rospy.Time.from_sec(data.raw.utc_time.timestamp()), source="utc time of capture"))
     }
 
-    self.publisher = LazyPublisher(topics, self.register, name = f'{namespace}/{self.camera_name}')
+    self.publisher = LazyPublisher(topics, name = f'{namespace}/{self.camera_name}', 
+            on_register=self.register, on_unregister=self.unregister)
 
   def register(self):
-    return []     # Here's where the lazy subscriber subscribes to it's inputs (we have no other ROS based inputs)
+    self.emit("subscribed", self.camera_name)
+    return []     # Here's where the lazy subscriber returns subscriptions to it's inputs 
+
+  def unregister(self, topics):
+    self.emit("unsubscribed", self.camera_name)
 
 
   def publish(self, image:ImageOutputs):
@@ -52,16 +60,31 @@ class CameraPublisher():
 
       
 
-class FramePublisher():
-     
+class FramePublisher(Dispatcher):
+    _events_ = ["any_subscribed", "all_unsubscribed"]
+
     def __init__(self, camera_names:List[str], namespace = ''):
-      self.publishers = {camera:CameraPublisher(camera, namespace) for camera in camera_names}
-  
+      self.publishers = {camera:CameraPublisher(camera, namespace) 
+            for camera in camera_names}
+      
+      self.cameras_subscribed = set()
+    
+    def subscribed(self, camera_name:str):
+      first = len(self.cameras_subscribed) == 0
+      self.cameras_subscribed.add(camera_name)
+      if first:
+        self.emit("any_subscribed")
+
+
+    def unsubscribed(self, camera_name:str):
+      self.cameras_subscribed.remove(camera_name)
+      if len(self.cameras_subscribed) == 0:
+        self.emit("all_unsubscribed")
+
     def publish(self, images:List[ImageOutputs]):
       for image in images:
         self.publishers[image.camera_name].publish(image)
   
-
     def stop(self):
       for camera in self.publishers.values():
         camera.stop()

@@ -22,7 +22,7 @@ import torch
 
 
 class SyncHandler(Dispatcher):
-  _events_ = ["on_frame", "on_dsync"]
+  _events_ = ["on_frame"]
 
   @beartype
   def __init__(self, camera_settings:Dict[str, CameraSettings], device:torch.device,

@@ -127,18 +127,26 @@ def run_node(camera_set_dict, camera_settings_dict):
   rospy.loginfo("Done")
 
   handler.bind(on_frame=processor.process)
-  handler.bind(on_dsync=camera_node.resync)
   camera_node.bind(on_image_settings=processor.update_settings)
 
   namespace = rospy.get_param('rig_frame', '')
   publisher = FramePublisher(camera_set.camera_ids, namespace)
   processor.bind(on_frame=publisher.publish)
 
+
+
   # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
   # processor.bind(on_frame=raw_writer.write)
   
   try:
-    camera_node.capture()
+
+    if rospy.get_param("lazy_capture", False):
+      publisher.bind(any_subscribed=camera_node.capture)
+      publisher.bind(any_subscribed=camera_node.pause)
+
+    else:
+      camera_node.capture()
+
   except KeyboardInterrupt:
     pass
   except PySpin.SpinnakerException as e:

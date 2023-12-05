@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from beartype import beartype
 from cached_property import cached_property
 
-from nvjpeg_torch import Jpeg, JpegException
+from nvjpeg_torch import Jpeg
 from taichi_image import color
 
 from multi_camera_driver.helpers.common import CameraImage, EncoderError
