@@ -62,11 +62,11 @@ class CameraSet(Dispatcher):
     self.camera_dict = spinnaker_helpers.find_cameras(
         camera_serials)  # camera_name -> camera
     
-    self.interface = spinnaker_helpers.find_interface(camera_serials)
-    if self.interface is None:
-      raise ValueError(f"Could not find interface for {camera_serials}")
-    else:
-      rospy.loginfo(f"Got camera interface {self.interface}")
+    #self.interface = spinnaker_helpers.find_interface(camera_serials)
+    #if self.interface is None:
+    #  raise ValueError(f"Could not find interface for {camera_serials}, got {self.camera_dict}")
+    #else:
+    #  rospy.loginfo(f"Got camera interface {self.interface}")
 
     rospy.loginfo(f"Initialising cameras: {camera_serials}")
     rospy.loginfo(

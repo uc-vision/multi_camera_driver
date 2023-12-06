@@ -8,7 +8,7 @@ import errno
 import yaml
 from typing import Dict, Union, NoReturn
 
-import camera_geometry_ros.conversions as conversions
+from . import geometry_conversions as conversions
 from camera_geometry.calib import import_rig
 from camera_geometry import json
 

@@ -124,11 +124,12 @@ class SyncHandler(Dispatcher):
       settings = list(self.camera_settings.values())[0]
       if settings.master_id is not None:
         seq_num = group[settings.master_id].seq
-        for i in self.trigger_queue:
-          if i[0] == seq_num:
-            rospy.loginfo(f"Trigger time {i[1]}")
+        
+        for (seq, time) in self.trigger_queue:
+          if seq == seq_num:
+            rospy.loginfo(f"Trigger time {time}")
 
-            group = {k:replace(image, utc_time=i[1])
+            group = {k:replace(image, utc_time=time)
                     for k, image in group.items()}
 
       self.published += 1

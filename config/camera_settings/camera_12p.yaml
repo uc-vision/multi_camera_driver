@@ -13,8 +13,9 @@ resize_width: 3072.0
 
 tone_mapping: reinhard
 
-# rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
+# rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert transverse
 transform: rotate_270
+auto_start: True
 
 
 camera_settings:

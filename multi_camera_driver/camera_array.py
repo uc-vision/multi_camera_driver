@@ -37,7 +37,7 @@ from multi_camera_driver.helpers.sync_handler import SyncHandler
 
 from multi_camera_driver.helpers.image_settings import ImageSettings
 from multi_camera_driver.helpers.config import (import_calibrations, 
-  load_calibrations, load_config, publish_extrinsics, write_calibration, exceptions_to_rosout)
+  load_calibrations, load_config, publish_extrinsics, write_calibration)
 
 
 
@@ -134,18 +134,23 @@ def run_node(camera_set_dict, camera_settings_dict):
   processor.bind(on_frame=publisher.publish)
 
 
-
   # raw_writer = ImageWriterRaw("/home/oliver/raw_images", camera_set.camera_ids)
   # processor.bind(on_frame=raw_writer.write)
   
+  def poll_start():
+    # Necessary because ROS2 humble doesn't support topic match notifications
+    if publisher.num_subscribed() == 0 and camera_node.started:
+      camera_node.stop()  
+    if publisher.num_subscribed() > 0 and not camera_node.started:
+      camera_node.start()
   try:
 
-    if rospy.get_param("lazy_capture", False):
-      publisher.bind(any_subscribed=camera_node.capture)
-      publisher.bind(any_subscribed=camera_node.pause)
-
+    if rospy.get_param("auto_start", False):        
+      camera_node.bind(on_update=poll_start)
     else:
-      camera_node.capture()
+      camera_node.start()
+      
+    camera_node.capture()
 
   except KeyboardInterrupt:
     pass
@@ -177,7 +182,7 @@ def main():
   camera_set_dict = load_config(camera_set_file)
   camera_settings_dict = load_config(camera_settings_file)
 
-  if camera_set_dict.get('reset_cycle', True):
+  if camera_set_dict.get('reset_cycle', False):
     rospy.loginfo("Resetting")
     spinnaker_helpers.reset_all()
     rospy.sleep(3)

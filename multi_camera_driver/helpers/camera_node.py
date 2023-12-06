@@ -12,8 +12,12 @@ from beartype import beartype
 
 from .image_settings import ImageSettings
 from .camera_set import CameraSet
+from std_srvs.srv import Empty
 from pydispatch import Dispatcher
 
+from std_msgs.msg import Bool
+from rclpy.qos import QoSProfile, DurabilityPolicy
+QOS_LATCHING = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
 class CameraArrayNode(Dispatcher):
   delayed_setters = ["binning"]
@@ -30,6 +34,13 @@ class CameraArrayNode(Dispatcher):
 
     rospy._node.add_on_set_parameters_callback(self.reconfigure_callback)
 
+
+    self.cameras_started_pub = rospy._node.create_publisher(Bool, '~/cameras_started', 
+                                                            qos_profile=QOS_LATCHING)
+    self.cameras_started_pub.publish(Bool(data=False))
+
+
+    
     for camera_name, info in camera_set.camera_settings.items():
       rospy.loginfo(f"{camera_name}: {info}")
 
@@ -51,6 +62,8 @@ class CameraArrayNode(Dispatcher):
       
 
       return self.config
+
+
 
 
   def reconfigure_callback(self, params):
@@ -84,6 +97,7 @@ class CameraArrayNode(Dispatcher):
     assert not self.started
     self.camera_set.register_handlers()
     self.camera_set.start()
+    self.cameras_started_pub.publish(Bool(data=True))
 
 
   def stop(self):
@@ -92,6 +106,7 @@ class CameraArrayNode(Dispatcher):
 
       gc.collect(0)
       self.camera_set.stop()
+      self.cameras_started_pub.publish(Bool(data=False))
 
 
   def update_pending(self):
@@ -114,7 +129,6 @@ class CameraArrayNode(Dispatcher):
     self.pending_config = {}
 
   def capture(self):
-    self.start()
 
     while not rospy.is_shutdown():
       self.update_pending()
@@ -123,6 +137,15 @@ class CameraArrayNode(Dispatcher):
 
     self.stop()
 
+
+  def auto_capture(self, poll_subscribed):
+
+    while not rospy.is_shutdown():
+      self.update_pending()
+      self.emit("on_update")
+      rospy.sleep(0.2)
+
+    self.stop()
 
   def cleanup(self):
     self.stop()

@@ -9,7 +9,7 @@ from nvjpeg_torch import Jpeg
 from taichi_image import color
 
 from multi_camera_driver.helpers.common import CameraImage, EncoderError
-from camera_geometry_ros.conversions import camera_info_msg
+from multi_camera_driver.helpers.geometry_conversions import camera_info_msg
 from camera_geometry import Camera
 from sensor_msgs.msg import CameraInfo
 from multi_camera_driver.helpers.image_settings import ImageSettings
