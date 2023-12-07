@@ -58,7 +58,6 @@ class SyncHandler(Dispatcher):
 
 
   def report_recieved(self):
-    rospy.loginfo('hi')
     now = rospy.Time.now()
     duration = now - self.update
     if duration > self.report_rate:
