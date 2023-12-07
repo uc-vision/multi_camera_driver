@@ -138,14 +138,7 @@ class CameraArrayNode(Dispatcher):
     self.stop()
 
 
-  def auto_capture(self, poll_subscribed):
 
-    while not rospy.is_shutdown():
-      self.update_pending()
-      self.emit("on_update")
-      rospy.sleep(0.2)
-
-    self.stop()
 
   def cleanup(self):
     self.stop()

@@ -119,7 +119,7 @@ def run_node(camera_set_dict, camera_settings_dict):
   #camera_set.bind(on_settings=diagnostics.on_camera_info, on_image=diagnostics.on_image)
 
   #camera_node.bind(on_update=diagnostics.reset)
-  camera_node.bind(on_update=handler.report_recieved)
+  timer = rospy.Timer(rospy.Duration(4.0), handler.report_recieved)
 
   processor = FrameProcessor(camera_set.camera_settings, camera_node.image_settings)
   rospy.loginfo("Frame processor warmup")

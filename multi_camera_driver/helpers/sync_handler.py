@@ -103,8 +103,7 @@ class SyncHandler(Dispatcher):
 
     timeout_time = self.frame_queue[-1].timestamp - self.timeout
     while(len(self.frame_queue) > 0 and self.frame_queue[0].timestamp < timeout_time):
-      dur_to_sec = (timeout_time - self.frame_queue[0].timestamp).to_sec()
-      rospy.logwarn(f"dropping frame from {self.frame_queue[0].camera_name} because it is too old, {self.frame_queue[0].timestamp} < {timeout_time} ({dur_to_sec/1e6}ms)")
+      
       frame:CameraImage = self.frame_queue.pop(0)
       self.dropped[frame.camera_name] += 1
 
@@ -151,11 +150,9 @@ class SyncHandler(Dispatcher):
 
   def process_image(self, camera_image_pair:Tuple[str, PySpin.ImagePtr]):
     camera_name, image = camera_image_pair
-
     try:
       offset = self.camera_settings[camera_name].time_offset_sec - self.camera_offsets[camera_name]
       image_info = spinnaker_image(camera_name, image, time_offset_sec=offset, device=self.device)
-
 
       self.add_frame(image_info)
       self.try_publish()
