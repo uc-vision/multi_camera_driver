@@ -10,6 +10,7 @@ from disable_gc import disable_gc
 
 import gc
 from fuzzywuzzy import process
+import time
 
 
 
@@ -409,6 +410,7 @@ def camera_list_to_dict(camera_list):
         camera_dict[get_camera_serial(cam)] = cam
     return camera_dict
 
+
 def find_cameras(camera_serials):
     camera_list = PySpin.System.GetInstance().GetCameras()
     serial_dict = camera_list_to_dict(camera_list)
@@ -423,6 +425,17 @@ def find_cameras(camera_serials):
 
     camera_list.Clear()
     return cameras
+
+def wait_for_cameras(camera_serials, timeout = 60):
+  start = time.time()
+  while True:
+    try:
+      return find_cameras(camera_serials)
+    except ValueError as e:
+      elapsed = start - time.time()
+      if elapsed > timeout:
+        raise e
+      time.sleep(5)
 
 def find_interface(camera_serials):
     "Returns the interface containing the cameras"

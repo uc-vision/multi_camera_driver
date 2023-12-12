@@ -59,15 +59,9 @@ class CameraSet(Dispatcher):
       self.trigger_reporter.start()
 
     self.camera_serials = camera_serials
-    self.camera_dict = spinnaker_helpers.find_cameras(
-        camera_serials)  # camera_name -> camera
-    
-    #self.interface = spinnaker_helpers.find_interface(camera_serials)
-    #if self.interface is None:
-    #  raise ValueError(f"Could not find interface for {camera_serials}, got {self.camera_dict}")
-    #else:
-    #  rospy.loginfo(f"Got camera interface {self.interface}")
 
+    # camera_name -> camera
+    self.camera_dict = spinnaker_helpers.wait_for_cameras(camera_serials)  
     rospy.loginfo(f"Initialising cameras: {camera_serials}")
     rospy.loginfo(
         f"Triggering: {'Disabled' if self.master_id is None else 'Enabled'}")
