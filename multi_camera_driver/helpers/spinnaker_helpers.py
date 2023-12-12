@@ -433,6 +433,8 @@ def wait_for_cameras(camera_serials, timeout = 60):
       return find_cameras(camera_serials)
     except ValueError as e:
       elapsed = start - time.time()
+      rospy.logwarn(f"{e} - time elapsed: {elapsed}")
+      rospy.logwarn(f"Waiting 5 seconds before retrying...")
       if elapsed > timeout:
         raise e
       time.sleep(5)
