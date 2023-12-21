@@ -137,10 +137,13 @@ class SyncHandler(Dispatcher):
       self.update_offsets(group)  
               
       # Set timestamps to be equal
-      group = {k:replace(image, timestamp=timestamp)
+
+
+      clock_time = min([image.clock_time for image in group.values()])
+
+      group = {k:replace(image, timestamp=clock_time)
                     for k, image in group.items()}
       
-      clock_time = min([image.clock_time for image in group.values()])
       diff = clock_time - timestamp
 
       t = 0.01
