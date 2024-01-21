@@ -20,6 +20,8 @@ def launch_setup(context):
       'camera_set_file': camera_set, 
       'settings_file': camera_settings
       }],
+    respawn=True,
+    respawn_delay=30
     )
   return [camera_array_node]
 
