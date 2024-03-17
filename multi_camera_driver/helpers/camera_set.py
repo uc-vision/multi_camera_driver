@@ -146,6 +146,7 @@ class CameraSet(Dispatcher):
     rospy.sleep(1.0)
     self.camera_dict[self.master_id].BeginAcquisition()
 
+    rospy.sleep(1.0)
     self.started = True
 
   def stop(self):
