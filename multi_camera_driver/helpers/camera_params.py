@@ -157,6 +157,14 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     integer_range=[IntegerRange(from_value=0, to_value=4096)]
   )
 
+  default_preview_size = default_settings.get('resize_width', 200)
+  preview_size_desc = ParameterDescriptor(
+    name='preview_size', 
+    type=2, 
+    description='preview size', 
+    integer_range=[IntegerRange(from_value=0, to_value=1024)]
+  )
+
   default_jpeg_quality = default_settings.get('jpeg_quality', 95)
   jpeg_quality_desc = ParameterDescriptor(
     name='jpeg_quality', 
@@ -228,6 +236,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
       ('max_framerate', default_max_framerate, max_framerate_desc),
       ('binning', default_binning, binning_desc),
       ('resize_width', default_width, resize_width_desc),
+      ('preview_size', default_preview_size, preview_size_desc),
       ('jpeg_quality', default_jpeg_quality, jpeg_quality_desc),
       ('tone_mapping', default_tone_mapping.value, tone_mapping_desc),
       ('transform', default_transform.value, transform_desc),
