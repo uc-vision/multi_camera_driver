@@ -162,7 +162,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     name='preview_size', 
     type=2, 
     description='preview size', 
-    integer_range=[IntegerRange(from_value=0, to_value=1024)]
+    integer_range=[IntegerRange(from_value=24, to_value=1024)]
   )
 
   default_jpeg_quality = default_settings.get('jpeg_quality', 95)
