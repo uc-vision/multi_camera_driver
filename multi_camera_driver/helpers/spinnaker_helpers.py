@@ -457,6 +457,9 @@ def validate_init(camera):
 def validate_streaming(camera):
     return validate_init(camera) and camera.IsStreaming()
 
+def validate_not_streaming(camera):
+    return validate_init(camera) and not camera.IsStreaming()
+
 
 def get_image_size(camera : PySpin.Camera):
     node_map = camera.GetNodeMap()

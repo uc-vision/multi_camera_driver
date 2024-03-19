@@ -157,7 +157,7 @@ def declare_camera_parameters(default_settings: Dict[str, Any]):
     integer_range=[IntegerRange(from_value=0, to_value=4096)]
   )
 
-  default_preview_size = default_settings.get('resize_width', 200)
+  default_preview_size = default_settings.get('preview_size', 200)
   preview_size_desc = ParameterDescriptor(
     name='preview_size', 
     type=2, 

@@ -140,20 +140,32 @@ class CameraSet(Dispatcher):
     for k, camera in self.camera_dict.items():
       if k != self.master_id:
         camera.BeginAcquisition()
+        rospy.loginfo(f"starting acquisition {k}..")
         assert spinnaker_helpers.validate_streaming(camera),\
             f"Camera {k} did not begin streaming"
-        
-    rospy.sleep(1.0)
     self.camera_dict[self.master_id].BeginAcquisition()
+    assert spinnaker_helpers.validate_streaming(self.camera_dict[self.master_id]),"Master Camera did not begin streaming"
 
-    rospy.sleep(1.0)
     self.started = True
 
   def stop(self):
     if self.started:
+
+      try:
+        self.camera_dict[self.master_id].EndAcquisition()
+        assert spinnaker_helpers.validate_not_streaming(self.camera_dict[self.master_id]),f'Not wanting to stop Master'
+      except PySpin.SpinnakerException as e:
+        rospy.logwarn("warning: " + str(e))
+
       for k, camera in self.camera_dict.items():
-        rospy.loginfo(f"Ending acquisition {k}..")
-        camera.EndAcquisition()
+        if k != self.master_id:
+          try:
+            rospy.loginfo(f"Ending acquisition {k}..")
+            camera.EndAcquisition()
+            assert spinnaker_helpers.validate_not_streaming(camera),f'Not wanting to stop {k}'
+
+          except PySpin.SpinnakerException as e:
+            rospy.logwarn("warning: " + str(e))
 
       rospy.loginfo("Stop - done.")
       self.started = False

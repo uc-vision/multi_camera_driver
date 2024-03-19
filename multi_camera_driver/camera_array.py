@@ -140,8 +140,10 @@ def run_node(camera_set_dict, camera_settings_dict):
   def poll_start():
     # Necessary because ROS2 humble doesn't support topic match notifications
     if publisher.num_subscribed() == 0 and camera_node.started:
+      handler.stop()
       camera_node.stop()  
     if publisher.num_subscribed() > 0 and not camera_node.started:
+      handler.start()
       camera_node.start()
   try:
 

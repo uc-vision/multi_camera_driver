@@ -164,4 +164,8 @@ class SyncHandler(Dispatcher):
   def stop(self):
     self.queue.stop()
     self.frame_queue = []
+  
+  def start(self):
+    self.queue = WorkQueue("SyncHandler", run=self.process_image, max_size=len(self.camera_settings))
+    self.queue.start()
 
